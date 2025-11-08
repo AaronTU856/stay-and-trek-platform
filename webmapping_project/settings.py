@@ -213,6 +213,10 @@ SPECTACULAR_SETTINGS = {
 
 }
 
+if os.getenv('CI', False):
+    os.environ['SPATIALITE_LIBRARY_PATH'] = 'mod_spatialite'
+
+
 # Use in-memory database for CI testing
 if os.getenv('CI', False):  # Detect Cloud Build
     DATABASES = {
