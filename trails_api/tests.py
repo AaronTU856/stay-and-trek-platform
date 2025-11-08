@@ -33,20 +33,20 @@ class TrailAPITestCase(APITestCase):
 
     def test_trail_list(self):
         """Test trail list endpoint"""
-        url = reverse('trail-list-create')
+        url = reverse('trails:trail-list-create')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_trail_detail(self):
         """Test trail detail endpoint"""
-        url = reverse('trail-detail', kwargs={'pk': self.trail1.pk})
+        url = reverse('trails:trail-detail', kwargs={'pk': self.trail1.pk})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['trail_name'], 'Bray Head Loop')
 
     def test_trail_creation(self):
         """Test creating a new trail"""
-        url = reverse('trail-list-create')
+        url = reverse('trails:trail-list-create')
         data = {
             "trail_name": "Glendalough Valley Loop",
             "county": "Wicklow",
@@ -64,7 +64,7 @@ class TrailAPITestCase(APITestCase):
 
     def test_within_radius_query(self):
         """Test spatial within-radius query"""
-        url = reverse('trails-within-radius')
+        url = reverse('trails:trails-within-radius')
         data = {'latitude': 53.0, 'longitude': -6.0, 'radius_km': 100}
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -73,7 +73,7 @@ class TrailAPITestCase(APITestCase):
 
     def test_statistics_endpoint(self):
         """Test statistics endpoint"""
-        url = reverse('trail-statistics')
+        url = reverse('trails:trail-statistics')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('total_trails', response.data)
