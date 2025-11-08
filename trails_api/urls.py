@@ -20,7 +20,7 @@ urlpatterns = [
     path('load-towns/', views.load_towns, name='load-towns'),
 
     # Spatial
-    path('within-radius/', views.trails_within_radius, name='trails_within_radius'),
+    path('within-radius/', views.trails_within_radius, name='trails-within-radius'),
     path('bbox/', views.trails_in_bounding_box, name='trails-bbox'),
     path('paths/geojson/', views.trails_paths_geojson, name='trails_paths_geojson'),
 
