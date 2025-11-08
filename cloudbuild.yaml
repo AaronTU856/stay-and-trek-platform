@@ -15,6 +15,7 @@ steps:
     args:
       - '-c'
       - |
+        apt-get update && apt-get install -y gdal-bin libgdal-dev
         pip install --no-cache-dir -r requirements.txt
         echo "Running Django unit tests..."
         python manage.py test --settings=webmapping_project.settings
