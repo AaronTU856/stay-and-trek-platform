@@ -15,6 +15,8 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+os.environ["GDAL_LIBRARY_PATH"] = "/usr/lib/libgdal.so"
+
 #GDAL_LIBRARY_PATH = '/opt/homebrew/opt/gdal/lib/libgdal.dylib'
 #GEOS_LIBRARY_PATH = '/opt/homebrew/opt/geos/lib/libgeos_c.dylib'
 #PROJ_LIBRARY_PATH = '/opt/homebrew/opt/proj/lib/libproj.dylib'
@@ -211,6 +213,16 @@ SPECTACULAR_SETTINGS = {
 
 }
 
+# Use in-memory database for CI testing
+if os.getenv('CI', False):  # Detect Cloud Build
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': ':memory:',
+        }
+    }
+
+
 LEAFLET_CONFIG = {
     'DEFAULT_CENTER': (53.3498, -6.2603),  # Dublin coordinates
     'DEFAULT_ZOOM': 7,
@@ -218,6 +230,10 @@ LEAFLET_CONFIG = {
     'MAX_ZOOM': 18,
     'SCALE': 'both',
 }
+
+
+
+
 
 
 
