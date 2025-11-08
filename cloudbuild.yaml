@@ -12,14 +12,13 @@ steps:
   # Step 1: Install dependencies and run unit tests
   - name: 'python:3.11-slim'
     entrypoint: 'bash'
+    env:
+      - CI=True               # ✅ makes Django switch to SpatiaLite
     args:
       - '-c'
       - |
-        apt-get update && apt-get install -y gdal-bin libgdal-dev libsqlite3-mod-spatialite
         pip install --no-cache-dir -r requirements.txt
         echo "Running Django unit tests with SpatiaLite..."
-        export CI=1
-        export SPATIALITE_LIBRARY_PATH=mod_spatialite
         python manage.py test --settings=webmapping_project.settings
     id: UnitTests
 

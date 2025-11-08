@@ -105,19 +105,41 @@ TEMPLATES = [
 WSGI_APPLICATION = 'webmapping_project.wsgi.application'
 
 
+if os.getenv("CI"):
+    print("🔹 Using SpatiaLite (SQLite GIS) for CI build")
+    os.environ["SPATIALITE_LIBRARY_PATH"] = "mod_spatialite"
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.contrib.gis.db.backends.spatialite",
+            "NAME": ":memory:",
+        }
+    }
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.contrib.gis.db.backends.postgis",
+            "NAME": "trails_db",
+            "USER": "postgres",
+            "PASSWORD": "postgres",
+            "HOST": "db",
+            "PORT": "5432",
+        }
+    }
+
+
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'NAME': 'trails_db',      #  match your docker-compose service
-        'USER': 'postgres',       # match docker-compose credentials
-        'PASSWORD': 'postgres',
-        'HOST': 'db',             # internal hostname for the Postgres container
-        'PORT': '5432',
-    }
-}
+# //DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.contrib.gis.db.backends.postgis',
+#         'NAME': 'trails_db',      #  match your docker-compose service
+#         'USER': 'postgres',       # match docker-compose credentials
+#         'PASSWORD': 'postgres',
+#         'HOST': 'db',             # internal hostname for the Postgres container
+#         'PORT': '5432',
+#     }
+# }
 
 
 
@@ -212,23 +234,6 @@ SPECTACULAR_SETTINGS = {
 
 
 }
-
-
-
-if os.getenv("CI"):
-    print("🔹 Using SpatiaLite (SQLite GIS) for CI build")
-    os.environ["SPATIALITE_LIBRARY_PATH"] = "mod_spatialite"
-
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.contrib.gis.db.backends.spatialite",
-            "NAME": ":memory:",
-        }
-    }
-
-    # Confirm backend switch
-    from django.db import connection
-    print("Database engine:", DATABASES["default"]["ENGINE"])
 
 
 
