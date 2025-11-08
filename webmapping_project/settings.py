@@ -213,18 +213,23 @@ SPECTACULAR_SETTINGS = {
 
 }
 
-if os.getenv('CI', False):
-    os.environ['SPATIALITE_LIBRARY_PATH'] = 'mod_spatialite'
 
 
-# Use in-memory database for CI testing
-if os.getenv('CI', False):  # Detect Cloud Build
+if os.getenv("CI"):
+    print("🔹 Using SpatiaLite (SQLite GIS) for CI build")
+    os.environ["SPATIALITE_LIBRARY_PATH"] = "mod_spatialite"
+
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': ':memory:',
+        "default": {
+            "ENGINE": "django.contrib.gis.db.backends.spatialite",
+            "NAME": ":memory:",
         }
     }
+
+    # Confirm backend switch
+    from django.db import connection
+    print("Database engine:", DATABASES["default"]["ENGINE"])
+
 
 
 LEAFLET_CONFIG = {
