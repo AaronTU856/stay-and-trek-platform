@@ -55,8 +55,7 @@ class TrailAPITestCase(APITestCase):
             "difficulty": "Easy",
             "elevation_gain_m": 180,
             "description": "Scenic loop around the Upper Lake.",
-            "latitude": 53.010,
-            "longitude": -6.327
+            "start_point": {"type": "Point", "coordinates": [-6.327, 53.010]},
         }
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -107,7 +106,7 @@ class TrailModelTestCase(TestCase):
         self.assertGreater(self.trail.distance_km, 0)
 
     def test_geojson_format(self):
-        url = reverse('trails_geojson')
+        url = reverse('trails:trails_geojson')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['type'], 'FeatureCollection')
