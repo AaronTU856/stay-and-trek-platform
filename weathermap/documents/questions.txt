@@ -1,0 +1,17 @@
+Question 5.1: 
+Why do we use async/await syntax for API calls instead of callback functions or .then() chains? What are the advantages?
+Readability: async/await makes asynchronous code look and behave more like synchronous code, which is easier to read and understand, especially for complex workflows.
+Error Handling: With async/await, you can use try/catch blocks for error handling, which is more intuitive and cleaner than chaining .catch() in promise chains.
+Avoiding Callback Hell: It eliminates deeply nested callback structures, making the code less prone to errors and easier to maintain.
+Debugging: Debugging is simpler because stack traces are more straightforward compared to promise chains or callbacks.
+
+
+
+Question 5.2: 
+What is the purpose of the finally block in the fetchWeatherData function?
+The finally block is used to execute code that should 
+run regardless of whether the try block succeeds 
+or the catch block handles an error. In the context of fetchWeatherData,
+it is typically used to clean up resources or update the UI 
+(e.g., hiding a loading spinner) 
+to ensure that certain actions are performed no matter the outcome of the API call.
