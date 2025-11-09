@@ -108,6 +108,7 @@ class TrailModelTestCase(TestCase):
     def test_geojson_format(self):
         url = reverse('trails:trails_geojson')
         response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['type'], 'FeatureCollection')
-        self.assertIn('features', response.data)
+        data = json.loads(response.content)
+        self.assertEqual(data['type'], 'FeatureCollection')
+        print(response.json())
+

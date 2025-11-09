@@ -9,17 +9,27 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
-import os
 from pathlib import Path
+from dotenv import load_dotenv
+import os
+import ctypes
+load_dotenv()
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-os.environ["GDAL_LIBRARY_PATH"] = "/usr/lib/libgdal.so"
+# --- Geo stack absolute paths (Homebrew on Apple Silicon) ---
+GDAL_LIBRARY_PATH = "/opt/homebrew/lib/libgdal.dylib"
+GEOS_LIBRARY_PATH = "/opt/homebrew/opt/geos/lib/libgeos_c.dylib"
 
-#GDAL_LIBRARY_PATH = '/opt/homebrew/opt/gdal/lib/libgdal.dylib'
-#GEOS_LIBRARY_PATH = '/opt/homebrew/opt/geos/lib/libgeos_c.dylib'
-#PROJ_LIBRARY_PATH = '/opt/homebrew/opt/proj/lib/libproj.dylib'
+# PROJ is looked up via env var (fine to set here too)
+import os
+os.environ["PROJ_LIB"] = "/opt/homebrew/opt/proj/share/proj"
+
+ctypes.CDLL(os.environ["GEOS_LIBRARY_PATH"])
+ctypes.CDLL(os.environ["GDAL_LIBRARY_PATH"])
+
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -115,16 +125,35 @@ if os.getenv("CI"):
         }
     }
 else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.contrib.gis.db.backends.postgis",
-            "NAME": "trails_db",
-            "USER": "postgres",
-            "PASSWORD": "postgres",
-            "HOST": "db",
-            "PORT": "5432",
+    # Detect which database to use: local PostGIS or Cloud SQL
+    from dotenv import load_dotenv
+    import os
+    load_dotenv()
+
+    if os.getenv("ACTIVE_DB") == "new":
+        print("🔹 Using Cloud SQL (PostgreSQL 17)")
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.contrib.gis.db.backends.postgis',
+                'NAME': os.getenv('NEW_DB_NAME'),
+                'USER': os.getenv('NEW_DB_USER'),
+                'PASSWORD': os.getenv('NEW_DB_PASSWORD'),
+                'HOST': os.getenv('NEW_DB_HOST'),
+                'PORT': os.getenv('NEW_DB_PORT'),
+            }
         }
-    }
+    else:
+        print("🔹 Using local PostGIS (default)")
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.contrib.gis.db.backends.postgis',
+                'NAME': 'webmapping_db',
+                'USER': 'aaronbaggot',
+                'PASSWORD': '',
+                'HOST': 'localhost',
+                'PORT': '5432',
+            }
+        }
 
 
 # Database

@@ -220,3 +220,8 @@ https://github.com/pointhi/leaflet-color-markers
 Trigger test Sat Nov  8 19:42:01 GMT 2025
 Trigger test Sat Nov  8 19:45:24 GMT 2025
 Pipeline test Sat Nov  8 20:05:55 GMT 2025
+
+
+## Project folder in google cloud
+cloud-sql-proxy long-octane-477515-k6:europe-west1:stay-trek-db --port=5432
+
