@@ -20,6 +20,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 from trails_api.views import trail_map
+from trails_api import views
 
 
 urlpatterns = [
@@ -33,6 +34,10 @@ urlpatterns = [
 
     # Trails API
     path('api/trails/', include(('trails_api.urls', 'trails'), namespace='trails')),
+    
+    # Weather
+    #path('api/trails/weather/<int:pk>/', views.trail_weather, name='trail-weather'),
+
 
 
     # API documentation

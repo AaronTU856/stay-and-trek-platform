@@ -6,6 +6,8 @@ from django.db.models import Count, Q
 from django.contrib.gis.geos import Point
 from django.contrib.gis.db.models.functions import Distance as DistanceFunction
 from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
+
 
 from rest_framework import generics, status
 from rest_framework.response import Response
@@ -16,6 +18,7 @@ from rest_framework.permissions import AllowAny
 from drf_spectacular.utils import extend_schema, OpenApiExample
 from django_filters.rest_framework import DjangoFilterBackend
 
+import requests
 from .models import Trail, Town
 from .serializers import (
     TrailListSerializer, TrailDetailSerializer, TrailGeoJSONSerializer,
@@ -348,3 +351,30 @@ def trail_map(request):
 
 def api_test_view(request):
     return render(request, "api_test.html")
+
+
+
+@api_view(['GET'])
+def trail_weather(request, pk):
+    try:
+        trail = Trail.objects.get(pk=pk)
+        
+        # Ensure start_point exists
+        if not trail.start_point:
+            return JsonResponse({'error': 'No coordinates for this trail'}, status=400)
+        
+        # Extract coordinates (PointField uses x=lon, y=lat)
+        lon, lat = trail.start_point.x, trail.start_point.y
+
+        api_key = settings.OPENWEATHERMAP_API_KEY
+        url = f'https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={api_key}&units=metric'
+
+        response = requests.get(url)
+        data = response.json()
+
+        return JsonResponse(data)
+    
+    except Trail.DoesNotExist:
+        return JsonResponse({'error': 'Trail not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

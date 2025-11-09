@@ -34,6 +34,11 @@
                             <button class="btn btn-warning" onclick="testSpatialQuery()">
                                 Find Nearby Trails
                             </button>
+
+                            <button class="btn btn-dark" onclick="testWeather()">
+                                🌤 Get Weather (Dublin)
+                            </button>
+
                             
                         </div>
                        
@@ -142,6 +147,32 @@
         document.addEventListener('DOMContentLoaded', function() {
             testEndpoint('/api/trails/');
         });
+
+
+        async function testWeather() {
+            const startTime = performance.now();
+            document.getElementById('apiResult').textContent = 'Fetching weather data...';
+            document.getElementById('responseTime').textContent = '';
+
+            try {
+                const lat = 53.35; // Dublin latitude
+                const lon = -6.26; // Dublin longitude
+
+                const response = await fetch(`${baseURL}/api/weather/?lat=${lat}&lon=${lon}`);
+                const data = await response.json();
+                const endTime = performance.now();
+
+                document.getElementById('apiResult').textContent = JSON.stringify(data, null, 2);
+                document.getElementById('responseTime').textContent =
+                    `Response time: ${(endTime - startTime).toFixed(2)}ms | Status: ${response.status}`;
+            } catch (error) {
+                document.getElementById('apiResult').textContent = 'Error: ' + error.message;
+                document.getElementById('responseTime').textContent = 'Error occurred';
+            }
+        }
+
+
+
     </script>
 </body>
 </html>

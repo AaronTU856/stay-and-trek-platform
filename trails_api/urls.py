@@ -30,5 +30,8 @@ urlpatterns = [
     path('info/', views.api_info, name='api-info'),
     path('test/', views.api_test_page, name='api-test'),
     
+    #Weather
+    path('weather/<int:pk>/', views.trail_weather, name='trail-weather'),
+    
     
 ]

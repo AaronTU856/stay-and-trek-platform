@@ -35,7 +35,8 @@ ctypes.CDLL(os.environ["GDAL_LIBRARY_PATH"])
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-nehw-)k@fa!el1zw5jdj#bn-x&@c)ph7sjd7i%%91$xwrcze)b'
+SECRET_KEY = os.getenv('SECRET_KEY')
+OPENWEATHERMAP_API_KEY = os.getenv('OPENWEATHERMAP_API_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
