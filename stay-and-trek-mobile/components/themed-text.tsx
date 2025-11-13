@@ -2,6 +2,9 @@ import { StyleSheet, Text, type TextProps } from 'react-native';
 
 import { useThemeColor } from '@/hooks/use-theme-color';
 
+import { useAccessibility } from "../context/AccessibilityContext";
+
+
 export type ThemedTextProps = TextProps & {
   lightColor?: string;
   darkColor?: string;
@@ -16,6 +19,13 @@ export function ThemedText({
   ...rest
 }: ThemedTextProps) {
   const color = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
+
+   // Access accessibility settings
+  const { largeText } = useAccessibility();
+
+  // Base font size and scale if largeText enabled
+  const baseFontSize = 16;
+  const scaledFontSize = largeText ? baseFontSize * 1.4 : baseFontSize;
 
   return (
     <Text

@@ -1,10 +1,32 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { PixelRatio, Dimensions } from 'react-native';
 
-const AccessibilityContext = createContext();
+const AccessibilityContext = createContext({
+  largeText: false,
+  fontScale: 1,
+  highContrast: false,
+  toggleLargeText: () => {},
+  toggleHighContrast: () => {},
+});
 
 export const AccessibilityProvider = ({ children }) => {
-  const [largeText, setLargeText] = useState(false);
+  const [fontScale, setFontScale] = useState(PixelRatio.getFontScale());
+  const [largeText, setLargeText] = useState(fontScale > 1.2);
   const [highContrast, setHighContrast] = useState(false);
+
+  useEffect(() => {
+    const onChange = () => {
+      const fs = PixelRatio.getFontScale();
+      setFontScale(fs);
+      setLargeText(fs > 1.2);
+    };
+
+    // Listen for changes (works across RN versions)
+    const sub = Dimensions.addEventListener ? Dimensions.addEventListener('change', onChange) : null;
+    return () => {
+      if (sub && typeof sub.remove === 'function') sub.remove();
+    };
+  }, []);
 
   const toggleLargeText = () => setLargeText(prev => !prev);
   const toggleHighContrast = () => setHighContrast(prev => !prev);
@@ -13,6 +35,7 @@ export const AccessibilityProvider = ({ children }) => {
     <AccessibilityContext.Provider
       value={{
         largeText,
+        fontScale,
         highContrast,
         toggleLargeText,
         toggleHighContrast,
