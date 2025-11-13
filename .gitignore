@@ -26,3 +26,11 @@ db.sqlite3
 .vscode/
 .idea/
 .DS_Store
+
+# Mobile Prototype (Expo)
+stay-and-trek-mobile/node_modules/
+stay-and-trek-mobile/.expo/
+stay-and-trek-mobile/.expo-shared/
+stay-and-trek-mobile/dist/
+stay-and-trek-mobile/web-build/
+stay-and-trek-mobile/package-lock.json
