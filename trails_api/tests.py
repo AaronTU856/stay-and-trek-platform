@@ -4,6 +4,7 @@ from rest_framework.test import APITestCase
 from rest_framework import status
 from django.contrib.gis.geos import Point
 from trails_api.models import Trail
+import json
 
 
 class TrailAPITestCase(APITestCase):
@@ -52,14 +53,24 @@ class TrailAPITestCase(APITestCase):
             "county": "Wicklow",
             "region": "Leinster",
             "distance_km": 8.2,
-            "difficulty": "Easy",
+            "difficulty": "easy",
             "elevation_gain_m": 180,
             "description": "Scenic loop around the Upper Lake.",
-            "start_point": {"type": "Point", "coordinates": [-6.327, 53.010]},
+
+            # REQUIRED BY SERIALIZER
+            "latitude": 53.010,
+            "longitude": -6.327,
+            "dogs_allowed": "yes",
+            "parking_available": "Yes",
+            "activity": "Hiking",
+            "nearest_town": "Laragh",
+            "trail_type": "Walking Trail"
         }
+
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Trail.objects.count(), 3)
+
 
     def test_within_radius_query(self):
         """Test spatial within-radius query"""

@@ -3,7 +3,7 @@ from django.urls import reverse
 from django.contrib.gis.geos import Point
 from trails_api.models import Trail, Town
 
-from trails_api.models import Trail, Town
+
 
 
 # Test that the trails GeoJSON endpoint returns a valid response

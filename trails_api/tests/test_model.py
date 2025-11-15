@@ -2,6 +2,7 @@ import pytest
 from django.contrib.gis.geos import Point
 from trails_api.models import Trail, Town
 
+
 # Test that the Trail model’s string representation returns the trail name
 @pytest.mark.django_db
 def test_trail_str():

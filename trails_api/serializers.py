@@ -82,7 +82,8 @@ class TrailCreateSerializer(serializers.ModelSerializer):
         latitude = validated_data.pop('latitude')
         longitude = validated_data.pop('longitude')
         validated_data['start_point'] = Point(longitude, latitude, srid=4326)
-        return Trail.objects.create(**validated_data)
+        return super().create(validated_data)
+
 
 
 # Serializer for returning summary statistics about trails       
