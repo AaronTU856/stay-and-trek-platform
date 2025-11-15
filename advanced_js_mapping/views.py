@@ -178,7 +178,7 @@ def map_view(request):
 # Add to advanced_js_mapping/views.py
 
 def analytics_view(request):
-    """Analytics dashboard with comprehensive statistics"""
+    """Analytics dashboard adapted for Town data."""
     from django.db.models import Count, Avg, Sum
     import json
 
@@ -187,7 +187,7 @@ def analytics_view(request):
     total_countries = Town.objects.values('country').distinct().count() if hasattr(Town, 'country') else 1
     total_population = Town.objects.aggregate(Sum('population'))['population__sum'] or 0
 
-    # Analysis statistics
+    # Analysis statistics (from PolygonAnalysis model)
     total_analyses = PolygonAnalysis.objects.count()
     recent_analyses = PolygonAnalysis.objects.filter(
         analysis_timestamp__gte=timezone.now() - timezone.timedelta(days=7)
@@ -201,7 +201,38 @@ def analytics_view(request):
         Avg('query_duration_ms')
     )['query_duration_ms__avg'] or 0
 
-    # Countries chart data
+    # Top cities by population
+    top_cities_qs = Town.objects.order_by('-population')[:10]
+    top_cities_by_population = [
+        {
+            'id': t.id,
+            'name': getattr(t, 'name', ''),
+            'country': getattr(t, 'country', '') or '',
+            'population': t.population or 0,
+        }
+        for t in top_cities_qs
+    ]
+
+    # GDP data likely not available on Town; provide empty list if absent
+    if hasattr(Town, 'gdp_per_capita'):
+        top_cities_by_gdp_qs = Town.objects.exclude(gdp_per_capita__isnull=True).order_by('-gdp_per_capita')[:10]
+        top_cities_by_gdp = [
+            {'id': t.id, 'name': t.name, 'country': getattr(t, 'country', '') or '', 'gdp_per_capita': t.gdp_per_capita}
+            for t in top_cities_by_gdp_qs
+        ]
+    else:
+        top_cities_by_gdp = []
+
+    # City types distribution (if town_type exists)
+    if hasattr(Town, 'town_type'):
+        types_qs = Town.objects.values('town_type').annotate(count=Count('id')).order_by('-count')
+        type_labels = [t['town_type'] or 'Unknown' for t in types_qs]
+        type_data = [t['count'] for t in types_qs]
+    else:
+        type_labels = []
+        type_data = []
+
+    # Countries chart data (top 10)
     if hasattr(Town, 'country'):
         popular_countries = Town.objects.values('country').annotate(
             city_count=Count('id')
@@ -209,10 +240,25 @@ def analytics_view(request):
     else:
         popular_countries = []
 
-    countries_labels = json.dumps([country['country'] for country in popular_countries])
+    countries_labels = json.dumps([country['country'] or 'Unknown' for country in popular_countries])
     countries_data = json.dumps([country['city_count'] for country in popular_countries])
 
-    # Recent analyses
+    # Population distribution buckets
+    buckets = [
+        ('<1k', 0, 999),
+        ('1k-5k', 1000, 4999),
+        ('5k-20k', 5000, 19999),
+        ('20k+', 20000, None),
+    ]
+    pop_dist = []
+    for label, low, high in buckets:
+        if high is None:
+            cnt = Town.objects.filter(population__gte=low).count()
+        else:
+            cnt = Town.objects.filter(population__gte=low, population__lte=high).count()
+        pop_dist.append({'label': label, 'count': cnt})
+
+    # Recent analyses list for table (keep as provided by model)
     recent_analyses_list = PolygonAnalysis.objects.order_by('-analysis_timestamp')[:10]
 
     context = {
@@ -226,6 +272,11 @@ def analytics_view(request):
         'countries_labels': countries_labels,
         'countries_data': countries_data,
         'recent_analyses_list': recent_analyses_list,
+        'top_cities_by_population': top_cities_by_population,
+        'top_cities_by_gdp': top_cities_by_gdp,
+        'city_type_labels': json.dumps(type_labels),
+        'city_type_data': json.dumps(type_data),
+        'population_distribution': json.dumps(pop_dist),
     }
 
     return render(request, 'advanced_js_mapping/analytics.html', context)
