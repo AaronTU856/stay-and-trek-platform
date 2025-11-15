@@ -30,8 +30,8 @@ urlpatterns = [
     path('info/', views.api_info, name='api-info'),
     path('test/', views.api_test_page, name='api-test'),
     
-    #Weather
+    #Weather endpoint for towns and trails
     path('weather/<int:pk>/', views.trail_weather, name='trail-weather'),
-    
+    path('weather-town/', views.town_weather, name='town-weather'),
     
 ]

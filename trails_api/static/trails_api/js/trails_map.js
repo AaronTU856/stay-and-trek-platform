@@ -185,7 +185,6 @@ fetch("/api/trails/towns/geojson/")
               console.error("❌ Weather fetch error:", err);
               layer.bindPopup('<b>${feature.properties.name}</b><br><em>Weather data unavailable.</em><br>Finding nearby trails...').openPopup();
 
-
             });
           performProximitySearch(lat, lng);
         });

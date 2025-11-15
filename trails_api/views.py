@@ -378,3 +378,21 @@ def trail_weather(request, pk):
         return JsonResponse({'error': 'Trail not found'}, status=404)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+    
+    
+@api_view(['GET'])
+def town_weather(request):
+    lat = request.GET.get("lat")
+    lng = request.GET.get("lng")
+
+    if not lat or not lng:
+        return Response({"error": "Missing coordinates"}, status=400)
+
+    api_key = settings.OPENWEATHERMAP_API_KEY
+    url = (
+        f"https://api.openweathermap.org/data/2.5/weather?"
+        f"lat={lat}&lon={lng}&appid={api_key}&units=metric"
+    )
+
+    data = requests.get(url).json()
+    return Response(data)
