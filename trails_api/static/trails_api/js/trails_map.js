@@ -163,6 +163,30 @@ fetch("/api/trails/towns/geojson/")
         );
         layer.on("click", () => {
           const [lng, lat] = feature.geometry.coordinates;
+
+          // Weather fetch on click
+          fetch(`/api/trails/weather-town/?lat=${lat}&lng=${lng}`)
+            .then(res => res.json())
+            .then((weather) => {
+              const description = weather.weather?.[0]?.description || "N/A";
+              const temp = weather.main?.temp ?? "N/A";
+              const wind = weather.wind?.speed ?? "N/A";
+
+              const weatherHtml = `
+                <b>${feature.properties.name}</b><br>
+                <strong>Weather:</strong> ${description}</br>
+                Temp: ${temp} °C<br>
+                Wind: ${wind} m/s<br><br>
+                `;
+                layer.bindPopup(weatherHtml + "<em>Finding nearby trails...</em>").openPopup();
+            }
+          )
+            .catch((err) => {
+              console.error("❌ Weather fetch error:", err);
+              layer.bindPopup('<b>${feature.properties.name}</b><br><em>Weather data unavailable.</em><br>Finding nearby trails...').openPopup();
+
+
+            });
           performProximitySearch(lat, lng);
         });
       },
