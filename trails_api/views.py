@@ -89,6 +89,18 @@ class TrailDetailView(generics.RetrieveUpdateDestroyAPIView):
 def trails_within_radius(request):
     """Find trails within a specified radius (km) of a given lat/lon."""
     try:
+        if not request.data.get("latitude") or not request.data.get("longitude"):
+            return Response(
+                {"error": "Latitude and longitude are required."},
+                status=400
+            )
+
+        if not request.data.get("radius_km"):
+            return Response(
+                {"error": "radius_km is required."},
+                status=400
+            )
+        
         lat = float(request.data.get("latitude"))
         lng = float(request.data.get("longitude"))
         radius_km = float(request.data.get("radius_km", 50))
