@@ -10,11 +10,11 @@
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Leaflet CSS (local static to ensure image paths resolve) -->
+    <link rel="stylesheet" href="{% static 'leaflet/leaflet.css' %}" />
 
-    <!-- Leaflet Draw CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+    <!-- Leaflet Draw CSS (local) -->
+    <link rel="stylesheet" href="{% static 'leaflet/draw/leaflet.draw.css' %}" />
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -51,8 +51,8 @@
 
     <!-- JavaScript Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <script src="{% static 'leaflet/leaflet.js' %}"></script>
+    <script src="{% static 'leaflet/draw/leaflet.draw.js' %}"></script>
 
     {% block extra_js %}{% endblock %}
 </body>

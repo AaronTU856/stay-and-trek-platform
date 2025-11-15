@@ -26,6 +26,24 @@ window.AdvancedMapping = (function() {
             // Expose map globally for other modules that expect it
             window.map = map;
 
+            // Ensure Leaflet default icon paths point to local static files so markers render correctly
+            // This avoids situations where the default icon image paths cannot be resolved (CDN/css path issues)
+            try {
+                if (L && L.Icon && L.Icon.Default && typeof L.Icon.Default.mergeOptions === 'function') {
+                    // Configure Leaflet to resolve marker asset URLs from the local static folder.
+                    // Use `imagePath` combined with the default icon filenames so Leaflet composes
+                    // the final URL correctly and avoids duplicating STATIC_URL segments.
+                    L.Icon.Default.mergeOptions({
+                        imagePath: '/static/leaflet/images/',
+                        iconUrl: 'marker-icon.png',
+                        iconRetinaUrl: 'marker-icon-2x.png',
+                        shadowUrl: 'marker-shadow.png'
+                    });
+                }
+            } catch (e) {
+                console.warn('Could not set Leaflet default icon options:', e);
+            }
+
             // Create and expose common layer groups used by analysis/UI modules
             window.citiesLayer = L.layerGroup().addTo(map);
             window.resultsLayer = L.layerGroup().addTo(map);

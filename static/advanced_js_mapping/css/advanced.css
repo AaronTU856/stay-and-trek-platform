@@ -110,3 +110,41 @@ body {
 #map { width: 100%; height: 600px; }
 .city-popup { font-size: 14px; }
 .results-summary .stat-card { padding: 8px; border-radius: 6px; background: #f8f9fa; }
+
+/* Ensure Leaflet marker images are visible (override other global rules that may hide/scale images) */
+.leaflet-container .leaflet-marker-icon,
+.leaflet-container .leaflet-marker-shadow,
+.leaflet-container .leaflet-div-icon {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  max-width: none !important;
+  width: auto !important;
+  height: auto !important;
+}
+
+/* Prevent Bootstrap/img responsive rules from shrinking marker images */
+.leaflet-container img {
+  max-width: none !important;
+  width: auto !important;
+  height: auto !important;
+}
+
+/* Ensure draw toolbar sprites use the correct absolute static paths
+   (serve from local static so relative resolution can't break). */
+.leaflet-draw-toolbar a {
+  background-image: url('/static/leaflet/draw/images/spritesheet.png') !important;
+  background-image: linear-gradient(transparent,transparent), url('/static/leaflet/draw/images/spritesheet.svg') !important;
+  background-repeat: no-repeat !important;
+  background-size: 300px 30px !important;
+  background-clip: padding-box !important;
+}
+
+.leaflet-retina .leaflet-draw-toolbar a {
+  background-image: url('/static/leaflet/draw/images/spritesheet-2x.png') !important;
+  background-image: linear-gradient(transparent,transparent), url('/static/leaflet/draw/images/spritesheet.svg') !important;
+}
+
+/* Note: removed the previous `.leaflet-default-icon-path { background-image: none !important; }`
+   because it prevented background-image assets (draw toolbar sprites) from showing.
+   The explicit overrides above point the draw toolbar at the correct `/static/...` files. */
