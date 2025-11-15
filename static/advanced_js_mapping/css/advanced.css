@@ -1,0 +1,4 @@
+/* Minimal styles for advanced_js_mapping compatibility */
+#map { width: 100%; height: 600px; }
+.city-popup { font-size: 14px; }
+.results-summary .stat-card { padding: 8px; border-radius: 6px; background: #f8f9fa; }

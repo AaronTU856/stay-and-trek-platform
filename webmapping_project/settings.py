@@ -78,6 +78,7 @@ INSTALLED_APPS = [
     
     # Dashboard
     'dashboard',
+    'advanced_js_mapping',
     
     'django.contrib.humanize',
     

@@ -1,0 +1,12 @@
+{% extends 'advanced_js_mapping/base.html' %}
+{% block title %}Advanced JS Mapping - Home{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <h1>Advanced Mapping Lab</h1>
+    <p class="lead">Use the interactive map to draw polygons and analyze towns from the existing project dataset.</p>
+    <p>
+        <a class="btn btn-primary" href="{% url 'advanced_js_mapping:map' %}">Open Interactive Map</a>
+        <a class="btn btn-secondary" href="{% url 'advanced_js_mapping:analytics' %}">View Analytics</a>
+    </p>
+</div>
+{% endblock %}

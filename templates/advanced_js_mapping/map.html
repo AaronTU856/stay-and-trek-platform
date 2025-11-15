@@ -1,0 +1,106 @@
+{% extends 'advanced_js_mapping/base.html' %}
+{% load static %}
+
+{% block title %}Interactive Polygon Map{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Map Column -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">🗺️ Interactive Map - Draw Polygons to Find Cities</h5>
+                </div>
+                <div class="card-body p-0">
+                    <!-- Map Container -->
+                    <div id="map" style="height: 600px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Panel -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">📊 Search Results</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Search Status -->
+                    <div id="searchStatus" class="alert alert-info">
+                        <strong>Instructions:</strong> Use the polygon tool in the map toolbar to draw a shape. Cities within your polygon will appear here.
+                    </div>
+
+                    <!-- Analysis Summary -->
+                    <div id="analysisSummary" style="display: none;">
+                        <h6>Analysis Summary</h6>
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <div class="bg-primary text-white p-2 rounded mb-2">
+                                    <div class="h4 mb-0" id="totalCities">0</div>
+                                    <small>Cities Found</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="bg-success text-white p-2 rounded mb-2">
+                                    <div class="h4 mb-0" id="totalPopulation">0</div>
+                                    <small>Total Population</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="bg-info text-white p-2 rounded">
+                                    <div class="h5 mb-0" id="polygonArea">0</div>
+                                    <small>Area (km²)</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="bg-warning text-white p-2 rounded">
+                                    <div class="h5 mb-0" id="populationDensity">0</div>
+                                    <small>Density (/km²)</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cities List -->
+                    <div id="citiesContainer" style="display: none;">
+                        <h6 class="mt-3">Cities Found</h6>
+                        <div id="citiesList" class="list-group" style="max-height: 300px; overflow-y: auto;">
+                            <!-- Cities will be populated here -->
+                        </div>
+                    </div>
+
+                    <!-- Loading Indicator -->
+                    <div id="loadingIndicator" style="display: none;" class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Searching for cities...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'advanced_js_mapping/js/map-interface.js' %}"></script>
+<script src="{% static 'advanced_js_mapping/js/spatial-analysis.js' %}"></script>
+<script src="{% static 'advanced_js_mapping/js/ui-controls.js' %}"></script>
+
+<script>
+    // Initialize the mapping application when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize map with drawing tools
+        window.AdvancedMapping.initializeMap('map');
+
+        // Set up spatial analysis handlers
+        window.SpatialAnalysis = window.SpatialAnalysis || {};
+        window.SpatialAnalysis.performSpatialSearch = window.performSpatialSearch || window.SpatialAnalysis.performSpatialSearch;
+
+        // Configure UI controls
+        if (typeof initializeUIControls === 'function') initializeUIControls();
+    });
+</script>
+{% endblock %}
