@@ -1232,3 +1232,26 @@ window.trailsMap.on(L.Draw.Event.CREATED, function (e) {
     body: JSON.stringify({ path: coordinates }),
   }).then(() => showAlert("Trail path saved!", "success"));
 });
+
+
+function onTrailClick(e) {
+    const trailId = e.target.options.trailId;
+
+    fetch(`/api/trails/weather/${trailId}/`)
+        .then(response => response.json())
+        .then(data => {
+            const weatherHtml = `
+                <strong>Weather:</strong><br>
+                ${data.weather[0].description}<br>
+                Temp: ${data.main.temp} °C<br>
+                Wind: ${data.wind.speed} m/s
+            `;
+
+            L.popup()
+                .setLatLng(e.latlng)
+                .setContent(weatherHtml)
+                .openOn(map);
+        })
+        .catch(error => console.error('Weather error:', error));
+}
+
