@@ -148,3 +148,14 @@ body {
 /* Note: removed the previous `.leaflet-default-icon-path { background-image: none !important; }`
    because it prevented background-image assets (draw toolbar sprites) from showing.
    The explicit overrides above point the draw toolbar at the correct `/static/...` files. */
+
+/* Navbar brand background - local to advanced mapping */
+.bg-brand {
+  background-color: var(--brand-primary) !important;
+}
+
+.navbar-dark .navbar-brand,
+.navbar-dark .nav-link {
+  color: #fff !important;
+}
+
