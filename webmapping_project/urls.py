@@ -20,14 +20,16 @@ from django.conf import settings
 from django.conf.urls.static import static
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 from trails_api.views import trail_map
-from trails_api import views
+
+from webmapping_project import views as project_views 
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
 
     # Home page (main map view)
-    path('', trail_map, name='home'),
+    #path('', trail_map, name='home'),
+    path('', project_views.home, name='home'),
 
     # Maps app
     path('maps/', include('maps.urls')),
@@ -38,7 +40,7 @@ urlpatterns = [
     # Weather
     #path('api/trails/weather/<int:pk>/', views.trail_weather, name='trail-weather'),
 
-
+    path('advanced-js-mapping/', include(('advanced_js_mapping.urls','advanced_js_mapping'), namespace='advanced_js_mapping')),
 
     # API documentation
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

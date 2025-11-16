@@ -1,0 +1,44 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Stay and Trek</title>
+  <link rel="stylesheet" href="{% static 'advanced_js_mapping/css/advanced.css' %}">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+  <main style="max-width:1100px;margin:48px auto;padding:28px;">
+    <h1>Irish Trails and Towns</h1>
+
+    <p>Welcome to the Stay and Trek web mapping project! Explore our interactive tools to analyze towns and trails.</p>
+    <img src="{% static 'images/hike_2.jpg' %}" alt="Hiking in Ireland" class="home-hero" loading="lazy" width="1200" height="420">
+
+    {% load static %}
+<!doctype html>
+<html lang="en">
+<head> "Discover hiking in Ireland with Stay and Trek and explore scenic trails, vibrant towns, and interactive maps designed to help you plan unforgettable outdoor adventures across the Irish countryside." </head>
+<body>
+  <main style="max-width:1100px;margin:48px auto;padding:28px;">
+    <h1>Stay and Trek — Home</h1>
+
+    
+    <img src="{% static 'images/hiking.jpeg' %}" alt="Hiking in Ireland" class="home-hero" loading="lazy" width="1200" height="420">
+
+
+    <p>Quick links to main pages:</p>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px">
+
+    <a href="{% url 'trails:map' %}" style="padding:12px 18px;background:var(--brand-primary,#2E8B57);color:#fff;border-radius:8px;text-decoration:none;">Trails API</a>
+      
+      <a href="{% url 'advanced_js_mapping:map' %}" style="padding:12px 18px;background:#2E27F5;color:#fff;border-radius:8px;text-decoration:none;">Interactive Map</a>
+
+      <a href="{% url 'advanced_js_mapping:index' %}" style="padding:12px 18px;background:#F5273F;color:#fff;border-radius:8px;text-decoration:none;">Search Towns using Polygon</a>
+
+      <a href="{% url 'advanced_js_mapping:analytics' %}" style="padding:12px 18px;background:#FFB86B;color:#111;border-radius:8px;text-decoration:none;">Analytics</a>
+      <a href="/admin/" style="padding:12px 18px;background:#34495E;color:#fff;border-radius:8px;text-decoration:none;">Admin</a>
+    </div>
+  </main>
+</body>
+</html>
