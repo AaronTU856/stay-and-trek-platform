@@ -21,7 +21,6 @@
 
     <style>
         body { background-color: #f8f9fa; }
-        .navbar-brand { font-weight: bold; }
         .main-content { min-height: calc(100vh - 76px); }
     </style>
 
@@ -34,6 +33,13 @@
             <a class="navbar-brand" href="{% url 'dashboard_index' %}">
                 🌍 Irish Trails Dashboard
             </a>
+
+            <nav class="top-nav">
+                <a class="top-back" href="/" onclick="if (history.length>1){ history.back(); return false; }">
+                ← Back
+                </a>
+            </nav>
+
             <div class="navbar-nav ms-auto">
                 <a class="nav-link {% if request.resolver_match.url_name == 'dashboard_index' %}active{% endif %}"
                    href="{% url 'dashboard_index' %}">Dashboard</a>

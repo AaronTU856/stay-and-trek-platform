@@ -35,6 +35,46 @@ body {
     font-weight: 600;
 }
  
+/* top nav / back link */
+.top-nav {
+  padding: 12px 18px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.top-back {
+  display:inline-block;
+  color: var(--text-dark, #213F35);
+  background: rgba(0,0,0,0.04);
+  padding: 8px 12px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+}
+.top-back:hover {
+  background: rgba(0,0,0,0.06);
+  color: var(--brand-primary, #2E8B57);
+}
+
+/* Ensure navbar sits above map controls/tiles and brand is visible */
+.navbar {
+    position: relative;
+    z-index: 3000; /* above map and controls */
+}
+
+.container.position-relative {
+    overflow: visible; /* allow absolutely positioned brand to show */
+}
+
+.navbar .navbar-brand {
+    position: relative !important;
+    color: #ffffff !important;
+    z-index: 99999 !important; /* force above map and controls */
+    background: transparent !important;
+}
+
+
 .navbar-brand i {
     color: #ffd700;
 }
@@ -365,10 +405,10 @@ body {
     }
 }
 .proximity-controls {
-            position: absolute;
-            top: 10px;
+            position: fixed; /* positioned relative to viewport to avoid clipping */
+            top: 160px; /* lowered so card sits below navbar */
             left: 50px;
-            z-index: 1000;
+            z-index: 9999 !important; /* ensure visible above navbar/overlays */
             background: white;
             padding: 15px;
             border-radius: 8px;
@@ -383,10 +423,10 @@ body {
             width: 320px;
             max-height: 80vh;
             overflow-y: auto;
-            z-index: 1000;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+                position: fixed; /* positioned relative to viewport to avoid clipping */
+                top: 160px; /* lowered so card sits below navbar */
+                left: 50px;
+                z-index: 9999 !important; /* very high so card appears above navbar and overlays */
             display: none;
         }
  
@@ -394,6 +434,53 @@ body {
             margin-bottom: 10px;
         }
  
+    /* Unified controls block: make the search input and radius card look like a single stacked block */
+    .leaflet-control-search.search-exp,
+    .proximity-controls {
+        position: fixed !important; /* fixed so both follow viewport */
+        left: 50px; /* align to left */
+        transform: none;
+        width: 340px; /* slightly wider */
+        z-index: 9999 !important;
+        background: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+        border: 1px solid rgba(0,0,0,0.08);
+        padding: 6px;
+        box-sizing: border-box;
+    }
+
+    .leaflet-control-search.search-exp {
+        top: 120px !important; /* search sits above (moved down slightly) */
+    }
+
+    .leaflet-control-search.search-exp .search-input,
+    .leaflet-control-search.search-exp input[type="text"],
+    .leaflet-control-search.search-exp input[type="search"] {
+        width: 100%;
+        box-sizing: border-box;
+        border-radius: 6px;
+        padding: 6px 8px;
+        border: 1px solid rgba(0,0,0,0.12);
+    }
+
+    .proximity-controls {
+        top: 340px !important; /* increased gap below search */
+        padding: 12px 14px;
+    }
+
+    @media (max-width: 768px) {
+        .leaflet-control-search.search-exp,
+        .proximity-controls {
+            left: auto;
+            transform: none;
+            right: 8px;
+            width: 92%;
+            max-width: 420px;
+        }
+        .leaflet-control-search.search-exp { top: 68px !important; }
+        .proximity-controls { top: calc(68px + 44px + 8px) !important; }
+    }
         .search-controls {
             display: none;
             margin-top: 10px;

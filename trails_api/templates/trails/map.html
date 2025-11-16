@@ -21,8 +21,13 @@
 
 <body>
   <nav class="navbar navbar-expand-lg navbar-dark bg-success">
-    <div class="container">
+    <div class="container position-relative">
       <a class="navbar-brand" href="#">🥾 Irish Trails Map</a>
+
+      <!-- move back link inside container and keep it at the right -->
+      <a class="top-back ms-auto" href="/" onclick="if (history.length>1){ history.back(); return false; }">
+        ← Back
+      </a>
     </div>
   </nav>
 
@@ -36,22 +41,24 @@
     <small class="text-muted">Results will appear here after you click the map</small>
   </div>
 
-  <!-- ✅ Search panel -->
-  <div class="position-absolute top-0 end-0 p-3" style="z-index:1000;">
-    <div class="card p-2">
-      <h6>🔍 Trails within radius</h6>
-      <input id="radius-input" type="number" class="form-control form-control-sm mb-2"
-            value="50" min="1" max="500" />
+   <!-- Left controls column (stacked cards) -->
+  <div class="left-controls" aria-label="Map controls">
+    <div class="card proximity-controls p-2">
+      <h6 class="mb-2">🔍 Trails within radius</h6>
+      <input id="radius-input" type="number" class="form-control form-control-sm mb-2" value="50" min="1" max="500" />
       <button id="toggle-search" class="btn btn-success btn-sm w-100">Enable Search</button>
     </div>
-  </div>
 
-  <!-- ✅ Nearest Town -->
-  <div class="mb-3">
-    <label for="trail-town">Nearest Town</label>
-    <input type="text" id="trail-town" class="form-control" placeholder="e.g. Glendalough">
-  </div>
+    <div class="card p-2">
+      <label for="trail-town" class="form-label small mb-1">Nearest Town</label>
+      <input type="text" id="trail-town" class="form-control form-control-sm" placeholder="e.g. Glendalough">
+    </div>
 
+    <div id="trail-results" class="card p-2">
+      <small class="text-muted">Results will appear here</small>
+      <div class="results-list mt-2"></div>
+    </div>
+  </div>
   
 <!-- ✅ JavaScript order -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

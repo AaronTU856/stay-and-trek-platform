@@ -354,10 +354,10 @@ body {
     }
 }
 .proximity-controls {
-            position: absolute;
-            top: 10px;
+            position: fixed; /* positioned relative to viewport to avoid clipping */
+            top: 160px; /* lowered so card sits below navbar */
             left: 50px;
-            z-index: 1000;
+            z-index: 9999 !important; /* ensure visible above navbar/overlays */
             background: white;
             padding: 15px;
             border-radius: 8px;
@@ -437,3 +437,51 @@ body {
             font-size: 11px;
             color: #495057;
         }
+
+/* Unified controls block: make the search input and radius card look like a single stacked block */
+.leaflet-control-search.search-exp,
+.proximity-controls {
+    position: fixed !important; /* fixed so both follow viewport */
+    left: 50px; /* align to left */
+    transform: none;
+    width: 340px; /* slightly wider */
+    z-index: 9999 !important;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+    border: 1px solid rgba(0,0,0,0.08);
+    padding: 6px;
+    box-sizing: border-box;
+}
+
+.leaflet-control-search.search-exp {
+    top: 120px !important; /* search sits above (moved down slightly) */
+}
+
+.leaflet-control-search.search-exp .search-input,
+.leaflet-control-search.search-exp input[type="text"],
+.leaflet-control-search.search-exp input[type="search"] {
+    width: 100%;
+    box-sizing: border-box;
+    border-radius: 6px;
+    padding: 6px 8px;
+    border: 1px solid rgba(0,0,0,0.12);
+}
+
+.proximity-controls {
+    top: 340px !important; /* increased gap below search */
+    padding: 12px 14px;
+}
+
+@media (max-width: 768px) {
+    .leaflet-control-search.search-exp,
+    .proximity-controls {
+        left: auto;
+        transform: none;
+        right: 8px;
+        width: 92%;
+        max-width: 420px;
+    }
+    .leaflet-control-search.search-exp { top: 68px !important; }
+    .proximity-controls { top: calc(68px + 44px + 8px) !important; }
+}

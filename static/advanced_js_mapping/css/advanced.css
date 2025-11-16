@@ -12,6 +12,28 @@
   --control-size: 44px;
 }
 
+/* top nav / back link */
+.top-nav {
+  padding: 12px 18px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.top-back {
+  display:inline-block;
+  color: var(--text-dark, #213F35);
+  background: rgba(0,0,0,0.04);
+  padding: 8px 12px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+}
+.top-back:hover {
+  background: rgba(0,0,0,0.06);
+  color: var(--brand-primary, #2E8B57);
+}
+
 /* Page background and base text */
 body {
   background: linear-gradient(180deg, var(--brand-light), #F8FFFB);

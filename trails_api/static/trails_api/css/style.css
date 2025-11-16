@@ -18,14 +18,9 @@ body {
     background-color: #f8f9fa;
 }
  
-/* Navigation */
-.navbar-brand {
-    font-weight: 600;
-}
- 
-.navbar-brand i {
-    color: #ffd700;
-}
+/* Navigation styles consolidated in `/static/css/style.css` */
+/* Per-app overrides may be added here if necessary. */
+
  
 /* Map Container */
 #map-container {
@@ -352,10 +347,10 @@ body {
     }
 }
 .proximity-controls {
-            position: absolute;
-            top: 10px;
+            position: fixed; /* positioned relative to viewport to avoid clipping */
+            top: 160px; /* lowered so card sits below navbar */
             left: 50px;
-            z-index: 1000;
+            z-index: 9999 !important; /* ensure visible above navbar/overlays */
             background: white;
             padding: 15px;
             border-radius: 8px;

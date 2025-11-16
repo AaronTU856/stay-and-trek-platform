@@ -31,6 +31,11 @@
             <a class="navbar-brand" href="{% url 'advanced_js_mapping:index' %}">
                 🗺️ Stay and Trek 2025
             </a>
+            <nav class="top-nav">
+                <a class="top-back" href="/" onclick="if (history.length>1){ history.back(); return false; }">
+                ← Back
+                </a>
+            </nav>
             <div class="navbar-nav ms-auto">
                 <a class="nav-link" href="{% url 'advanced_js_mapping:index' %}">Home</a>
                 <a class="nav-link" href="{% url 'advanced_js_mapping:map' %}">Interactive Map</a>

@@ -12,23 +12,86 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #f8f9fa;
 }
- 
-/* Navigation */
-.navbar-brand {
-    font-weight: 600;
+
+/* top nav / back link */
+.top-nav {
+  padding: 12px 18px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
- 
-.navbar-brand i {
-    color: #ffd700;
+/* keep back link interactive on the right */
+.top-back {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1070;
+  pointer-events: auto;
 }
+
+/* small screen tweak */
+@media (max-width: 420px) {
+    .top-back { right: 8px; }
+}
+
+.top-back:hover {
+  background: rgba(0,0,0,0.06);
+  color: var(--brand-primary, #2E8B57);
+}
+
+/* Navbar styles are consolidated in `/static/css/style.css`. */
+/* Keep per-app navigation tweaks here only when strictly necessary. */
+
+
+
  
+.left-controls {
+    position: absolute;
+    top: 72px;        /* below navbar */
+    left: 12px;
+    z-index: 500 !important; /* lower than navbar brand */
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 300px;
+  pointer-events: auto;
+}
+
+/* keep controls visible and move map content to the right on desktop */
+#map {
+  height: calc(100vh - 56px);
+  width: calc(100% - 332px); /* reserve space for left controls + gap */
+  margin-left: 332px;
+  transition: width 200ms ease, margin 200ms ease;
+}
+
+/* restore full-width map on small screens and move controls to top-right */
+@media (max-width: 768px) {
+    .left-controls {
+        position: absolute;
+        top: 56px;
+        right: 8px;
+        left: auto;
+        width: 92%;
+        max-width: 420px;
+        flex-direction: column;
+    }
+    #map {
+        width: 100%;
+        margin-left: 0;
+        height: calc(100vh - 56px);
+    }
+}
+
 /* Map Container */
 #map-container {
-    background-color: #e9ecef;
-    border-radius: 0.5rem;
-    overflow: hidden;
-    margin: 1rem;
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        background-color: #e9ecef;
+        border-radius: 0.5rem;
+        overflow: hidden;
+        margin: 1rem;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 }
  
 #map {
@@ -50,6 +113,11 @@ body {
     align-items: center;
     z-index: 1000;
     backdrop-filter: blur(2px);
+}
+
+/* Ensure results and controls sit beneath the navbar brand */
+#trail-results {
+    z-index: 500 !important;
 }
  
 .map-info-box {
@@ -346,11 +414,11 @@ body {
         top: 10px;
     }
 }
-.proximity-controls {
-            position: absolute;
-            top: 10px;
+        .proximity-controls {
+            position: fixed; /* use fixed so it's positioned relative to viewport and not clipped */
+            top: 160px; /* lowered further so card sits well below navbar and left controls */
             left: 50px;
-            z-index: 1000;
+            z-index: 9999 !important; /* very high so card appears above navbar and overlays */
             background: white;
             padding: 15px;
             border-radius: 8px;
@@ -438,4 +506,64 @@ body {
             vertical-align: middle;
           }
           
+/* Responsive tweak for proximity-controls on small screens */
+@media (max-width: 768px) {
+    .proximity-controls {
+        position: fixed;
+        top: 68px; /* keep it below the mobile navbar */
+        left: auto;
+        right: 8px;
+        width: 92%;
+        max-width: 420px;
+    }
+}
+
+/* Unified controls block: make the search input and radius card look like a single stacked block */
+
+.leaflet-control-search.search-exp,
+.proximity-controls {
+    position: fixed !important; /* fixed so both follow viewport */
+    left: 50px; /* align to left */
+    transform: none;
+    width: 340px; /* slightly wider */
+    z-index: 9999 !important;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+    border: 1px solid rgba(0,0,0,0.08);
+    padding: 6px;
+    box-sizing: border-box;
+}
+
+.leaflet-control-search.search-exp {
+    top: 120px !important; /* search sits above (moved down slightly) */
+}
+
+.leaflet-control-search.search-exp .search-input,
+.leaflet-control-search.search-exp input[type="text"],
+.leaflet-control-search.search-exp input[type="search"] {
+    width: 100%;
+    box-sizing: border-box;
+    border-radius: 6px;
+    padding: 6px 8px;
+    border: 1px solid rgba(0,0,0,0.12);
+}
+
+.proximity-controls {
+    top: 340px !important; /* increased gap below search */
+    padding: 12px 14px;
+}
+
+@media (max-width: 768px) {
+    .leaflet-control-search.search-exp,
+    .proximity-controls {
+        left: auto;
+        transform: none;
+        right: 8px;
+        width: 92%;
+        max-width: 420px;
+    }
+    .leaflet-control-search.search-exp { top: 68px !important; }
+    .proximity-controls { top: calc(68px + 44px + 8px) !important; }
+}
         
