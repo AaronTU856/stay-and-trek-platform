@@ -38,7 +38,7 @@
                             <div class="col-6">
                                 <div class="bg-primary text-white p-2 rounded mb-2">
                                     <div class="h4 mb-0" id="totalCities">0</div>
-                                    <small>Cities Found</small>
+                                    <small>Towns Found</small>
                                 </div>
                             </div>
                             <div class="col-6">
@@ -64,7 +64,7 @@
 
                     <!-- Cities List -->
                     <div id="citiesContainer" style="display: none;">
-                        <h6 class="mt-3">Cities Found</h6>
+                        <h6 class="mt-3">Towns Found</h6>
                         <div id="citiesList" class="list-group" style="max-height: 300px; overflow-y: auto;">
                             <!-- Cities will be populated here -->
                         </div>
@@ -75,7 +75,7 @@
                         <div class="spinner-border" role="status">
                             <span class="visually-hidden">Loading...</span>
                         </div>
-                        <p class="mt-2">Searching for cities...</p>
+                        <p class="mt-2">Searching for towns...</p>
                     </div>
                 </div>
             </div>
@@ -85,6 +85,41 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- Leaflet Draw CSS and JS for polygon drawing functionality -->
+<!-- Using latest stable version with bug fixes -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+
+<style>
+    /* Ensure drawing cursor is visible as crosshair while drawing polygons */
+    /* high-specificity crosshair rule for when we toggle drawing */
+    .leaflet-container.awmdrawing, .leaflet-container.awmdrawing *,
+    .leaflet-container.leaflet-draw-drawing, .leaflet-container .leaflet-draw-draw-polygon {
+        cursor: crosshair !important;
+    }
+    /* Leaflet draw places an invisible mouse-marker element that can capture cursor/pointer
+       Make sure it doesn't block the crosshair cursor and doesn't intercept pointer events */
+    .leaflet-marker-icon.leaflet-mouse-marker {
+        pointer-events: none !important;
+        cursor: crosshair !important;
+    }
+    
+    /* CRITICAL: Ensure Leaflet.Draw overlay and guides have proper pointer-events
+       so clicks pass through to the drawing handler, not blocked by other elements */
+    .leaflet-draw-guide, .leaflet-draw-guide-dash {
+        pointer-events: none !important;
+    }
+    
+    /* Ensure map container itself can receive clicks during drawing mode */
+    .leaflet-container.leaflet-draw-drawing {
+        pointer-events: auto !important;
+    }
+    
+    /* Ensure the map panes are not blocking pointer events */
+    .leaflet-pane, .leaflet-overlay-pane, .leaflet-shadow-pane {
+        pointer-events: auto !important;
+    }
+</style>
 <script src="{% static 'advanced_js_mapping/js/map-interface.js' %}"></script>
 <script src="{% static 'advanced_js_mapping/js/spatial-analysis.js' %}"></script>
 <script src="{% static 'advanced_js_mapping/js/ui-controls.js' %}"></script>

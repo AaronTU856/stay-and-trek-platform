@@ -25,6 +25,13 @@ def polygon_search(request):
     """
     start_time = time.time()
 
+    # DEBUG: dump raw request body for polygon POST (temporary — remove after debugging)
+    try:
+        raw_body = request.body.decode('utf-8')
+    except Exception:
+        raw_body = repr(request.body)
+    logger.info(f"RAW POLYGON POST BODY: {raw_body[:2000]}")
+
     try:
         # Parse incoming JSON data
         data = json.loads(request.body)
@@ -39,22 +46,107 @@ def polygon_search(request):
 
         # Create PostGIS polygon geometry from GeoJSON
         try:
-            polygon_coords = polygon_geojson['coordinates'][0]
+            logger.debug(f"Received polygon payload type={type(polygon_geojson)} value={repr(polygon_geojson)[:500]}")
+
+            # Accept several input shapes: dict with 'coordinates', dict with 'geometry',
+            # or a raw list of coordinates
+            coords_container = None
+            if isinstance(polygon_geojson, dict):
+                # shape: { 'type': 'Polygon', 'coordinates': [...] }
+                if 'coordinates' in polygon_geojson:
+                    coords_container = polygon_geojson['coordinates']
+                # shape: { 'geometry': { 'type': 'Polygon', 'coordinates': [...] } }
+                elif 'geometry' in polygon_geojson and isinstance(polygon_geojson['geometry'], dict) and 'coordinates' in polygon_geojson['geometry']:
+                    coords_container = polygon_geojson['geometry']['coordinates']
+                # sometimes client sends a Feature object with geometry nested under 'geometry'
+                elif polygon_geojson.get('type', '').lower() == 'feature' and isinstance(polygon_geojson.get('geometry'), dict):
+                    coords_container = polygon_geojson['geometry'].get('coordinates')
+            elif isinstance(polygon_geojson, list):
+                coords_container = polygon_geojson
+
+            if coords_container is None:
+                raise ValueError('Unsupported polygon payload type')
+
+            # coords_container may be: [ [ [lng,lat], ... ] ]  (GeoJSON Polygon)
+            # or a single linear ring: [ [lng,lat], ... ]
+            if not coords_container:
+                raise ValueError('Empty coordinates')
+
+            # Determine ring (array of [lng,lat])
+            first = coords_container[0]
+            if isinstance(first, (list, tuple)) and len(first) > 0 and isinstance(first[0], (list, tuple)):
+                # coords_container is [ [ [lng,lat], ... ] ]
+                polygon_coords = list(first)
+            elif isinstance(first, (list, tuple)) and isinstance(first[0], (int, float)):
+                # coords_container is already the ring: [ [lng,lat], ... ]
+                polygon_coords = list(coords_container)
+            else:
+                raise ValueError('Unsupported coordinates nesting')
+
             # Ensure polygon is properly closed
             if polygon_coords[0] != polygon_coords[-1]:
                 polygon_coords.append(polygon_coords[0])
 
-            # Create PostGIS Polygon object
-            polygon_geometry = Polygon(polygon_coords)
+            # Build a GeoJSON Polygon and use GEOSGeometry so SRID is set correctly
+            geojson_polygon = {
+                'type': 'Polygon',
+                'coordinates': [polygon_coords]
+            }
 
-        except (KeyError, IndexError, ValueError) as e:
+            polygon_geometry = GEOSGeometry(json.dumps(geojson_polygon), srid=4326)
+
+            # As a safety fallback, ensure SRID is set (models use 4326)
+            if not getattr(polygon_geometry, 'srid', None):
+                polygon_geometry.srid = 4326
+
+            logger.debug(f"Parsed polygon with {len(polygon_coords)} points")
+
+        except Exception as e:
+            logger.error(f"Invalid polygon format: {e} -- payload={repr(polygon_geojson)[:1000]}")
             return JsonResponse({
                 'error': 'Invalid polygon format',
                 'details': str(e)
             }, status=400)
 
-        # SPATIAL QUERY: Find towns within polygon using PostGIS (compatibility with project)
-        queryset = Town.objects.filter(location__within=polygon_geometry)
+        # SPATIAL QUERY: attempt several approaches and gather counts for diagnostics
+        within_count = 0
+        intersects_count = 0
+        bbox_count = 0
+        used_method = 'within'
+
+        try:
+            queryset_within = Town.objects.filter(location__within=polygon_geometry)
+            within_count = queryset_within.count()
+        except Exception as e:
+            logger.debug(f"within query failed: {e}")
+            queryset_within = Town.objects.none()
+
+        try:
+            queryset_intersects = Town.objects.filter(location__intersects=polygon_geometry)
+            intersects_count = queryset_intersects.count()
+        except Exception as e:
+            logger.debug(f"intersects query failed: {e}")
+            queryset_intersects = Town.objects.none()
+
+        # bounding box comparison
+        try:
+            bbox = polygon_geometry.extent  # (xmin, ymin, xmax, ymax)
+            bbox_poly = Polygon.from_bbox(bbox)
+            bbox_count = Town.objects.filter(location__within=bbox_poly).count()
+            logger.info(f"Polygon extent: {bbox}, bbox_count={bbox_count}")
+        except Exception as e:
+            logger.debug(f"Could not compute bbox debug info: {e}")
+
+        # Choose the best non-empty queryset (prefer within)
+        if within_count > 0:
+            queryset = queryset_within
+            used_method = 'within'
+        elif intersects_count > 0:
+            queryset = queryset_intersects
+            used_method = 'intersects'
+        else:
+            queryset = queryset_within
+            used_method = 'within'
 
         # Apply additional filters if provided
         if filters.get('min_population'):
@@ -105,6 +197,13 @@ def polygon_search(request):
         # Calculate execution time
         execution_time_ms = int((time.time() - start_time) * 1000)
 
+        # Log a brief summary for debugging: how many cities found and sample names
+        try:
+            sample_names = [c['name'] for c in cities][:10]
+            logger.info(f"Polygon search found {len(cities)} cities (sample: {sample_names}) in {execution_time_ms}ms")
+        except Exception:
+            logger.info(f"Polygon search completed; cities_count={len(cities)}")
+
         # Save analysis for tracking
         try:
             analysis = PolygonAnalysis.objects.create(
@@ -135,10 +234,22 @@ def polygon_search(request):
                     'average_population': round(avg_population, 0),
                     'polygon_area_km2': round(polygon_area_km2, 2),
                     'population_density': round(total_population / polygon_area_km2, 2) if polygon_area_km2 > 0 else 0,
-                    'execution_time_ms': execution_time_ms
+                    'execution_time_ms': execution_time_ms,
+                    'debug': {
+                        'bbox_count': bbox_count,
+                        'within_count': within_count,
+                        'intersects_count': intersects_count,
+                        'used_method': used_method
+                    }
                 }
             }
         }
+
+        # DEBUG: log the response payload (truncated) to help trace client/server mismatch
+        try:
+            logger.info(f"Polygon search response (truncated): {json.dumps(response_data)[:2000]}")
+        except Exception:
+            logger.info("Polygon search response prepared (could not serialize)")
 
         return JsonResponse(response_data)
 
