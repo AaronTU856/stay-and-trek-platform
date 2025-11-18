@@ -6,15 +6,15 @@ from django.db.models import Count, Q
 from django.contrib.gis.geos import Point
 from django.contrib.gis.db.models.functions import Distance as DistanceFunction
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
 from django.conf import settings
-
 
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.filters import SearchFilter, OrderingFilter
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from drf_spectacular.utils import extend_schema, OpenApiExample
 from django_filters.rest_framework import DjangoFilterBackend
 
@@ -28,8 +28,6 @@ from .serializers import (
 from .serializers import TrailPathGeoSerializer
 from .filters import TrailFilter
 import json
-
-
 
 # Pagination
 class StandardResultsSetPagination(PageNumberPagination):
@@ -70,6 +68,28 @@ class TrailListCreateView(generics.ListCreateAPIView):
             queryset = queryset.filter(difficulty__iexact=difficulty)
 
         return queryset
+    
+    def get_permissions(self):
+        """GET requests are open, POST requires authentication."""
+        if self.request.method == 'POST':
+            permission_classes = [IsAuthenticated]
+        else:
+            permission_classes = [AllowAny]
+        return [permission() for permission in permission_classes]
+
+
+
+class TownDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """Retrieve, update or delete a town. PUT/PATCH/DELETE require authentication."""
+    queryset = Town.objects.all()
+
+    def get_permissions(self):
+        """GET is open, PUT/PATCH/DELETE require authentication."""
+        if self.request.method in ['PUT', 'PATCH', 'DELETE']:
+            permission_classes = [IsAuthenticated]
+        else:
+            permission_classes = [AllowAny]
+        return [permission() for permission in permission_classes]
 
 
 # Trail  Detail, Update, Delete
@@ -182,6 +202,18 @@ def trail_statistics(request):
     return Response(serializer.data)
 
 
+# Protected template views
+
+@login_required
+def advanced_mapping_map(request):
+    """Render the advanced mapping page - requires login."""
+    return render(request, 'advanced_js_mapping/map.html')
+
+
+@login_required
+def trail_map(request):
+    """Render main trail map - requires login."""
+    return render(request, 'trails/map.html')
 
 # Towns and GeoJSON Endpoints
 

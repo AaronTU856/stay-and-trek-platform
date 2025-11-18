@@ -93,6 +93,8 @@ INSTALLED_APPS = [
     'advanced_js_mapping',
     
     'django.contrib.humanize',
+    # Authentication app
+    'authentication'
     
     
 ]
@@ -288,6 +290,10 @@ LEAFLET_CONFIG = {
 }
 
 
+# Authentication Configuration
+LOGIN_URL = '/auth/login/'
+LOGIN_REDIRECT_URL = '/advanced-js-mapping/'
+LOGOUT_REDIRECT_URL = '/advanced-js-mapping/'
 
 
 

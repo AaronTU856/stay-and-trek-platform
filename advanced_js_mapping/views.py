@@ -12,6 +12,9 @@ import time
 import logging
 from .models import PolygonAnalysis, SearchSession
 from trails_api.models import Town
+from django.contrib.auth.decorators import login_required
+from django.contrib.gis.geos import Point
+
 
 logger = logging.getLogger(__name__)
 
@@ -266,6 +269,7 @@ def polygon_search(request):
             'details': str(e)
         }, status=500)
 
+@login_required
 def index_view(request):
     """Main page with application overview"""
     # Use Town model for counts to reflect existing project data
@@ -279,15 +283,13 @@ def index_view(request):
 
     return render(request, 'advanced_js_mapping/index.html', context)
 
+@login_required
 def map_view(request):
     """Interactive map view"""
     context = {}
     return render(request, 'advanced_js_mapping/map.html', context)
 
-
-
-# Add to advanced_js_mapping/views.py
-
+@login_required
 def analytics_view(request):
     """Analytics dashboard adapted for Town data."""
     from django.db.models import Count, Avg, Sum
@@ -391,3 +393,188 @@ def analytics_view(request):
     }
 
     return render(request, 'advanced_js_mapping/analytics.html', context)
+
+
+
+@login_required
+def towns_management_view(request):
+    """Town management interface for authenticated users"""
+    context = {
+        'user': request.user,
+    }
+    return render(request, 'advanced_js_mapping/towns_management.html', context)
+
+
+@csrf_exempt
+@login_required
+@require_http_methods(["GET", "PUT", "DELETE"])
+def edit_town_api(request, town_id):
+    """API endpoint for editing town data - requires authentication"""
+    try:
+        town = Town.objects.get(id=town_id)
+
+        if request.method == 'GET':
+            # Return town data
+            lat = town.location.y if town.location else None
+            lon = town.location.x if town.location else None
+            
+            return JsonResponse({
+                'success': True,
+                'town': {
+                    'id': town.id,
+                    'name': town.name,
+                    'country': getattr(town, 'country', '') or '',
+                    'latitude': lat,
+                    'longitude': lon,
+                    'population': town.population or 0,
+                    'area_km2': getattr(town, 'area', None),
+                    'town_type': getattr(town, 'town_type', '') or '',
+                }
+            })
+        elif request.method == 'PUT':
+            # Update town data
+            data = json.loads(request.body)
+
+            # Update fields if provided
+            if 'name' in data:
+                town.name = data['name']
+            if 'country' in data:
+                town.country = data['country']
+            if 'population' in data:
+                town.population = int(data['population'])
+            if 'area_km2' in data and data['area_km2'] is not None:
+                if hasattr(town, 'area'):
+                    town.area = float(data['area_km2'])
+            if 'town_type' in data:
+                if hasattr(town, 'town_type'):
+                    town.town_type = data['town_type']
+            
+            # Update location if coordinates provided
+            if 'latitude' in data and 'longitude' in data:
+                lat = float(data['latitude'])
+                lon = float(data['longitude'])
+                town.location = Point(lon, lat, srid=4326)
+
+            town.save()
+
+            lat = town.location.y if town.location else None
+            lon = town.location.x if town.location else None
+
+            return JsonResponse({
+                'success': True,
+                'message': f'Town {town.name} updated successfully',
+                'town': {
+                    'id': town.id,
+                    'name': town.name,
+                    'country': getattr(town, 'country', '') or '',
+                    'latitude': lat,
+                    'longitude': lon,
+                    'population': town.population or 0,
+                    'area_km2': getattr(town, 'area', None),
+                    'town_type': getattr(town, 'town_type', '') or '',
+                }
+            })
+
+        elif request.method == 'DELETE':
+            # Delete town
+            town_name = town.name
+            town.delete()
+            return JsonResponse({
+                'success': True,
+                'message': f'Town {town_name} deleted successfully'
+            })
+
+    except Town.DoesNotExist:
+        return JsonResponse({
+            'error': 'Town not found'
+        }, status=404)
+
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'error': 'Invalid JSON data'
+        }, status=400)
+
+    except ValueError as e:
+        return JsonResponse({
+            'error': 'Invalid data format',
+            'details': str(e)
+        }, status=400)
+
+    except Exception as e:
+        logger.error(f"Town edit API error: {e}")
+        return JsonResponse({
+            'error': 'Internal server error',
+            'details': str(e)
+        }, status=500)
+
+@csrf_exempt
+@require_http_methods(["GET", "POST"])
+def trails_api(request):
+    """API endpoint to list or create trails"""
+    if request.method == 'GET':
+        # Return list of trails as JSON
+        from trails_api.models import Trail
+        
+        trails = Trail.objects.all().values('id', 'trail_name', 'distance_km', 'difficulty', 'county')
+        return JsonResponse({'success': True, 'trails': list(trails), 'count': len(list(trails))})
+    
+    elif request.method == 'POST':
+        # Create new trail (requires authentication)
+        if not request.user.is_authenticated:
+            return JsonResponse({'success': False, 'error': 'Authentication required'}, status=401)
+        
+        try:
+            from trails_api.models import Trail
+            
+            data = json.loads(request.body)
+            trail = Trail.objects.create(
+                trail_name=data.get('trail_name'),
+                distance_km=data.get('distance_km', 0),
+                difficulty=data.get('difficulty', 'Easy'),
+                county=data.get('county', ''),
+                region=data.get('region', ''),
+            )
+            return JsonResponse({'success': True, 'trail_id': trail.id, 'message': 'Trail created'})
+        except Exception as e:
+            logger.error(f"Trail creation error: {e}")
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)
+        
+@csrf_exempt
+@require_http_methods(["POST"])
+def distance_search(request):
+    """Search towns within a distance radius"""
+    try:
+        data = json.loads(request.body)
+        lat = data.get('latitude')
+        lng = data.get('longitude')
+        radius_km = data.get('radius_km', 10)
+        
+        center_point = Point(lng, lat, srid=4326)
+        towns = Town.objects.filter(
+            location__distance_lte=(center_point, Distance(km=radius_km))
+        ).values('id', 'name', 'country', 'population')
+        
+        results = []
+        for town in towns:
+            results.append({
+                'id': town['id'],
+                'name': town['name'],
+                'country': town.get('country', ''),
+                'population': town['population'],
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'towns': results,
+            'radius_km': radius_km,
+            'count': len(results)
+        })
+    except Exception as e:
+        logger.error(f'Distance search error: {str(e)}')
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+        
+        
+        
+        
+        
+        
