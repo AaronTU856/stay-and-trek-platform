@@ -72,7 +72,7 @@ class TrailListCreateView(generics.ListCreateAPIView):
         return queryset
 
 
-# Trail Details
+# Trail  Detail, Update, Delete
 
 @extend_schema(tags=["Trails"], summary="Retrieve, update or delete a trail")
 class TrailDetailView(generics.RetrieveUpdateDestroyAPIView):

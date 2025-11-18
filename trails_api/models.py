@@ -53,7 +53,6 @@ class TrailManager(models.Manager):
         """Return coordinates as [longitude, latitude] for GeoJSON."""
         return [self.longitude, self.latitude] if self.start_point else None
 
-
 class Trail(models.Model):
     """Main Trail model containing spatial and descriptive data."""
 
@@ -67,10 +66,9 @@ class Trail(models.Model):
         ('yes', 'Yes'),
         ('no', 'No'),
     ]
-
+    
     def __str__(self):
         return self.trail_name
-
     path = gis_models.LineStringField(srid=4326, null=True, blank=True)
     trail_name = models.CharField(max_length=200, db_index=True)
     county = models.CharField(max_length=100, db_index=True)
@@ -104,7 +102,6 @@ class Trail(models.Model):
     public_transport = models.TextField(blank=True)
     trail_type = models.CharField(max_length=100, blank=True)
     parking_available = models.CharField(max_length=100, blank=True)
-
     class Meta:
         verbose_name = 'Trail'
         verbose_name_plural = "Trails"
