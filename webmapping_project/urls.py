@@ -49,8 +49,6 @@ urlpatterns = [
 
     # Dashboard
     path('dashboard/', include('dashboard.urls')),
-    # Advanced JS Mapping app
-    path('advanced-js-mapping/', include(('advanced_js_mapping.urls', 'advanced_js_mapping'), namespace='advanced_js_mapping')),
     
     # Authentication
     path('auth/', include('authentication.urls')),  # Add this line
