@@ -63,6 +63,50 @@ function initializeMap() {
   });
 
   console.log("✅ Map and base layer ready!");
+  
+  // Initialize draw control AFTER map is created
+  initializeDrawControls();
+}
+
+// Initialize draw controls for trail path drawing
+function initializeDrawControls() {
+  const drawControl = new L.Control.Draw({
+    draw: {
+      marker: false,
+      circle: false,
+      rectangle: false,
+      polygon: false,
+      polyline: {
+        shapeOptions: {
+          color: "orange",
+          weight: 4,
+        },
+      },
+    },
+    edit: {
+      featureGroup: L.featureGroup().addTo(window.trailsMap),
+    },
+  });
+  window.trailsMap.addControl(drawControl);
+
+  // Handle created trail
+  window.trailsMap.on(L.Draw.Event.CREATED, function (e) {
+    const layer = e.layer;
+    window.trailsMap.addLayer(layer);
+
+    const coordinates = layer.getLatLngs().map((p) => [p.lat, p.lng]);
+    console.log("Trail coordinates:", coordinates);
+
+    // POST these to Django API
+    fetch("/api/trails/add-path/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCsrfToken(),
+      },
+      body: JSON.stringify({ path: coordinates }),
+    }).then(() => showAlert("Trail path saved!", "success"));
+  });
 }
 
 // Load trails from GeoJSON endpoint
@@ -1219,48 +1263,7 @@ function clearProximityResults() {
   if (panel) panel.style.display = "none";
 }
 
-// Drawing Tool for Trail Paths
-
-// Initialize the draw control
-const drawControl = new L.Control.Draw({
-  draw: {
-    marker: false,
-    circle: false,
-    rectangle: false,
-    polygon: false,
-    polyline: {
-      shapeOptions: {
-        color: "orange",
-        weight: 4,
-      },
-    },
-  },
-  edit: {
-    featureGroup: L.featureGroup().addTo(window.trailsMap),
-  },
-});
-window.trailsMap.addControl(drawControl);
-
-// Handle created trail
-window.trailsMap.on(L.Draw.Event.CREATED, function (e) {
-  const layer = e.layer;
-  window.trailsMap.addLayer(layer);
-
-  const coordinates = layer.getLatLngs().map((p) => [p.lat, p.lng]);
-  console.log("Trail coordinates:", coordinates);
-
-  // POST these to Django API
-  fetch("/api/trails/add-path/", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-CSRFToken": getCsrfToken(),
-    },
-    body: JSON.stringify({ path: coordinates }),
-  }).then(() => showAlert("Trail path saved!", "success"));
-});
-
-
+// Weather popup for trail markers
 function onTrailClick(e) {
     const trailId = e.target.options.trailId;
 
