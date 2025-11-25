@@ -4,6 +4,7 @@
 console.log('🔬 Advanced JavaScript Mapping - Loading spatial analysis module...');
 
 async function performSpatialSearch(polygonGeometry) {
+    console.log('🔍 performSpatialSearch called with geometry:', polygonGeometry);
     if (window.AdvancedMapping && typeof window.AdvancedMapping.showLoading === 'function') {
         window.AdvancedMapping.showLoading(true);
     }
@@ -87,36 +88,38 @@ async function performSpatialSearch(polygonGeometry) {
             }
         }
 
-            // Update UI panels and list using the parsed `cities` array
-            try {
-                const analysisSummary = document.getElementById('analysisSummary');
-                const citiesContainer = document.getElementById('citiesContainer');
-                if (analysisSummary) analysisSummary.style.display = 'block';
-                if (citiesContainer) citiesContainer.style.display = 'block';
+        // Update UI panels and list using the parsed `cities` array
+        try {
+            const analysisSummary = document.getElementById('analysisSummary');
+            const citiesContainer = document.getElementById('citiesContainer');
+            if (analysisSummary) analysisSummary.style.display = 'block';
+            if (citiesContainer) citiesContainer.style.display = 'block';
 
-                const totalCitiesEl = document.getElementById('totalCities');
-                const totalPopEl = document.getElementById('totalPopulation');
-                if (totalCitiesEl && data && data.results && data.results.analysis) totalCitiesEl.textContent = data.results.analysis.total_cities || 0;
-                if (totalPopEl && data && data.results && data.results.analysis) totalPopEl.textContent = data.results.analysis.total_population || 0;
+            const totalCitiesEl = document.getElementById('totalCities');
+            const totalPopEl = document.getElementById('totalPopulation');
+            if (totalCitiesEl && data && data.results && data.results.analysis) totalCitiesEl.textContent = data.results.analysis.total_cities || 0;
+            if (totalPopEl && data && data.results && data.results.analysis) totalPopEl.textContent = data.results.analysis.total_population || 0;
 
-                const list = document.getElementById('citiesList');
-                if (list) {
-                    list.innerHTML = '';
-                    cities.forEach(c => {
-                        const li = document.createElement('a');
-                        li.className = 'list-group-item list-group-item-action';
-                        li.textContent = `${c.name} — ${c.population || 'N/A'}`;
-                        list.appendChild(li);
-                    });
-                }
-            } catch (uiErr) {
-                console.warn('Failed to update UI panels', uiErr);
+            const list = document.getElementById('citiesList');
+            if (list) {
+                list.innerHTML = '';
+                cities.forEach(c => {
+                    const li = document.createElement('a');
+                    li.className = 'list-group-item list-group-item-action';
+                    li.textContent = `${c.name} — ${c.population || 'N/A'}`;
+                    list.appendChild(li);
+                });
             }
+        } catch (uiErr) {
+            console.warn('Failed to update UI panels', uiErr);
+        }
 
-            // Refresh the page after successful search completion
-            setTimeout(() => {
-                location.reload();
-            }, 1500);
+        // Refresh the page after successful search completion
+        console.log('🔄 Scheduling page reload in 1.5 seconds...');
+        setTimeout(() => {
+            console.log('🔄 Reloading page now...');
+            window.location.reload(true); // true = bypass cache
+        }, 1500);
 
     } catch (e) {
         console.error('Spatial search failed', e);

@@ -284,6 +284,7 @@ window.AdvancedMapping = (function() {
         
         // Finish manual polygon
         function finishManualPolygon() {
+            console.log('📍 finishManualPolygon called, mode:', manualPolygonMode, 'points:', manualPolygonPoints.length);
             if (manualPolygonMode && manualPolygonPoints.length > 2) {
                 const closedRing = [...manualPolygonPoints, manualPolygonPoints[0]];
                 const polygon = L.polygon(closedRing, {
@@ -308,13 +309,18 @@ window.AdvancedMapping = (function() {
                     manualPolygonLayer = null;
                 }
                 
+                console.log('✅ Polygon created, triggering spatial search...');
                 // Trigger spatial search
                 if (window.SpatialAnalysis && typeof window.SpatialAnalysis.performSpatialSearch === 'function') {
                     window.SpatialAnalysis.performSpatialSearch(geoJson.geometry);
+                } else {
+                    console.warn('❌ SpatialAnalysis.performSpatialSearch not available');
                 }
                 
                 // Fire draw:created event
                 map.fire('draw:created', { layer: polygon });
+            } else {
+                console.warn('⚠️ finishManualPolygon: mode=' + manualPolygonMode + ', points=' + manualPolygonPoints.length);
             }
         }
 
