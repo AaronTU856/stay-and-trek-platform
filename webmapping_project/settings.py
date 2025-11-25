@@ -30,16 +30,20 @@ if load_dotenv:
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# --- Geo stack absolute paths (Homebrew on Apple Silicon) ---
-GDAL_LIBRARY_PATH = "/opt/homebrew/lib/libgdal.dylib"
-GEOS_LIBRARY_PATH = "/opt/homebrew/opt/geos/lib/libgeos_c.dylib"
+# --- Geo stack paths (platform-aware) ---
+# Django/GeoDjango will auto-detect GDAL/GEOS at runtime
+# Only set paths, don't try to preload the libraries
+import platform
 
-# PROJ is looked up via env var (fine to set here too)
-import os
-os.environ["PROJ_LIB"] = "/opt/homebrew/opt/proj/share/proj"
-
-ctypes.CDLL(os.environ["GEOS_LIBRARY_PATH"])
-ctypes.CDLL(os.environ["GDAL_LIBRARY_PATH"])
+if platform.system() == "Darwin":
+    # macOS development (Apple Silicon Homebrew)
+    os.environ["GDAL_LIBRARY_PATH"] = "/opt/homebrew/lib/libgdal.dylib"
+    os.environ["GEOS_LIBRARY_PATH"] = "/opt/homebrew/opt/geos/lib/libgeos_c.dylib"
+    os.environ["PROJ_LIB"] = "/opt/homebrew/opt/proj/share/proj"
+else:
+    # Linux (Docker/production) - rely on system libraries
+    os.environ["PROJ_LIB"] = "/usr/share/proj"
+    # Django will find these automatically
 
 
 
@@ -159,16 +163,31 @@ else:
         }
     else:
         print("🔹 Using local PostGIS (default)")
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.contrib.gis.db.backends.postgis',
-                'NAME': 'webmapping_db',
-                'USER': 'aaronbaggot',
-                'PASSWORD': '',
-                'HOST': 'localhost',
-                'PORT': '5432',
+        # Check if running in Docker (env vars set by docker-compose)
+        if os.getenv('DATABASE_URL'):
+            # Docker environment - use docker-compose variables
+            DATABASES = {
+                'default': {
+                    'ENGINE': 'django.contrib.gis.db.backends.postgis',
+                    'NAME': os.getenv('POSTGRES_DB', 'trails_db'),
+                    'USER': os.getenv('POSTGRES_USER', 'postgres'),
+                    'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'postgres'),
+                    'HOST': os.getenv('DB_HOST', 'db'),  # Docker service name
+                    'PORT': os.getenv('DB_PORT', '5432'),
+                }
             }
-        }
+        else:
+            # Local development (macOS)
+            DATABASES = {
+                'default': {
+                    'ENGINE': 'django.contrib.gis.db.backends.postgis',
+                    'NAME': 'webmapping_db',
+                    'USER': 'aaronbaggot',
+                    'PASSWORD': '',
+                    'HOST': 'localhost',
+                    'PORT': '5432',
+                }
+            }
 
 
 # Database

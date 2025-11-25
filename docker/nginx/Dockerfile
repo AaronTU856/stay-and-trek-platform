@@ -5,7 +5,7 @@ FROM nginx:alpine
 RUN rm /etc/nginx/conf.d/default.conf
 
 # Copy custom Nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/nginx.conf
+COPY docker/nginx/nginx.conf /etc/nginx/conf.d/nginx.conf
 
 # Expose port 80
 EXPOSE 80
