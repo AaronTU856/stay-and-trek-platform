@@ -58,9 +58,34 @@ urlpatterns = [
 if settings.DEBUG:
     from django.views.static import serve as static_serve
     from django.urls import re_path
+    import os
+    from pathlib import Path
+    
+    # Helper to serve files from multiple static directories (root + app-specific)
+    def static_files_view(request, path):
+        """Serve static files from root static/ and app-specific static/ dirs"""
+        # Try root static directory first
+        root_static = settings.BASE_DIR / 'static'
+        if (root_static / path).exists():
+            return static_serve(request, path, document_root=str(root_static))
+        
+        # Try app-specific static directories
+        for app_dir in [
+            settings.BASE_DIR / 'trails_api' / 'static',
+            settings.BASE_DIR / 'advanced_js_mapping' / 'static',
+            settings.BASE_DIR / 'dashboard' / 'static',
+            settings.BASE_DIR / 'maps' / 'static',
+        ]:
+            app_path = app_dir / path
+            if app_path.exists():
+                return static_serve(request, path, document_root=str(app_dir))
+        
+        # File not found - return 404
+        from django.http import Http404
+        raise Http404(f"Static file not found: {path}")
     
     # Serve static files directly from the source directories
     urlpatterns += [
-        re_path(r'^static/(?P<path>.*)$', static_serve, {'document_root': str(settings.BASE_DIR / 'static')}),
+        re_path(r'^static/(?P<path>.*)$', static_files_view),
         re_path(r'^media/(?P<path>.*)$', static_serve, {'document_root': str(settings.BASE_DIR / 'media')}),
     ]
