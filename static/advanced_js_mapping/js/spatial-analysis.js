@@ -113,6 +113,11 @@ async function performSpatialSearch(polygonGeometry) {
                 console.warn('Failed to update UI panels', uiErr);
             }
 
+            // Refresh the page after successful search completion
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+
     } catch (e) {
         console.error('Spatial search failed', e);
         if (window.AdvancedMapping && typeof window.AdvancedMapping.showErrorMessage === 'function') {
