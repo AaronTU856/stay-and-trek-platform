@@ -20,12 +20,17 @@ COPY . /app
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Environment variables for Geo libraries
-ENV GEOS_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu/libgeos_c.so
-ENV GDAL_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu/libgdal.so
+ENV GEOS_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/libgeos_c.so
+ENV GDAL_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/libgdal.so
 ENV PROJ_LIB=/usr/share/proj
+
+# Create staticfiles directory
+RUN mkdir -p /app/staticfiles /app/media
 
 # Cloud Run expects port 8080
 EXPOSE 8080
 
-# Run migrations and start gunicorn
-CMD exec gunicorn --bind :$PORT --workers 1 --timeout 0 webmapping_project.wsgi:application
+# Collect static files and run migrations, then start gunicorn
+CMD python manage.py collectstatic --noinput && \
+    python manage.py migrate && \
+    exec gunicorn --bind :$PORT --workers 1 --timeout 0 webmapping_project.wsgi:application

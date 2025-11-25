@@ -1,9 +1,26 @@
 services:
+  nginx:
+    build:
+      context: .
+      dockerfile: docker/nginx/Dockerfile
+    container_name: nginx_container
+    ports:
+      - "80:80"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/nginx.conf:ro
+      - ./staticfiles:/app/staticfiles:ro
+    depends_on:
+      - web
+    networks:
+      - app_network
+
   web:
     build: .
+    container_name: django_container
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - .:/app
+      - ./staticfiles:/app/staticfiles
     ports:
       - "8000:8000"
     depends_on:
@@ -12,9 +29,12 @@ services:
       - DEBUG=1
       - SECRET_KEY=your_secret_key_here
       - DATABASE_URL=postgres://postgres:postgres@db:5432/trails_db
+    networks:
+      - app_network
 
   db:
     image: postgis/postgis:15-3.4
+    container_name: postgres_container
     platform: linux/amd64  # Use amd64 to work on your M1 Mac
     environment:
       POSTGRES_DB: trails_db
@@ -24,6 +44,12 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    networks:
+      - app_network
 
 volumes:
   postgres_data:
+
+networks:
+  app_network:
+    driver: bridge
