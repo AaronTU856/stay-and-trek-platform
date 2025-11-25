@@ -3,12 +3,6 @@ options:
   logging: CLOUD_LOGGING_ONLY
 
 steps:
-  # Step 1: Install dependencies and run unit tests (Placeholder for now)
-  # This step can be customized for your Django app's unit tests (e.g., pytest, manage.py test)
-
-
-
-
   # Step 1: Install dependencies and run unit tests
   - name: 'python:3.11-slim'
     id: UnitTests
@@ -18,10 +12,9 @@ steps:
       - |
           apt-get update && apt-get install -y gdal-bin libgdal-dev libsqlite3-mod-spatialite
           pip install --no-cache-dir -r requirements.txt
-          echo "Running Django unit tests with SpatiaLite..."
+          echo "Running Django unit tests..."
           export CI=true
           python manage.py test --settings=webmapping_project.settings
-    id: UnitTests
 
 
 
