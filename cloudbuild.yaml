@@ -23,7 +23,7 @@ steps:
     args: 
       - build
       - -t
-      - europe-west1-docker.pkg.dev/${PROJECT_ID}/cloud-run-source-deploy/stay-and-trek-service:${SHORT_SHA}
+      - europe-west1-docker.pkg.dev/long-octane-477515-k6/cloud-run-source-deploy/stay-and-trek-service:latest
       - .
     id: BuildImage
 
@@ -31,7 +31,7 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args: 
       - push
-      - europe-west1-docker.pkg.dev/${PROJECT_ID}/cloud-run-source-deploy/stay-and-trek-service:${SHORT_SHA}
+      - europe-west1-docker.pkg.dev/long-octane-477515-k6/cloud-run-source-deploy/stay-and-trek-service:latest
     id: PushImage
 
   # Step 4: Deploy the new image to Cloud Run
@@ -43,7 +43,7 @@ steps:
       - deploy
       - stay-and-trek-service
       - --image
-      - europe-west1-docker.pkg.dev/${PROJECT_ID}/cloud-run-source-deploy/stay-and-trek-service:${SHORT_SHA}
+      - europe-west1-docker.pkg.dev/long-octane-477515-k6/cloud-run-source-deploy/stay-and-trek-service:latest
       - --region
       - europe-west1
       - --service-account
@@ -55,7 +55,7 @@ steps:
       - 'CLOUDSDK_CORE_PROJECT=$PROJECT_ID' # Ensure gcloud uses the correct project
 
 images:
-  - europe-west1-docker.pkg.dev/${PROJECT_ID}/cloud-run-source-deploy/stay-and-trek-service:${SHORT_SHA}
+  - europe-west1-docker.pkg.dev/long-octane-477515-k6/cloud-run-source-deploy/stay-and-trek-service:latest
 
 # Substitutions (optional, but good practice for project ID)
 # default_subs:
