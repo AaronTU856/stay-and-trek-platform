@@ -70,15 +70,16 @@ if settings.DEBUG:
             return static_serve(request, path, document_root=str(root_static))
         
         # Try app-specific static directories
-        for app_dir in [
-            settings.BASE_DIR / 'trails_api' / 'static',
-            settings.BASE_DIR / 'advanced_js_mapping' / 'static',
-            settings.BASE_DIR / 'dashboard' / 'static',
-            settings.BASE_DIR / 'maps' / 'static',
-        ]:
-            app_path = app_dir / path
-            if app_path.exists():
-                return static_serve(request, path, document_root=str(app_dir))
+        # Path format: "trails_api/js/file.js" - split on first /
+        if '/' in path:
+            app_name = path.split('/')[0]
+            remaining_path = path[len(app_name)+1:]  # Remove app_name/ prefix
+            
+            app_static_dir = settings.BASE_DIR / app_name / 'static' / app_name
+            if app_static_dir.exists():
+                full_path = app_static_dir / remaining_path
+                if full_path.exists():
+                    return static_serve(request, remaining_path, document_root=str(app_static_dir))
         
         # File not found - return 404
         from django.http import Http404
