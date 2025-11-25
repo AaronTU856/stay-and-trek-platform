@@ -84,8 +84,6 @@ class TrailCreateSerializer(serializers.ModelSerializer):
         validated_data['start_point'] = Point(longitude, latitude, srid=4326)
         return super().create(validated_data)
 
-
-
 # Serializer for returning summary statistics about trails       
 class TrailSummarySerializer(serializers.Serializer):
         total_trails = serializers.IntegerField()
@@ -94,8 +92,7 @@ class TrailSummarySerializer(serializers.Serializer):
         easy_count = serializers.IntegerField()
         moderate_count = serializers.IntegerField()
         hard_count = serializers.IntegerField()
-    
-        
+           
 # Serializer used when searching for trails within a radius
 class DistanceSerializer(serializers.Serializer):
     latitude = serializers.FloatField(min_value=-90, max_value=90)
