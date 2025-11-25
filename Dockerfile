@@ -27,5 +27,5 @@ ENV PROJ_LIB=/usr/share/proj
 # Cloud Run expects port 8080
 EXPOSE 8080
 
-# Start Django on the correct port
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8080"]
+# Run migrations and start gunicorn
+CMD exec gunicorn --bind :$PORT --workers 1 --timeout 0 webmapping_project.wsgi:application
