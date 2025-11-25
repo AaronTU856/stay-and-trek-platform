@@ -167,8 +167,7 @@ fetch("/api/trails/towns/geojson/")
           // Show weather popup with loading state
           const loadingHtml = `
             <b>${feature.properties.name}</b><br>
-            <strong>Weather:</strong> Loading...<br>
-            Finding nearby trails...
+            <strong>Weather:</strong> Loading...
           `;
           layer.bindPopup(loadingHtml).openPopup();
 
@@ -184,19 +183,15 @@ fetch("/api/trails/towns/geojson/")
                 <b>${feature.properties.name}</b><br>
                 <strong>Weather:</strong> ${description}<br>
                 Temp: ${temp} °C<br>
-                Wind: ${wind} m/s<br><br>
-                <em>Finding nearby trails...</em>
+                Wind: ${wind} m/s
               `;
               layer.bindPopup(weatherHtml).openPopup();
             }
           )
             .catch((err) => {
               console.error("❌ Weather fetch error:", err);
-              layer.bindPopup(`<b>${feature.properties.name}</b><br><em>Weather data unavailable.</em><br>Finding nearby trails...`).openPopup();
+              layer.bindPopup(`<b>${feature.properties.name}</b><br><em>Weather data unavailable.</em>`).openPopup();
             });
-
-          // Start proximity search (doesn't open popup, runs in background)
-          performProximitySearch(lat, lng);
         });
       },
     }).addTo(window.trailsMap);
