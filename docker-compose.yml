@@ -8,7 +8,7 @@ services:
       - "80:80"
     volumes:
       - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/nginx.conf:ro
-      - ./staticfiles:/app/staticfiles:ro
+      - ./staticfiles:/app/staticfiles
     depends_on:
       - web
     networks:
@@ -20,7 +20,6 @@ services:
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - .:/app
-      - ./staticfiles:/app/staticfiles
     ports:
       - "8000:8000"
     depends_on:
