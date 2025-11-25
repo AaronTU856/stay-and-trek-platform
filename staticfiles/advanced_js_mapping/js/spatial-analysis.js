@@ -114,12 +114,30 @@ async function performSpatialSearch(polygonGeometry) {
             console.warn('Failed to update UI panels', uiErr);
         }
 
-        // Refresh the page after successful search completion
-        console.log('🔄 Scheduling page reload in 1.5 seconds...');
-        setTimeout(() => {
-            console.log('🔄 Reloading page now...');
-            window.location.reload(true); // true = bypass cache
-        }, 1500);
+        // Clear drawn items and reset for next search (instead of reloading)
+        console.log('✅ About to check reload condition. cities.length=' + cities.length);
+        if (cities.length > 0) {
+            console.log('✅ cities.length > 0 is TRUE! Clearing polygon for next search...');
+            // Clear the drawn polygon after 2 seconds to let user see the results
+            setTimeout(() => {
+                console.log('🔄 Clearing polygon and resetting for next search...');
+                if (window.currentPolygon) {
+                    // Remove the polygon layer from map
+                    if (window.trailsMap && window.currentPolygon._leaflet_id) {
+                        try {
+                            window.trailsMap.removeLayer(window.currentPolygon);
+                        } catch (e) {
+                            console.warn('Could not remove polygon from map', e);
+                        }
+                    }
+                    window.currentPolygon = null;
+                }
+                // Don't reload - just continue drawing
+                console.log('✅ Ready for next polygon search');
+            }, 2000);
+        } else {
+            console.log('❌ cities.length > 0 is FALSE. No towns found.');
+        }
 
     } catch (e) {
         console.error('Spatial search failed', e);
