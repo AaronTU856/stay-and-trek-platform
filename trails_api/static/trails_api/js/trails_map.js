@@ -1159,8 +1159,8 @@ function displayNearestTrails(trails) {
   window.nearestTrailsLayer.clearLayers();
 
   trails.forEach((trail, index) => {
-    trail.distance_to_user =
-      trail.distance_to_user || trail.distance_from_point_km;
+    // Use distance_from_point_km which is returned by the API
+    const distanceKm = trail.distance_from_point_km || trail.distance_to_user || 0;
 
     const lat = parseFloat(trail.latitude || trail.coordinates?.lat);
     const lng = parseFloat(trail.longitude || trail.coordinates?.lng);
@@ -1180,7 +1180,7 @@ function displayNearestTrails(trails) {
             County: ${trail.county || "Unknown"}<br>
             Difficulty: ${trail.difficulty || "N/A"}<br>
             Distance: ${trail.distance_km || "?"} km<br>
-            From You: ${trail.distance_to_user?.toFixed(1) || "?"} km
+            From Search: ${distanceKm.toFixed(1)} km
             
         `);
 
@@ -1216,7 +1216,7 @@ function updateResultsPanel(data) {
 
   const trails = (data.nearest_trails || []).map((t) => ({
     ...t,
-    distance_to_user: t.distance_to_user || t.distance_from_point_km,
+    distanceFromSearch: t.distance_from_point_km || 0,
   }));
   resultsPanel.innerHTML = `
         <div class="card shadow">
@@ -1241,7 +1241,7 @@ function updateResultsPanel(data) {
                         <small>${trail.county || "Unknown"} • ${
                       trail.difficulty || "N/A"
                     } • ${
-                      trail.distance_to_user?.toFixed(1) || "?"
+                      trail.distanceFromSearch.toFixed(1)
                     } km away</small>
                     </div>`
                   )
