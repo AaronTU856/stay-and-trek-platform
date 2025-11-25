@@ -10,10 +10,22 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 from pathlib import Path
-from dotenv import load_dotenv
 import os
 import ctypes
-load_dotenv()
+
+# Try to load environment variables from a .env file if python-dotenv is installed.
+# This keeps the app from crashing if the package isn't available in the environment.
+try:
+    from dotenv import load_dotenv
+except Exception:
+    load_dotenv = None
+
+if load_dotenv:
+    try:
+        load_dotenv()
+    except Exception:
+        # silently continue if loading the file fails
+        pass
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -81,6 +93,8 @@ INSTALLED_APPS = [
     'advanced_js_mapping',
     
     'django.contrib.humanize',
+    # Authentication app
+    'authentication'
     
     
 ]
@@ -129,9 +143,7 @@ if os.getenv("CI"):
     }
 else:
     # Detect which database to use: local PostGIS or Cloud SQL
-    from dotenv import load_dotenv
-    import os
-    load_dotenv()
+    # environment variables should already be loaded above if python-dotenv is present
 
     if os.getenv("ACTIVE_DB") == "new":
         print("🔹 Using Cloud SQL (PostgreSQL 17)")
@@ -278,6 +290,10 @@ LEAFLET_CONFIG = {
 }
 
 
+# Authentication Configuration
+LOGIN_URL = '/auth/login/'
+LOGIN_REDIRECT_URL = '/advanced-js-mapping/'
+LOGOUT_REDIRECT_URL = '/advanced-js-mapping/'
 
 
 

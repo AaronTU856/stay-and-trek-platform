@@ -26,27 +26,24 @@ window.AdvancedMapping = (function() {
             // Expose map globally for other modules that expect it
             window.map = map;
 
-            // Ensure Leaflet default icon paths point to local static files so markers render correctly
-            // This avoids situations where the default icon image paths cannot be resolved (CDN/css path issues)
+            // Ensure Leaflet default icon URLs point to local static files so markers render correctly.
+            // Use explicit absolute static URLs to avoid path resolution issues.
             try {
-                if (L && L.Icon && L.Icon.Default && typeof L.Icon.Default.mergeOptions === 'function') {
-                    // Configure Leaflet to resolve marker asset URLs from the local static folder.
-                    // Use `imagePath` combined with the default icon filenames so Leaflet composes
-                    // the final URL correctly and avoids duplicating STATIC_URL segments.
+                if (L && L.Icon && L.Icon.Default) {
                     L.Icon.Default.mergeOptions({
-                        imagePath: '/static/leaflet/images/',
-                        iconUrl: 'marker-icon.png',
-                        iconRetinaUrl: 'marker-icon-2x.png',
-                        shadowUrl: 'marker-shadow.png'
+                        iconUrl: '/static/leaflet/images/marker-icon.png',
+                        iconRetinaUrl: '/static/leaflet/images/marker-icon-2x.png',
+                        shadowUrl: '/static/leaflet/images/marker-shadow.png'
                     });
                 }
             } catch (e) {
-                console.warn('Could not set Leaflet default icon options:', e);
+                // Icon settings failed silently
             }
 
             // Create and expose common layer groups used by analysis/UI modules
-            window.citiesLayer = L.layerGroup().addTo(map);
-            window.resultsLayer = L.layerGroup().addTo(map);
+            // Use FeatureGroup so we can call getBounds() and treat it as a group of features
+            window.citiesLayer = L.featureGroup().addTo(map);
+            window.resultsLayer = L.featureGroup().addTo(map);
 
             // Load initial towns from Trails API and display them
             loadInitialTowns();
@@ -61,6 +58,22 @@ window.AdvancedMapping = (function() {
                     radius: 6
                 }
             };
+
+            // Explicit result marker icon to avoid icon path resolution issues
+            try {
+                window.resultMarkerIcon = L.icon({
+                    iconUrl: '/static/leaflet/images/marker-icon.png',
+                    iconRetinaUrl: '/static/leaflet/images/marker-icon-2x.png',
+                    shadowUrl: '/static/leaflet/images/marker-shadow.png',
+                    iconSize: [25, 41],
+                    iconAnchor: [12, 41],
+                    popupAnchor: [1, -34],
+                    shadowSize: [41, 41]
+                });
+            } catch (e) {
+                // Result marker icon creation failed, use default
+                window.resultMarkerIcon = null;
+            }
 
             // Shared state placeholders
             window.currentPolygon = null;
@@ -92,10 +105,56 @@ window.AdvancedMapping = (function() {
             // Initialize drawing controls
             initializeDrawingControls();
 
-            console.log('Map initialized successfully');
+            // Add a small helper control to finish a polygon drawing if the draw:created
+            // event does not fire in some environments. This control finds the last
+            // polygon layer on the map and triggers the spatial search.
+            const FinishDrawControl = L.Control.extend({
+                options: { position: 'topright' },
+                onAdd: function() {
+                    const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+                    const btn = L.DomUtil.create('a', '', container);
+                    btn.href = '#';
+                    btn.title = 'Finish Draw (fallback)';
+                    btn.innerHTML = '&#10003;';
+                    btn.style.padding = '6px';
+                    btn.style.fontSize = '16px';
+                    L.DomEvent.on(btn, 'click', L.DomEvent.stop)
+                        .on(btn, 'click', () => {
+                            try {
+                                let lastPoly = null;
+                                map.eachLayer(function(layer) {
+                                    // detect polygons (exclude tile layers and marker groups)
+                                    if (layer instanceof L.Polygon && !(layer instanceof L.Rectangle) && layer._latlngs) {
+                                        lastPoly = layer;
+                                    }
+                                });
+                                if (lastPoly) {
+                                    lastPoly.setStyle({
+                                        color: '#2E8B57',
+                                        weight: 4,
+                                        opacity: 1,
+                                        fillColor: '#90EE90',
+                                        fillOpacity: 0.15
+                                    });
+                                    const geoJson = lastPoly.toGeoJSON();
+                                    try { if (drawnItems && drawnItems.getLayers && drawnItems.getLayers().indexOf(lastPoly) === -1) drawnItems.addLayer(lastPoly); } catch (e) {}
+                                    if (window.SpatialAnalysis && typeof window.SpatialAnalysis.performSpatialSearch === 'function') {
+                                        window.SpatialAnalysis.performSpatialSearch(geoJson.geometry);
+                                    } else if (window.SpatialAnalysis && typeof window.SpatialAnalysis.executeSpatialQuery === 'function') {
+                                        window.SpatialAnalysis.executeSpatialQuery({ polygon: geoJson.geometry });
+                                    }
+                                }
+                            } catch (err) {
+                                // Finish button click failed silently
+                            }
+                        });
+                    return container;
+                }
+            });
+            map.addControl(new FinishDrawControl());
 
         } catch (error) {
-            console.error('Failed to initialize map:', error);
+            // Map initialization failed silently
             alert('Failed to load the map. Please refresh the page.');
         }
     }
@@ -119,20 +178,24 @@ window.AdvancedMapping = (function() {
                         message: '<strong>Error:</strong> Shape edges cannot cross!'
                     },
                     shapeOptions: {
-                        color: '#007bff',
-                        weight: 3,
-                        opacity: 0.8,
-                        fillOpacity: 0.2
-                    }
+                        color: '#2E8B57',      // Green (brand color for visibility)
+                        weight: 4,              // Thicker line
+                        opacity: 1,             // Fully opaque outline
+                        fillColor: '#90EE90',   // Light green fill
+                        fillOpacity: 0.15      // Subtle fill
+                    },
+                    metric: true
                 },
                 polyline: false,
                 rectangle: {
                     shapeOptions: {
-                        color: '#007bff',
-                        weight: 3,
-                        opacity: 0.8,
-                        fillOpacity: 0.2
-                    }
+                        color: '#2E8B57',
+                        weight: 4,
+                        opacity: 1,
+                        fillColor: '#90EE90',
+                        fillOpacity: 0.15
+                    },
+                    metric: true
                 },
                 circle: false,
                 marker: false,
@@ -145,30 +208,148 @@ window.AdvancedMapping = (function() {
         });
 
         map.addControl(drawControl);
+        // CRITICAL WORKAROUND: Leaflet.Draw 1.0.4 has click handling issues in some environments
+        // Create a manual polygon drawing system as fallback
+        let manualPolygonMode = false;
+        let manualPolygonPoints = [];
+        let manualPolygonLayer = null;
+        
+        // Hook into polygon button click to enable manual drawing mode
+        setTimeout(() => {
+            const polygonBtn = document.querySelector('.leaflet-draw-draw-polygon');
+            if (polygonBtn) {
+                polygonBtn.addEventListener('click', function(e) {
+                    setTimeout(() => {
+                        manualPolygonMode = true;
+                        manualPolygonPoints = [];
+                        attachFinishButtonHandler();
+                    }, 50);
+                });
+            }
+        }, 600);
+        
+        // Attach finish button handler
+        function attachFinishButtonHandler() {
+            setTimeout(() => {
+                let finishBtn = document.querySelector('.leaflet-draw-actions a');
+                
+                if (finishBtn && !finishBtn._hasFinishHandler) {
+                    finishBtn._hasFinishHandler = true;
+                    finishBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        finishManualPolygon();
+                    });
+                }
+            }, 100);
+        }
+        
+        // Hook into cancel button to disable manual mode
+        map.on('draw:drawstop', function() {
+            manualPolygonMode = false;
+            manualPolygonPoints = [];
+        });
+        
+        // Capture map clicks during manual polygon mode
+        map.on('click', function(e) {
+            if (manualPolygonMode && e.originalEvent) {
+                // Make sure this click isn't from a UI element
+                if (e.originalEvent.target.closest('.leaflet-draw')) return;
+                
+                manualPolygonPoints.push([e.latlng.lat, e.latlng.lng]);
+                
+                // Remove old preview layer if exists
+                if (manualPolygonLayer) {
+                    map.removeLayer(manualPolygonLayer);
+                }
+                
+                // Draw preview of polygon so far
+                if (manualPolygonPoints.length > 1) {
+                    manualPolygonLayer = L.polyline(manualPolygonPoints, {
+                        color: '#2E8B57',
+                        weight: 4,
+                        opacity: 1,
+                        dashArray: '5, 5'
+                    }).addTo(map);
+                }
+            }
+        });
+        
+        // Support double-click to finish polygon
+        map.on('dblclick', function(e) {
+            if (manualPolygonMode && manualPolygonPoints.length > 2) {
+                finishManualPolygon();
+            }
+        });
+        
+        // Finish manual polygon
+        function finishManualPolygon() {
+            if (manualPolygonMode && manualPolygonPoints.length > 2) {
+                const closedRing = [...manualPolygonPoints, manualPolygonPoints[0]];
+                const polygon = L.polygon(closedRing, {
+                    color: '#2E8B57',
+                    weight: 4,
+                    opacity: 1,
+                    fillColor: '#90EE90',
+                    fillOpacity: 0.15
+                });
+                
+                polygon.addTo(map);
+                drawnItems.addLayer(polygon);
+                
+                const geoJson = polygon.toGeoJSON();
+                window.currentPolygon = polygon;
+                manualPolygonMode = false;
+                manualPolygonPoints = [];
+                
+                // Clean up preview layer
+                if (manualPolygonLayer) {
+                    map.removeLayer(manualPolygonLayer);
+                    manualPolygonLayer = null;
+                }
+                
+                // Trigger spatial search
+                if (window.SpatialAnalysis && typeof window.SpatialAnalysis.performSpatialSearch === 'function') {
+                    window.SpatialAnalysis.performSpatialSearch(geoJson.geometry);
+                }
+                
+                // Fire draw:created event
+                map.fire('draw:created', { layer: polygon });
+            }
+        }
 
         // Event handlers for drawing
         map.on('draw:created', function(event) {
             const layer = event.layer;
+            
+            // Apply explicit polygon styling to ensure visibility
+            if (layer instanceof L.Polygon) {
+                layer.setStyle({
+                    color: '#2E8B57',
+                    weight: 4,
+                    opacity: 1,
+                    fillColor: '#90EE90',
+                    fillOpacity: 0.15
+                });
+            }
+            
             drawnItems.addLayer(layer);
 
             // Extract polygon coordinates
             const geoJson = layer.toGeoJSON();
-            console.log('Polygon drawn:', geoJson);
 
             // Track current polygon for other modules
             window.currentPolygon = layer;
 
-            // Trigger spatial analysis (use performSpatialSearch which prepares params)
+            // Trigger spatial analysis
             if (window.SpatialAnalysis && typeof window.SpatialAnalysis.performSpatialSearch === 'function') {
                 window.SpatialAnalysis.performSpatialSearch(geoJson.geometry);
             } else if (window.SpatialAnalysis && typeof window.SpatialAnalysis.executeSpatialQuery === 'function') {
-                // Fallback to direct execute (wrap geometry)
                 window.SpatialAnalysis.executeSpatialQuery({ polygon: geoJson.geometry });
             }
         });
 
         map.on('draw:deleted', function(event) {
-            console.log('Polygon deleted');
             // Clear current polygon reference and results
             window.currentPolygon = null;
             if (window.UIControls && typeof window.UIControls.clearResults === 'function') window.UIControls.clearResults();
@@ -177,9 +358,16 @@ window.AdvancedMapping = (function() {
         map.on('draw:edited', function(event) {
             const layers = event.layers;
             layers.eachLayer(function(layer) {
+                if (layer instanceof L.Polygon) {
+                    layer.setStyle({
+                        color: '#2E8B57',
+                        weight: 4,
+                        opacity: 1,
+                        fillColor: '#90EE90',
+                        fillOpacity: 0.15
+                    });
+                }
                 const geoJson = layer.toGeoJSON();
-                console.log('Polygon edited:', geoJson);
-                // Update current polygon reference
                 window.currentPolygon = layer;
                 if (window.SpatialAnalysis && typeof window.SpatialAnalysis.performSpatialSearch === 'function') {
                     window.SpatialAnalysis.performSpatialSearch(geoJson.geometry);
@@ -187,6 +375,52 @@ window.AdvancedMapping = (function() {
                     window.SpatialAnalysis.executeSpatialQuery({ polygon: geoJson.geometry });
                 }
             });
+        });
+
+        map.on('draw:drawstart', function() {
+            const container = map.getContainer();
+            if (container) {
+                container.style.cursor = 'crosshair';
+                container.classList.add('awmdrawing');
+            }
+        });
+
+        map.on('draw:drawstop', function() {
+            const container = map.getContainer();
+            if (container) {
+                container.style.cursor = '';
+                container.classList.remove('awmdrawing');
+            }
+            // Fallback: some Leaflet builds may not emit draw:created reliably.
+            // If no `window.currentPolygon` was set by draw:created but drawnItems
+            // contains a new layer, use the last layer as the drawn polygon and
+            // Fallback: trigger spatial search if draw:created didn't fire
+            try {
+                if (!window.currentPolygon && drawnItems && drawnItems.getLayers && drawnItems.getLayers().length > 0) {
+                    const layers = drawnItems.getLayers();
+                    const lastLayer = layers[layers.length - 1];
+                    if (lastLayer) {
+                        if (lastLayer instanceof L.Polygon) {
+                            lastLayer.setStyle({
+                                color: '#2E8B57',
+                                weight: 4,
+                                opacity: 1,
+                                fillColor: '#90EE90',
+                                fillOpacity: 0.15
+                            });
+                        }
+                        const geoJson = lastLayer.toGeoJSON();
+                        window.currentPolygon = lastLayer;
+                        if (window.SpatialAnalysis && typeof window.SpatialAnalysis.performSpatialSearch === 'function') {
+                            window.SpatialAnalysis.performSpatialSearch(geoJson.geometry);
+                        } else if (window.SpatialAnalysis && typeof window.SpatialAnalysis.executeSpatialQuery === 'function') {
+                            window.SpatialAnalysis.executeSpatialQuery({ polygon: geoJson.geometry });
+                        }
+                    }
+                }
+            } catch (fallbackErr) {
+                // Fallback failed silently
+            }
         });
     }
 
@@ -198,19 +432,70 @@ window.AdvancedMapping = (function() {
         if (window.citiesLayer) {
             window.citiesLayer.clearLayers();
         }
+        // Display cities on map
 
         // Add new city markers into the citiesLayer
-        cities.forEach(function(city) {
-            const marker = L.marker([city.latitude, city.longitude], {
-                cityMarker: true
-            });
-            marker.bindPopup(createCityPopupContent(city));
-            if (window.citiesLayer) {
-                window.citiesLayer.addLayer(marker);
-            } else {
-                marker.addTo(map);
+        cities.forEach(function(city, idx) {
+            try {
+                const lat = Number(city.latitude);
+                const lng = Number(city.longitude);
+                if (!isFinite(lat) || !isFinite(lng)) {
+                    return;
+                }
+
+                const markerOpts = { cityMarker: true };
+                if (window.resultMarkerIcon) markerOpts.icon = window.resultMarkerIcon;
+                const marker = L.marker([lat, lng], markerOpts);
+                marker.bindPopup(createCityPopupContent(city));
+                if (window.citiesLayer) {
+                    window.citiesLayer.addLayer(marker);
+                } else {
+                    marker.addTo(map);
+                }
+            } catch (e) {
+                // Marker addition failed silently
             }
         });
+
+        // Fit bounds to displayed cities
+        try {
+            if (window.citiesLayer && window.citiesLayer.getLayers().length > 0) {
+                const bounds = window.citiesLayer.getBounds();
+                if (bounds.isValid()) {
+                    map.fitBounds(bounds.pad(0.1));
+                }
+            }
+        } catch (e) {
+            // Bounds fitting failed silently
+        }
+
+        // Fallback: if we had cities but no marker icons were added, use circleMarker
+        try {
+            const added = window.citiesLayer ? window.citiesLayer.getLayers().length : 0;
+            if (cities.length > 0 && added === 0) {
+                cities.forEach(function(city, idx) {
+                    try {
+                        const lat = Number(city.latitude);
+                        const lng = Number(city.longitude);
+                        if (!isFinite(lat) || !isFinite(lng)) return;
+                        const cm = L.circleMarker([lat, lng], {
+                            radius: 6,
+                            color: '#ff5722',
+                            fillColor: '#ff8a50',
+                            fillOpacity: 0.9
+                        }).bindPopup(createCityPopupContent(city));
+                        if (window.citiesLayer) window.citiesLayer.addLayer(cm); else cm.addTo(map);
+                    } catch (e) {
+                        // Fallback marker addition failed silently
+                    }
+                });
+                try {
+                    if (window.citiesLayer && window.citiesLayer.getLayers().length > 0) map.fitBounds(window.citiesLayer.getBounds().pad(0.1));
+                } catch (e) { }
+            }
+        } catch (e) {
+            // Fallback logic failed silently
+        }
 
     }
 
@@ -234,7 +519,9 @@ window.AdvancedMapping = (function() {
                         const lat = coords[1];
                         const lng = coords[0];
 
-                        const marker = L.marker([lat, lng]);
+                        const markerOpts = {};
+                        if (window.resultMarkerIcon) markerOpts.icon = window.resultMarkerIcon;
+                        const marker = L.marker([lat, lng], markerOpts);
                         const popup = `
                             <div class="city-popup">
                                 <strong>${props.name || props.ENGLISH || 'Unknown'}</strong><br/>
@@ -243,12 +530,12 @@ window.AdvancedMapping = (function() {
                         marker.bindPopup(popup);
                         window.citiesLayer.addLayer(marker);
                     } catch (e) {
-                        console.warn('Failed to add town marker', e);
+                        // Town marker addition failed silently
                     }
                 });
             }
         } catch (err) {
-            console.warn('Could not load initial towns:', err);
+            // Town loading failed silently
         }
     }
 

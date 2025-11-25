@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Advanced Mapping Lab{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background-color: #f8f9fa;
+        }
+        
+        main {
+            flex: 1;
+        }
+        
+        .navbar {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.3rem;
+        }
+        
+        .nav-link {
+            transition: all 0.3s ease;
+        }
+        
+        .nav-link:hover {
+            color: #90EE90 !important;
+        }
+        
+        .dropdown-menu {
+            border: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .dropdown-item:hover {
+            background-color: #f8f9fa;
+            color: #2E8B57;
+        }
+        
+        footer {
+            background-color: #343a40;
+            color: white;
+            padding: 20px 0;
+            margin-top: 40px;
+        }
+        
+        footer a {
+            color: #90EE90;
+            text-decoration: none;
+        }
+        
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(135deg, #2E8B57 0%, #1e5c3f 100%);">
+        <div class="container-lg">
+            <a class="navbar-brand" href="{% url 'advanced_js_mapping:index' %}">
+                <i class="fas fa-map"></i> Advanced Mapping Lab
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <div class="navbar-nav me-auto">
+                    <a class="nav-link" href="{% url 'advanced_js_mapping:index' %}">
+                        <i class="fas fa-home me-1"></i>Home
+                    </a>
+                    <a class="nav-link" href="{% url 'advanced_js_mapping:map' %}">
+                        <i class="fas fa-map-location-dot me-1"></i>Interactive Map
+                    </a>
+                    <a class="nav-link" href="{% url 'advanced_js_mapping:analytics' %}">
+                        <i class="fas fa-chart-bar me-1"></i>Analytics
+                    </a>
+                    <a class="nav-link" href="{% url 'advanced_js_mapping:towns_management' %}">
+                        <i class="fas fa-city me-1"></i>Town Management
+                    </a>
+                </div>
+                <div class="navbar-nav">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-user-circle me-1"></i>{{ user.username }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'authentication:profile' %}">
+                                        <i class="fas fa-user me-2"></i>Profile
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'authentication:home' %}">
+                                        <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'authentication:logout' %}">
+                                        <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <a class="nav-link" href="{% url 'authentication:login' %}">
+                            <i class="fas fa-sign-in-alt me-1"></i>Login
+                        </a>
+                        <a class="nav-link" href="{% url 'authentication:signup' %}">
+                            <i class="fas fa-user-plus me-1"></i>Sign Up
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container-lg py-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container-lg">
+            <div class="row">
+                <div class="col-md-4">
+                    <h6><i class="fas fa-map"></i> Advanced Mapping Lab</h6>
+                    <p>Interactive geospatial analysis and visualization platform</p>
+                </div>
+                <div class="col-md-4">
+                    <h6>Quick Links</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="{% url 'advanced_js_mapping:index' %}">Home</a></li>
+                        <li><a href="{% url 'advanced_js_mapping:map' %}">Map</a></li>
+                        <li><a href="{% url 'advanced_js_mapping:analytics' %}">Analytics</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h6>Account</h6>
+                    <ul class="list-unstyled">
+                        {% if user.is_authenticated %}
+                            <li>Logged in as <strong>{{ user.username }}</strong></li>
+                            <li><a href="{% url 'authentication:logout' %}">Logout</a></li>
+                        {% else %}
+                            <li><a href="{% url 'authentication:login' %}">Login</a></li>
+                            <li><a href="{% url 'authentication:signup' %}">Sign Up</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+            <hr style="border-color: rgba(255,255,255,0.2);">
+            <div class="text-center" style="font-size: 0.9rem;">
+                <p>&copy; 2025 Advanced Mapping Lab. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
