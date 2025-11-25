@@ -164,6 +164,14 @@ fetch("/api/trails/towns/geojson/")
         layer.on("click", () => {
           const [lng, lat] = feature.geometry.coordinates;
 
+          // Show weather popup with loading state
+          const loadingHtml = `
+            <b>${feature.properties.name}</b><br>
+            <strong>Weather:</strong> Loading...<br>
+            Finding nearby trails...
+          `;
+          layer.bindPopup(loadingHtml).openPopup();
+
           // Weather fetch on click
           fetch(`/api/trails/weather-town/?lat=${lat}&lng=${lng}`)
             .then(res => res.json())
@@ -174,18 +182,20 @@ fetch("/api/trails/towns/geojson/")
 
               const weatherHtml = `
                 <b>${feature.properties.name}</b><br>
-                <strong>Weather:</strong> ${description}</br>
+                <strong>Weather:</strong> ${description}<br>
                 Temp: ${temp} °C<br>
                 Wind: ${wind} m/s<br><br>
-                `;
-                layer.bindPopup(weatherHtml + "<em>Finding nearby trails...</em>").openPopup();
+                <em>Finding nearby trails...</em>
+              `;
+              layer.bindPopup(weatherHtml).openPopup();
             }
           )
             .catch((err) => {
               console.error("❌ Weather fetch error:", err);
               layer.bindPopup(`<b>${feature.properties.name}</b><br><em>Weather data unavailable.</em><br>Finding nearby trails...`).openPopup();
-
             });
+
+          // Start proximity search (doesn't open popup, runs in background)
           performProximitySearch(lat, lng);
         });
       },
@@ -1017,8 +1027,7 @@ async function performProximitySearch(lat, lng) {
       `<strong>Search Point</strong><br>Lat: ${lat.toFixed(
         5
       )}<br>Lng: ${lng.toFixed(5)}`
-    )
-    .openPopup();
+    );
 
   // 🔵 Add or update the search radius circle
   if (window.searchCircle) {
