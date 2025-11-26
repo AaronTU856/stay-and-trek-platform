@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trails & Towns API Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .result-container { max-height: 400px; overflow-y: auto; }
+        pre { font-size: 0.85em; }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>Trails & Towns API Test Interface</h1>
+       
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>API Endpoints</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" onclick="testEndpoint('/api/trails/geojson')">
+                                List Trails
+                            </button>
+                            <button class="btn btn-info" onclick="testEndpoint('/api/trails/geojson/')">
+                                List Towns
+                            </button>
+                            <button class="btn btn-success" onclick="testEndpoint('/api/trails/load-towns/')">
+                                Load Towns
+                            </button>
+                            <button class="btn btn-warning" onclick="testSpatialQuery()">
+                                Find Nearby Trails
+                            </button>
+
+                            <button class="btn btn-dark" onclick="testWeather()">
+                                🌤 Get Weather (Dublin)
+                            </button>
+
+                            
+                        </div>
+                       
+                        <hr>
+                        <h6>Filters</h6>
+                        <input type="text" class="form-control mb-2" id="searchInput" placeholder="Search trails...">
+                        <select class="form-select mb-2" id="countrySelect">
+                            <option value="">All Counties</option>
+                        </select>
+                        <button class="btn btn-outline-primary btn-sm" onclick="testWithFilters()">
+                            Apply Filters
+                        </button>
+                    </div>
+                </div>
+            </div>
+           
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between">
+                        <h5>API Response</h5>
+                        <small class="text-muted" id="responseTime"></small>
+                    </div>
+                    <div class="card-body result-container">
+                        <pre id="apiResult">Click a button to test an API endpoint...</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let baseURL = 'http://127.0.0.1:8000';
+       
+        async function testEndpoint(endpoint) {
+            const startTime = performance.now();
+            document.getElementById('apiResult').textContent = 'Loading...';
+            document.getElementById('responseTime').textContent = '';
+           
+            try {
+                const response = await fetch(baseURL + endpoint);
+                const data = await response.json();
+                const endTime = performance.now();
+               
+                document.getElementById('apiResult').textContent = JSON.stringify(data, null, 2);
+                document.getElementById('responseTime').textContent =
+                    `Response time: ${(endTime - startTime).toFixed(2)}ms | Status: ${response.status}`;
+               
+                // Populate country select if we're loading cities
+                if (endpoint === '/api/cities/' && data.results) {
+                    populateCountrySelect(data.results);
+                }
+            } catch (error) {
+                document.getElementById('apiResult').textContent = 'Error: ' + error.message;
+                document.getElementById('responseTime').textContent = 'Error occurred';
+            }
+        }
+       
+    
+       
+        function testWithFilters() {
+            const search = document.getElementById('searchInput').value;
+            const country = document.getElementById('countySelect').value;
+           
+            let endpoint = '/api/trails/geojson/?';
+            const params = [];
+           
+            if (search) params.push(`search=${encodeURIComponent(search)}`);
+            if (country) params.push(`county=${encodeURIComponent(county)}`);
+            if (difficulty) params.push(`difficulty=${encodeURIComponent(difficulty)}`);
+
+            endpoint += params.join('&');
+            testEndpoint(endpoint);
+        }
+       
+        async function testSpatialQuery() {
+            const startTime = performance.now();
+            document.getElementById('apiResult').textContent = 'Loading spatial query...';
+           
+            const queryData = {
+                latitude: 53.3498,
+                longitude: -6.2603,
+                radius_km: 1000
+            };
+           
+            try {
+                const response = await fetch(baseURL + '/api/trails/within-radius/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(queryData)
+                });
+               
+                const data = await response.json();
+                const endTime = performance.now();
+               
+                document.getElementById('apiResult').textContent = JSON.stringify(data, null, 2);
+                document.getElementById('responseTime').textContent =
+                    `Response time: ${(endTime - startTime).toFixed(2)}ms | Status: ${response.status}`;
+            } catch (error) {
+                document.getElementById('apiResult').textContent = 'Error: ' + error.message;
+            }
+        }
+       
+        // Load cities on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            testEndpoint('/api/trails/');
+        });
+
+
+        async function testWeather() {
+            const startTime = performance.now();
+            document.getElementById('apiResult').textContent = 'Fetching weather data...';
+            document.getElementById('responseTime').textContent = '';
+
+            try {
+                const lat = 53.35; // Dublin latitude
+                const lon = -6.26; // Dublin longitude
+
+                const response = await fetch(`${baseURL}/api/weather/?lat=${lat}&lon=${lon}`);
+                const data = await response.json();
+                const endTime = performance.now();
+
+                document.getElementById('apiResult').textContent = JSON.stringify(data, null, 2);
+                document.getElementById('responseTime').textContent =
+                    `Response time: ${(endTime - startTime).toFixed(2)}ms | Status: ${response.status}`;
+            } catch (error) {
+                document.getElementById('apiResult').textContent = 'Error: ' + error.message;
+                document.getElementById('responseTime').textContent = 'Error occurred';
+            }
+        }
+
+
+
+    </script>
+</body>
+</html>
