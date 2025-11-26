@@ -1,9 +1,10 @@
 from django.contrib import admin
+from leaflet.admin import LeafletGeoAdmin
 from .models import Trail, Town
 
 
 @admin.register(Trail)
-class TrailAdmin(admin.ModelAdmin):
+class TrailAdmin(LeafletGeoAdmin):
     list_display = (
         'trail_name',
         'county',
