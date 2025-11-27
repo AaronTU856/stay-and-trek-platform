@@ -3,6 +3,7 @@ from . import views
 
 app_name = 'authentication'
 
+# URL patterns for authentication app
 urlpatterns = [
     path('', views.home_view, name='home'),
     path('login/', views.CustomLoginView.as_view(), name='login'),

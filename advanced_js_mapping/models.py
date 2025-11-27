@@ -3,7 +3,7 @@ from django.contrib.gis.db import models as gis_models
 from django.contrib.gis.geos import GEOSGeometry
 from django.core.validators import MinValueValidator, MaxValueValidator
 
-
+# Enhanced city model with PostGIS spatial features and additional demographics.
 class AdvancedCity(models.Model):
     """
     Enhanced city model with PostGIS spatial features and additional demographics.
@@ -23,6 +23,7 @@ class AdvancedCity(models.Model):
     elevation_m = models.IntegerField(null=True, blank=True)
     gdp_per_capita = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     unemployment_rate = models.FloatField(null=True, blank=True)
+
 
     CITY_TYPES = [
         ('capital', 'Capital City'),
@@ -49,6 +50,7 @@ class AdvancedCity(models.Model):
     def __str__(self):
         return f"{self.name}, {self.country}"
 
+# Override save method to auto-generate Point geometry
     def save(self, *args, **kwargs):
         """Automatically create Point geometry from lat/lng"""
         if self.latitude is not None and self.longitude is not None:
@@ -62,6 +64,7 @@ class AdvancedCity(models.Model):
             return round(self.population / self.area_km2, 2)
         return None
 
+# Method to convert to GeoJSON Feature
     def to_geojson_feature(self):
         """Convert city to GeoJSON Feature format"""
         return {
@@ -106,6 +109,7 @@ class PolygonAnalysis(models.Model):
         verbose_name_plural = "Polygon Analyses"
         ordering = ['-analysis_timestamp']
 
+# Track user sessions for analytics
 class SearchSession(models.Model):
     """Track user sessions for analytics"""
     session_key = models.CharField(max_length=40)

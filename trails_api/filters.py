@@ -30,6 +30,7 @@ class TrailFilter(django_filters.FilterSet):
     )
    
    
+   # Meta class to specify model and fields
     class Meta:
         model = Trail
         fields = ['county', 'difficulty', 'region']

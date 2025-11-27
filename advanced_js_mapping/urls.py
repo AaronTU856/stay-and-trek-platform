@@ -3,6 +3,7 @@ from . import views
 
 app_name = 'advanced_js_mapping'
 
+# URL patterns for advanced_js_mapping app
 urlpatterns = [
     path('', views.index_view, name='index'),
     path('map/', views.map_view, name='map'),

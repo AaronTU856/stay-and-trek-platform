@@ -1,0 +1,55 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}Stay and Trek Admin{% endblock %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <style>
+    .quick-nav {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 12px;
+      padding: 0 12px;
+      background: #f8f9fa;
+      border-bottom: 1px solid #dee2e6;
+    }
+    .quick-nav a {
+      padding: 12px 18px;
+      background: var(--brand-primary, #2E8B57);
+      color: #fff;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 500;
+      transition: opacity 0.2s;
+    }
+    .quick-nav a:hover {
+      opacity: 0.9;
+      text-decoration: none;
+      color: #fff;
+    }
+    .quick-nav a.analytics {
+      background: #FFB86B;
+      color: #111;
+    }
+  </style>
+{% endblock %}
+
+{% block header %}
+  <div id="header">
+    <div id="branding">
+      <h1 id="site-name">Stay and Trek Admin</h1>
+    </div>
+    {% block usertools %}{{ block.super }}{% endblock %}
+    {% block nav-global %}{{ block.super }}{% endblock %}
+  </div>
+  <div class="quick-nav">
+    <a href="/" class="home">🏠 Home</a>
+    <a href="/api/trails/map/" class="trails">🥾 Trails in Ireland</a>
+    <a href="/dashboard/" class="dashboard">📊 Dashboard</a>
+    <a href="/advanced-js-mapping/map/" class="map">🗺️ Interactive Map</a>
+    <a href="/advanced-js-mapping/" class="search">🏨 Accommodations</a>
+    <a href="/advanced-js-mapping/analytics/" class="analytics">📈 Analytics</a>
+  </div>
+{% endblock %}

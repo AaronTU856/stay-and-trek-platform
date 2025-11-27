@@ -29,7 +29,7 @@ from .serializers import TrailPathGeoSerializer
 from .filters import TrailFilter
 import json
 
-# Pagination
+# Pagination for API results
 class StandardResultsSetPagination(PageNumberPagination):
     """Custom pagination for API endpoints."""
     page_size = 20
@@ -48,12 +48,12 @@ class TrailListCreateView(generics.ListCreateAPIView):
     search_fields = ['trail_name', 'county', 'region']
     ordering_fields = ['trail_name', 'county', 'distance_km', 'difficulty']
     ordering = ['trail_name']
-
+    # Use custom filter class for advanced filtering
     def get_serializer_class(self):
         if self.request.method == 'POST':
             return TrailCreateSerializer
         return TrailListSerializer
-
+    # Apply filters based on query parameters
     def get_queryset(self):
         queryset = super().get_queryset()
         min_length = self.request.query_params.get('min_length')
@@ -68,7 +68,7 @@ class TrailListCreateView(generics.ListCreateAPIView):
             queryset = queryset.filter(difficulty__iexact=difficulty)
 
         return queryset
-    
+    # Set permissions based on request method
     def get_permissions(self):
         """GET requests are open, POST requires authentication."""
         if self.request.method == 'POST':
@@ -78,11 +78,11 @@ class TrailListCreateView(generics.ListCreateAPIView):
         return [permission() for permission in permission_classes]
 
 
-
+# Town Detail, Update, Delete
 class TownDetailView(generics.RetrieveUpdateDestroyAPIView):
     """Retrieve, update or delete a town. PUT/PATCH/DELETE require authentication."""
     queryset = Town.objects.all()
-
+    # Serializer for Town details
     def get_permissions(self):
         """GET is open, PUT/PATCH/DELETE require authentication."""
         if self.request.method in ['PUT', 'PATCH', 'DELETE']:
@@ -109,24 +109,25 @@ class TrailDetailView(generics.RetrieveUpdateDestroyAPIView):
 def trails_within_radius(request):
     """Find trails within a specified radius (km) of a given lat/lon."""
     try:
+        # Validate input
         if not request.data.get("latitude") or not request.data.get("longitude"):
             return Response(
                 {"error": "Latitude and longitude are required."},
                 status=400
             )
-
+        # Check for radius_km parameter
         if not request.data.get("radius_km"):
             return Response(
                 {"error": "radius_km is required."},
                 status=400
             )
-        
+        # Extract parameters
         lat = float(request.data.get("latitude"))
         lng = float(request.data.get("longitude"))
         radius_km = float(request.data.get("radius_km", 50))
 
         user_location = Point(lng, lat, srid=4326)
-
+    # Query trails within radius
         trails = (
             Trail.objects.annotate(distance=DistanceFunction("start_point", user_location))
             .filter(distance__lte=radius_km * 1000)
@@ -168,6 +169,7 @@ def trails_within_radius(request):
 def trails_in_bounding_box(request):
     """Find trails within a bounding box."""
     serializer = BoundingBoxSerializer(data=request.data)
+    # Validate input
     if serializer.is_valid():
         data = serializer.validated_data
         bbox = [
@@ -190,6 +192,7 @@ def trails_in_bounding_box(request):
 @api_view(['GET'])
 def trail_statistics(request):
     """Return overall statistics about trails."""
+    # Compute statistics
     stats = {
         "total_trails": Trail.objects.count(),
         "average_distance_km": Trail.objects.aggregate(avg=models.Avg("distance_km"))["avg"] or 0,
@@ -209,7 +212,7 @@ def advanced_mapping_map(request):
     """Render the advanced mapping page - requires login."""
     return render(request, 'advanced_js_mapping/map.html')
 
-
+# Protected template views
 @login_required
 def trail_map(request):
     """Render main trail map - requires login."""
@@ -221,7 +224,7 @@ def trail_map(request):
 def towns_geojson(request):
     """Return towns as GeoJSON with optional filters."""
     towns = Town.objects.all()
-
+    # Apply filters based on query parameters
     min_pop = request.GET.get('min_population')
     max_pop = request.GET.get('max_population')
     town_type = request.GET.get('town_type')
@@ -241,7 +244,7 @@ def towns_geojson(request):
     )
     return HttpResponse(geojson, content_type='application/json')
 
-
+# Nearest Town Endpoint
 @api_view(['POST'])
 def nearest_town(request):
     """Find the nearest town to given coordinates."""
@@ -249,7 +252,7 @@ def nearest_town(request):
     lng = request.data.get('longitude')
     if not lat or not lng:
         return Response({'error': 'Latitude and longitude required'}, status=400)
-
+    # Create Point object
     user_location = Point(float(lng), float(lat), srid=4326)
     nearest = Town.objects.annotate(distance=DistanceFunction('location', user_location)).order_by('distance').first()
 
@@ -262,13 +265,13 @@ def nearest_town(request):
         'distance_km': round(nearest.distance.km, 2),
     })
 
-
+# Load Sample Towns from GeoJSON
 @api_view(['GET'])
 def load_towns(request):
     """Load sample towns from a GeoJSON file."""
     with open("trails_api/data/sample_towns.geojson") as f:
         data = json.load(f)
-
+    # Clear existing towns
     Town.objects.all().delete()
     count = 0
 
@@ -349,7 +352,7 @@ def api_info(request):
     }
     return Response(info)
 
-
+# Counties List Endpoint
 @api_view(['GET'])
 def counties_list(request):
     """Return a list of counties with trail counts."""
@@ -361,7 +364,7 @@ def counties_list(request):
     )
     return Response(list(counties))
 
-
+# Simple Trail Search Endpoint
 @api_view(['GET'])
 def trail_search(request):
     """Simple search endpoint for trail names."""
@@ -388,16 +391,16 @@ def api_test_page(request):
     """Simple frontend for testing API."""
     return render(request, 'api_test.html')
 
-
+# Protected template views
 def trail_map(request):
     """Render main project map (templates/trails/map.html)."""
     return render(request, 'trails/map.html')
-
+# Simple API Test View
 def api_test_view(request):
     return render(request, "api_test.html")
 
 
-
+#  Weather Endpoints
 @api_view(['GET'])
 def trail_weather(request, pk):
     try:
@@ -423,7 +426,7 @@ def trail_weather(request, pk):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
     
-    
+# Town Weather Endpoint 
 @api_view(['GET'])
 def town_weather(request):
     lat = request.GET.get("lat")

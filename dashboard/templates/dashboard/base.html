@@ -60,6 +60,16 @@
         </div>
     </nav>
 
+    <!-- Quick Navigation to Other Pages -->
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin:12px;padding:0 12px;">
+      <a href="/" style="padding:12px 18px;background:var(--brand-primary,#2E8B57);color:#fff;border-radius:8px;text-decoration:none;">🏠 Home</a>
+      <a href="{% url 'trails:map' %}" style="padding:12px 18px;background:var(--brand-primary,#2E8B57);color:#fff;border-radius:8px;text-decoration:none;">🥾 Trails in Ireland</a>
+      <a href="{% url 'advanced_js_mapping:map' %}" style="padding:12px 18px;background:#2E27F5;color:#fff;border-radius:8px;text-decoration:none;">🗺️ Interactive Map</a>
+      <a href="{% url 'advanced_js_mapping:index' %}" style="padding:12px 18px;background:#F5273F;color:#fff;border-radius:8px;text-decoration:none;">🏨 Accommodations</a>
+      <a href="{% url 'advanced_js_mapping:analytics' %}" style="padding:12px 18px;background:#FFB86B;color:#111;border-radius:8px;text-decoration:none;">📈 Analytics</a>
+      <a href="/admin/" style="padding:12px 18px;background:#34495E;color:#fff;border-radius:8px;text-decoration:none;">⚙️ Admin</a>
+    </div>
+
     <!-- ✅ Main Content -->
     <main class="main-content">
         {% block content %}

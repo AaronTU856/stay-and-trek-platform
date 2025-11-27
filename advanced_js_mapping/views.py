@@ -15,9 +15,10 @@ from trails_api.models import Town
 from django.contrib.auth.decorators import login_required
 from django.contrib.gis.geos import Point
 
-
+# Set up logging
 logger = logging.getLogger(__name__)
 
+# Advanced spatial search endpoint which finds cities within a drawn polygon.
 @csrf_exempt
 @require_http_methods(["POST"])
 def polygon_search(request):
@@ -26,9 +27,9 @@ def polygon_search(request):
 
     This is the core function that performs PostGIS spatial queries.
     """
-    start_time = time.time()
+    start_time = time.time() # Start timer for performance measurement
 
-    # DEBUG: dump raw request body for polygon POST (temporary — remove after debugging)
+    # dump raw request body for polygon POST (temporary — remove after debugging)
     try:
         raw_body = request.body.decode('utf-8')
     except Exception:
@@ -118,8 +119,8 @@ def polygon_search(request):
         used_method = 'within'
 
         try:
-            queryset_within = Town.objects.filter(location__within=polygon_geometry)
-            within_count = queryset_within.count()
+            queryset_within = Town.objects.filter # (location__within=polygon_geometry)
+            within_count = queryset_within.count() 
         except Exception as e:
             logger.debug(f"within query failed: {e}")
             queryset_within = Town.objects.none()
@@ -279,6 +280,7 @@ def index_view(request):
     context = {
         'total_cities': total_cities,
         'total_countries': total_countries,
+        'current_page': 'polygon_search',
     }
 
     return render(request, 'advanced_js_mapping/index.html', context)
@@ -286,7 +288,9 @@ def index_view(request):
 @login_required
 def map_view(request):
     """Interactive map view"""
-    context = {}
+    context = {
+        'current_page': 'interactive_map',
+    }
     return render(request, 'advanced_js_mapping/map.html', context)
 
 @login_required
@@ -390,6 +394,7 @@ def analytics_view(request):
         'city_type_labels': json.dumps(type_labels),
         'city_type_data': json.dumps(type_data),
         'population_distribution': json.dumps(pop_dist),
+        'current_page': 'analytics',
     }
 
     return render(request, 'advanced_js_mapping/analytics.html', context)
@@ -404,7 +409,7 @@ def towns_management_view(request):
     }
     return render(request, 'advanced_js_mapping/towns_management.html', context)
 
-
+# Town editing API endpoint with authentication and CSRF exemption
 @csrf_exempt
 @login_required
 @require_http_methods(["GET", "PUT", "DELETE"])
@@ -507,6 +512,7 @@ def edit_town_api(request, town_id):
             'details': str(e)
         }, status=500)
 
+# Trails API endpoint to list or create trails
 @csrf_exempt
 @require_http_methods(["GET", "POST"])
 def trails_api(request):
@@ -538,7 +544,8 @@ def trails_api(request):
         except Exception as e:
             logger.error(f"Trail creation error: {e}")
             return JsonResponse({'success': False, 'error': str(e)}, status=400)
-        
+  
+# Distance search API endpoint      
 @csrf_exempt
 @require_http_methods(["POST"])
 def distance_search(request):

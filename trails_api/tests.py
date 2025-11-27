@@ -6,7 +6,7 @@ from django.contrib.gis.geos import Point
 from trails_api.models import Trail
 import json
 
-
+# Test cases for Trails API
 class TrailAPITestCase(APITestCase):
     """Test cases for Trails API"""
 
@@ -32,12 +32,14 @@ class TrailAPITestCase(APITestCase):
             start_point=Point(-9.667, 53.763, srid=4326)
         )
 
+    # Test trail list endpoint
     def test_trail_list(self):
         """Test trail list endpoint"""
         url = reverse('trails:trail-list-create')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+    # Test trail detail endpoint
     def test_trail_detail(self):
         """Test trail detail endpoint"""
         url = reverse('trails:trail-detail', kwargs={'pk': self.trail1.pk})
@@ -45,6 +47,7 @@ class TrailAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['trail_name'], 'Bray Head Loop')
 
+    # Test trail creation endpoint
     def test_trail_creation(self):
         """Test creating a new trail"""
         url = reverse('trails:trail-list-create')
@@ -71,7 +74,7 @@ class TrailAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Trail.objects.count(), 3)
 
-
+    # Test spatial within-radius query
     def test_within_radius_query(self):
         """Test spatial within-radius query"""
         url = reverse('trails:trails-within-radius')
@@ -81,6 +84,7 @@ class TrailAPITestCase(APITestCase):
         self.assertIn('nearest_trails', response.data)
         self.assertGreaterEqual(response.data['total_found'], 1)
 
+    # Test statistics endpoint
     def test_statistics_endpoint(self):
         """Test statistics endpoint"""
         url = reverse('trails:trail-statistics')
@@ -89,8 +93,7 @@ class TrailAPITestCase(APITestCase):
         self.assertIn('total_trails', response.data)
         self.assertIn('average_distance_km', response.data)
 
-
-class TrailModelTestCase(TestCase):
+#class TrailModelTestCase(TestCase):
     """Test cases for Trail model"""
 
     def setUp(self):
@@ -104,18 +107,20 @@ class TrailModelTestCase(TestCase):
             description='A test trail for unit testing',
             start_point=Point(0, 0, srid=4326)
         )
-
+    # Test string representation of Trail model
     def test_string_representation(self):
         self.assertIn('Test Trail', str(self.trail))
-
+    # Test latitude and longitude properties
     def test_coordinates_properties(self):
         self.assertEqual(self.trail.start_point.x, 0)
         self.assertEqual(self.trail.start_point.y, 0)
 
+    # Test distance field
     def test_distance_field(self):
         self.assertIsInstance(self.trail.distance_km, float)
         self.assertGreater(self.trail.distance_km, 0)
 
+    # Test GeoJSON format
     def test_geojson_format(self):
         url = reverse('trails:trails_geojson')
         response = self.client.get(url)

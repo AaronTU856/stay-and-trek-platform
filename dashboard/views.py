@@ -5,6 +5,7 @@ from django.shortcuts import render
 from trails_api.models import Trail, Town
 from django.db.models import Count, Avg, Sum
 
+# Main dashboard view
 def index(request):
     """Main trail dashboard view"""
     context = {
@@ -16,6 +17,7 @@ def index(request):
     }
     return render(request, 'dashboard/index.html', context)
 
+# Trail analytics view
 def analytics(request):
     """Trail analytics page"""
     trail_stats = {
@@ -28,6 +30,7 @@ def analytics(request):
         "hard_count": Trail.objects.filter(difficulty="hard").count(),
     }
 
+# Render the analytics template with computed statistics that provide insights into the trails
     context = {
         'trail_stats': trail_stats,
         'total_towns': Town.objects.count(),

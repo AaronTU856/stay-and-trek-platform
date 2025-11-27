@@ -1,0 +1,68 @@
+{% load i18n static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% trans 'Log in' %} | Django site admin</title>
+    <link rel="stylesheet" type="text/css" href="{% static "admin/css/base.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "admin/css/login.css" %}">
+    <meta name="theme-color" content="#417690">
+</head>
+<body class="login">
+    <div id="container">
+        <div id="header">
+            <div id="branding" style="display: flex; justify-content: space-between; align-items: center;">
+                <h1>{% trans 'Django administration' %}</h1>
+                <a href="/" style="padding: 8px 16px; background: #2E8B57; color: #fff; border-radius: 4px; text-decoration: none; font-size: 14px; margin-right: 12px;">🏠 Home</a>
+            </div>
+        </div>
+        <div id="content-main">
+            {% if form.non_field_errors %}
+            <div class="errorlist">
+                {% for error in form.non_field_errors %}
+                <div>{{ error }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <form method="post" id="login-form">
+                {% csrf_token %}
+                <fieldset class="module aligned">
+                    <h1>{% trans 'Log in' %}</h1>
+                    <div class="form-row">
+                        {{ form.username.label_tag }}
+                        {{ form.username }}
+                        {% if form.username.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.username.errors %}
+                            <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                    </div>
+                    <div class="form-row">
+                        {{ form.password.label_tag }}
+                        {{ form.password }}
+                        {% if form.password.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.password.errors %}
+                            <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                    </div>
+                    <div class="submit-row">
+                        <label>&nbsp;</label><input type="submit" value="{% trans 'Log in' %}" />
+                    </div>
+                </fieldset>
+            </form>
+            <p style="text-align: center; margin-top: 20px;">
+                Don't have an account? <a href="{% url 'authentication:signup' %}" style="color: #417690; text-decoration: none; font-weight: 500;">Sign up here</a>
+            </p>
+        </div>
+        <div id="footer">
+            <p>© 2024 Django administration</p>
+        </div>
+    </div>
+</body>
+</html>

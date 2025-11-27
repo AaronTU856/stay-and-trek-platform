@@ -10,6 +10,7 @@ class TrailListSerializer(serializers.ModelSerializer):
     latitude = serializers.ReadOnlyField()
     longitude = serializers.ReadOnlyField()
     
+    # Trail model fields to include
     class Meta:
         model = Trail
         fields = [
@@ -35,6 +36,7 @@ class TrailGeoJSONSerializer(GeoFeatureModelSerializer):
     latitude = serializers.SerializerMethodField()
     longitude = serializers.SerializerMethodField()
 
+    # Meta information for the TrailGeoJSONSerializer
     class Meta:
         model = Trail
         geo_field = 'start_point'
@@ -61,6 +63,7 @@ class TrailCreateSerializer(serializers.ModelSerializer):
     latitude = serializers.FloatField(write_only=True)
     longitude = serializers.FloatField(write_only=True)
 
+    # Trail model fields to include
     class Meta:
         model = Trail
         fields = [
@@ -122,7 +125,8 @@ class TownGeoJSONSerializer(GeoFeatureModelSerializer):
         geo_field = 'location'
         fields = ('id', 'name', 'town_type', 'population', 'area')
 
-    
+  
+  # Serializer for Trail path as GeoJSON LineString  
 class TrailPathGeoSerializer(GeoFeatureModelSerializer):
     class Meta:
         model = Trail
