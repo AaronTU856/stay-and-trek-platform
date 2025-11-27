@@ -24,9 +24,9 @@ COPY . /app
 # Create staticfiles and media directories
 RUN mkdir -p /app/staticfiles /app/media
 
-# Cloud Run expects port 8080
+# Cloud Run expects port 8080, but can be overridden with PORT env var
 EXPOSE 8080
 
-# Use gunicorn for Cloud Run on port 8080
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "4", "webmapping_project.wsgi:application"]
+# Use gunicorn with PORT environment variable (defaults to 8080 for Cloud Run, can be 8000 for local Docker)
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-8080} --workers 4 webmapping_project.wsgi:application"]
 
