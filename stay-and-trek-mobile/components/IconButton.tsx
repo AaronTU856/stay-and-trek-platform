@@ -61,6 +61,10 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 3 },
       },
       android: { elevation: 4 },
+        // web: use boxShadow instead of shadow* props to avoid RN Web deprecation warnings
+        web: {
+          boxShadow: '0px 3px 6px rgba(0,0,0,0.12)'
+        }
     }),
   },
   label: {

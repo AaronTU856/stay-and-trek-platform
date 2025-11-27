@@ -66,13 +66,15 @@ const styles = StyleSheet.create({
       paddingHorizontal: 20
     },
     card: {
-      backgroundColor: "#f2f2f2",
+      backgroundColor: "#cedcceff",
       padding: 16,
       borderRadius: 12,
       marginBottom: 12,
       shadowColor: "#000",
       shadowOpacity: 0.1,
       shadowRadius: 4,
-      elevation: 2
+      elevation: 2,
+      // Web (React Native Web) prefers boxShadow instead of shadow* props
+      boxShadow: '0px 3px 6px rgba(0,0,0,0.12)'
     }
   });

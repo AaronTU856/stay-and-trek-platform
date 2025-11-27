@@ -7,7 +7,7 @@ type SearchBarProps = {
   onSelect?: (value: string) => void;
 };
 
-export default function SearchBar({ suggestions = [], placeholder = 'Search trails, towns...', onSelect }: SearchBarProps) {
+export default function SearchBar({ suggestions = [], placeholder = 'Search trails, accommodation...', onSelect }: SearchBarProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<string[]>([]);
 
