@@ -27,6 +27,6 @@ RUN mkdir -p /app/staticfiles /app/media
 # Cloud Run expects port 8080
 EXPOSE 8080
 
-# Start Django dev server (for docker-compose) or gunicorn (for Cloud Run)
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# Use gunicorn for Cloud Run on port 8080
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "4", "webmapping_project.wsgi:application"]
 
