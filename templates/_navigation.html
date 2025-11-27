@@ -1,0 +1,47 @@
+<!-- Navigation Component - Include in all templates -->
+<!-- Usage: {% include "_navigation.html" with current_page="page_name" %} -->
+<div style="display:flex;gap:12px;flex-wrap:wrap;margin:12px 0">
+
+  {% if current_page != "trails" %}
+    <a href="{% url 'trails:map' %}" 
+       style="padding:12px 18px;background:var(--brand-primary,#2E8B57);color:#fff;border-radius:8px;text-decoration:none;transition:opacity 0.2s;">
+      🥾 Trails in Ireland
+    </a>
+  {% endif %}
+
+  {% if current_page != "dashboard" %}
+    <a href="/dashboard/" 
+       style="padding:12px 18px;background:#8B4513;color:#fff;border-radius:8px;text-decoration:none;transition:opacity 0.2s;">
+      📊 Dashboard
+    </a>
+  {% endif %}
+
+  {% if current_page != "interactive_map" %}
+    <a href="{% url 'advanced_js_mapping:map' %}" 
+       style="padding:12px 18px;background:#2E27F5;color:#fff;border-radius:8px;text-decoration:none;transition:opacity 0.2s;">
+      🗺️ Interactive Map
+    </a>
+  {% endif %}
+
+  {% if current_page != "polygon_search" %}
+    <a href="{% url 'advanced_js_mapping:index' %}" 
+       style="padding:12px 18px;background:#F5273F;color:#fff;border-radius:8px;text-decoration:none;transition:opacity 0.2s;">
+      🏨 Accommodations
+    </a>
+  {% endif %}
+
+  {% if current_page != "analytics" %}
+    <a href="{% url 'advanced_js_mapping:analytics' %}" 
+       style="padding:12px 18px;background:#FFB86B;color:#111;border-radius:8px;text-decoration:none;transition:opacity 0.2s;">
+      📈 Analytics
+    </a>
+  {% endif %}
+
+  {% if current_page != "admin" %}
+    <a href="/admin/" 
+       style="padding:12px 18px;background:#34495E;color:#fff;border-radius:8px;text-decoration:none;transition:opacity 0.2s;">
+      ⚙️ Admin
+    </a>
+  {% endif %}
+
+</div>

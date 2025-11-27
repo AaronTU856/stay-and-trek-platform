@@ -29,7 +29,7 @@ def polygon_search(request):
     """
     start_time = time.time() # Start timer for performance measurement
 
-    # DEBUG: dump raw request body for polygon POST (temporary — remove after debugging)
+    # dump raw request body for polygon POST (temporary — remove after debugging)
     try:
         raw_body = request.body.decode('utf-8')
     except Exception:
@@ -280,6 +280,7 @@ def index_view(request):
     context = {
         'total_cities': total_cities,
         'total_countries': total_countries,
+        'current_page': 'polygon_search',
     }
 
     return render(request, 'advanced_js_mapping/index.html', context)
@@ -287,7 +288,9 @@ def index_view(request):
 @login_required
 def map_view(request):
     """Interactive map view"""
-    context = {}
+    context = {
+        'current_page': 'interactive_map',
+    }
     return render(request, 'advanced_js_mapping/map.html', context)
 
 @login_required
@@ -391,6 +394,7 @@ def analytics_view(request):
         'city_type_labels': json.dumps(type_labels),
         'city_type_data': json.dumps(type_data),
         'population_distribution': json.dumps(pop_dist),
+        'current_page': 'analytics',
     }
 
     return render(request, 'advanced_js_mapping/analytics.html', context)
