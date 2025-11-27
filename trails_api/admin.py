@@ -2,7 +2,7 @@ from django.contrib import admin
 from leaflet.admin import LeafletGeoAdmin
 from .models import Trail, Town
 
-
+# Admin configuration for Trail model
 @admin.register(Trail)
 class TrailAdmin(LeafletGeoAdmin):
     list_display = (
@@ -39,7 +39,7 @@ class TrailAdmin(LeafletGeoAdmin):
     readonly_fields = ('created_at', 'updated_at')
     ordering = ('trail_name',)
 
-
+# Admin configuration for Town model
 @admin.register(Town)
 class TownAdmin(admin.ModelAdmin):
     list_display = ('name', 'population')

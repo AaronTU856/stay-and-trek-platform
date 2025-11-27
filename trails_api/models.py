@@ -8,22 +8,25 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 # CUSTOM MANAGER FOR TRAIL 
 class TrailManager(models.Manager):
     """Custom manager for trail model with spatial queries"""
-
+    # Search trails within a radius of a point on the map
     def within_radius(self, center_point, radius_km):
         """Find trails within a specified radius of a point."""
         return self.filter(
             start_point__distance_lte=(center_point, Distance(km=radius_km))
         )
-
+    # Search trails within a bounding box
     def in_bounding_box(self, bbox):
         """Find trails within a bounding box."""
         min_lng, min_lat, max_lng, max_lat = bbox
+        # Create Polygon from bbox
         bbox_polygon = Polygon.from_bbox((min_lng, min_lat, max_lng, max_lat))
         return self.filter(start_point__within=bbox_polygon)
-
+    # Find nearest trails to a given point
     def nearest_to_point(self, point, limit=10):
         """Find nearest trails to a point."""
+        # Import Distance function here to avoid circular import issues
         from django.contrib.gis.db.models.functions import Distance as DistanceFunction
+        # Annotate distance and order by it
         return self.annotate(
             distance=DistanceFunction('start_point', point)
         ).order_by('distance')[:limit]
@@ -75,11 +78,11 @@ class Trail(models.Model):
     path = gis_models.LineStringField(srid=4326, null=True, blank=True)
     
     # Amenities & Features
-    dogs_allowed = models.BooleanField(default=True, null=True, blank=True)  # CHANGED from CharField
-    parking_available = models.CharField(max_length=100, blank=True)
-    public_transport = models.TextField(blank=True)
-    facilities = models.TextField(blank=True)
-    trail_type = models.CharField(max_length=100, blank=True)
+    dogs_allowed = models.BooleanField(default=True, null=True, blank=True) # Whether dogs are allowed on the trail
+    parking_available = models.CharField(max_length=100, blank=True) # Parking information
+    public_transport = models.TextField(blank=True) # Public transport options (Not Implemented)
+    facilities = models.TextField(blank=True) # Available facilities
+    trail_type = models.CharField(max_length=100, blank=True) # Type of trail ( loop, Greenway, out-and-back)
     
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
@@ -88,6 +91,7 @@ class Trail(models.Model):
     # Use custom manager
     objects = TrailManager()
     
+    # Meta information for the Trail model
     class Meta:
         verbose_name = 'Trail'
         verbose_name_plural = "Trails"
@@ -99,7 +103,7 @@ class Trail(models.Model):
     
     def __str__(self):
         return self.trail_name
-    
+    # Properties to extract latitude and longitude from start_point
     @property
     def latitude(self):
         """Return latitude coordinate."""
@@ -109,7 +113,7 @@ class Trail(models.Model):
     def longitude(self):
         """Return longitude coordinate."""
         return self.start_point.x if self.start_point else None
-
+    # co-ordinates property for GeoJSON compatibility
     @property
     def coordinates(self):
         """Return coordinates as [longitude, latitude] for GeoJSON."""
@@ -146,7 +150,7 @@ class Town(models.Model):
     )
     is_capital = models.BooleanField(default=False, db_index=True)
     
-    # Spatial Data
+    # Spatial Data 
     location = gis_models.PointField(srid=4326)
     
     # Demographics
@@ -171,6 +175,8 @@ class Town(models.Model):
         null=True, 
         blank=True
     )
+    
+    # Socioeconomic Data not implemented
     unemployment_rate = models.FloatField(
         null=True, 
         blank=True,
@@ -181,6 +187,7 @@ class Town(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    # Meta information for the Town model
     class Meta:
         verbose_name = 'Town'
         verbose_name_plural = 'Towns'

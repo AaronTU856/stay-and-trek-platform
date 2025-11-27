@@ -6,7 +6,7 @@ from .views import trail_map
 from .views import api_test_view
 
 app_name = 'trails'
-
+# URL patterns for trails_api app
 urlpatterns = [
     path('', views.TrailListCreateView.as_view(), name='trail-list-create'),
     path('<int:pk>/', views.TrailDetailView.as_view(), name='trail-detail'),

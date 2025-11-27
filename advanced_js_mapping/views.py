@@ -15,9 +15,10 @@ from trails_api.models import Town
 from django.contrib.auth.decorators import login_required
 from django.contrib.gis.geos import Point
 
-
+# Set up logging
 logger = logging.getLogger(__name__)
 
+# Advanced spatial search endpoint which finds cities within a drawn polygon.
 @csrf_exempt
 @require_http_methods(["POST"])
 def polygon_search(request):
@@ -26,7 +27,7 @@ def polygon_search(request):
 
     This is the core function that performs PostGIS spatial queries.
     """
-    start_time = time.time()
+    start_time = time.time() # Start timer for performance measurement
 
     # DEBUG: dump raw request body for polygon POST (temporary — remove after debugging)
     try:
@@ -118,8 +119,8 @@ def polygon_search(request):
         used_method = 'within'
 
         try:
-            queryset_within = Town.objects.filter(location__within=polygon_geometry)
-            within_count = queryset_within.count()
+            queryset_within = Town.objects.filter # (location__within=polygon_geometry)
+            within_count = queryset_within.count() 
         except Exception as e:
             logger.debug(f"within query failed: {e}")
             queryset_within = Town.objects.none()
@@ -404,7 +405,7 @@ def towns_management_view(request):
     }
     return render(request, 'advanced_js_mapping/towns_management.html', context)
 
-
+# Town editing API endpoint with authentication and CSRF exemption
 @csrf_exempt
 @login_required
 @require_http_methods(["GET", "PUT", "DELETE"])
@@ -507,6 +508,7 @@ def edit_town_api(request, town_id):
             'details': str(e)
         }, status=500)
 
+# Trails API endpoint to list or create trails
 @csrf_exempt
 @require_http_methods(["GET", "POST"])
 def trails_api(request):
@@ -538,7 +540,8 @@ def trails_api(request):
         except Exception as e:
             logger.error(f"Trail creation error: {e}")
             return JsonResponse({'success': False, 'error': str(e)}, status=400)
-        
+  
+# Distance search API endpoint      
 @csrf_exempt
 @require_http_methods(["POST"])
 def distance_search(request):

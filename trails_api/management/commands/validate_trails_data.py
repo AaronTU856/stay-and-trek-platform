@@ -3,9 +3,11 @@ from django.core.management.base import BaseCommand
 from django.contrib.gis.geos import Point
 from trails_api.models import Trail, Town
 
+# Management command to validate trails and towns spatial data
 class Command(BaseCommand):
     help = 'Validate trails and towns spatial data'
 
+    # Handle method to perform validations
     def handle(self, *args, **options):
         self.stdout.write(self.style.SUCCESS("Starting trails & towns validation..."))
 

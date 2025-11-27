@@ -1,6 +1,7 @@
 const fs = require('fs');
 const puppeteer = require('puppeteer');
 
+// Main async function to run Puppeteer E2E test
 (async () => {
   const outScreenshot = 'tmp/puppeteer_map.png';
   const outNetwork = 'tmp/puppeteer_network.json';
@@ -13,6 +14,7 @@ const puppeteer = require('puppeteer');
   });
   const page = await browser.newPage();
 
+  // Capture network requests and console logs
   const networkEvents = [];
   const consoleEvents = [];
 
@@ -22,6 +24,7 @@ const puppeteer = require('puppeteer');
     console.log(text);
   });
 
+  // Capture all network requests
   page.on('requestfinished', async req => {
     try {
       const res = req.response();
@@ -33,6 +36,7 @@ const puppeteer = require('puppeteer');
     }
   });
 
+  // Navigate to the target URL
   const targetUrl = process.env.TARGET_URL || 'http://127.0.0.1:8000/advanced-js-mapping/map/';
   console.log('Opening', targetUrl);
   await page.goto(targetUrl, { waitUntil: 'networkidle2', timeout: 30000 }).catch(e => {

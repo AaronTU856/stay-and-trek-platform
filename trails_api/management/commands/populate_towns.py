@@ -3,6 +3,7 @@ from trails_api.models import Town
 from django.contrib.gis.geos import Point
 
 
+# Management command to populate towns
 class Command(BaseCommand):
     help = 'Populate database with Irish towns and cities'
 
@@ -27,7 +28,7 @@ class Command(BaseCommand):
             },
             # Add more towns as needed
         ]
-
+        # Populate the Town model
         for town_data in towns_data:
             town, created = Town.objects.get_or_create(
                 name=town_data['name'],

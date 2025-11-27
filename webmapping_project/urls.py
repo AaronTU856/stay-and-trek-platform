@@ -32,7 +32,7 @@ urlpatterns = [
     path('', project_views.home, name='home'),
 
     # Maps app
-    path('maps/', include('maps.urls')),
+    path('maps/', include(('maps.urls', 'maps'), namespace='maps')),
 
     # Trails API
     path('api/trails/', include(('trails_api.urls', 'trails'), namespace='trails')),
