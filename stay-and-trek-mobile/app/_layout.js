@@ -12,6 +12,14 @@ export default function Layout() {
           <Tabs.Screen name="trails" options={{ title: "Trails" }} />
           <Tabs.Screen name="stay" options={{ title: "Stay" }} />
           <Tabs.Screen name="weather" options={{ title: "Weather" }} />
+          {/* Hide trail-details from tab bar */}
+          <Tabs.Screen 
+            name="trail-details" 
+            options={{ 
+              href: null,
+              title: "Trail Details"
+            }} 
+          />
         </Tabs>
       </SafeAreaView>
     </AccessibilityProvider>
