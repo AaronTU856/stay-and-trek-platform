@@ -1,6 +1,6 @@
-/* ============================================
+/* 
    Global Theme Colors & Styles
-   ============================================ */
+  */
 
 :root {
     /* Brand Colors */
@@ -17,9 +17,9 @@
     --text-muted: #666;
 }
 
-/* ============================================
+/* 
    Navigation & Headers
-   ============================================ */
+   */
 
 .navbar.bg-primary,
 .navbar-primary {
@@ -37,9 +37,9 @@
     font-size: 1.3rem;
 }
 
-/* ============================================
+/* 
    Buttons - Global Styles
-   ============================================ */
+   */
 
 .btn-primary {
     background-color: var(--brand-primary);
@@ -96,9 +96,9 @@
     border-color: #22343a;
 }
 
-/* ============================================
+/* 
    Quick Navigation Buttons
-   ============================================ */
+   */
 
 .quick-nav-button,
 .nav-button {
@@ -168,9 +168,9 @@
     background-color: #22343a;
 }
 
-/* ============================================
+/* 
    Body & Layout
-   ============================================ */
+   */
 
 body {
     background-color: var(--brand-light);
@@ -182,9 +182,9 @@ body {
     min-height: calc(100vh - 76px);
 }
 
-/* ============================================
+/* 
    Footer
-   ============================================ */
+    */
 
 footer {
     background-color: var(--brand-light);
@@ -195,9 +195,8 @@ footer .text-muted {
     color: var(--text-muted) !important;
 }
 
-/* ============================================
-   Back Button
-   ============================================ */
+/* 
+   */
 
 .top-nav {
     display: flex;
@@ -241,9 +240,9 @@ footer .text-muted {
     transform: translateX(-1px);
 }
 
-/* ============================================
+/* 
    Cards & Containers
-   ============================================ */
+    */
 
 .card {
     border: 1px solid #dee2e6;
@@ -260,9 +259,9 @@ footer .text-muted {
     padding: 1.5rem;
 }
 
-/* ============================================
+/* 
    Links
-   ============================================ */
+    */
 
 a {
     color: var(--brand-primary);
@@ -275,9 +274,9 @@ a:hover {
     text-decoration: underline;
 }
 
-/* ============================================
+/* 
    Responsive Adjustments
-   ============================================ */
+    */
 
 @media (max-width: 768px) {
     .nav-button,
