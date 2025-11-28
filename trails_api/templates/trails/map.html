@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="{% static 'trails_api/css/leaflet-search.min.css' %}">
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="stylesheet" href="{% static 'css/global-theme.css' %}">>
 
   
   <style>
@@ -19,14 +20,14 @@
 </head>
 
 <body>
-  <nav class="navbar navbar-expand-lg navbar-dark bg-success">
-    <div class="container position-relative">
-      <a class="navbar-brand" href="#">🥾 Irish Trails Map</a>
-
-      <!-- move back link inside container and keep it at the right -->
-      <a class="top-back ms-auto" href="/" onclick="if (history.length>1){ history.back(); return false; }">
-        ← Back
-      </a>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container-fluid">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span class="navbar-brand">🥾 Irish Trails Map</span>
+        <a class="top-back" href="/" onclick="if (history.length>1){ history.back(); return false; }">
+          ← Back
+        </a>
+      </div>
     </div>
   </nav>
 

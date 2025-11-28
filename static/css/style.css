@@ -451,7 +451,7 @@ body {
     }
 
     .leaflet-control-search.search-exp {
-        top: 120px !important; /* search sits above (moved down slightly) */
+        top: 320px !important; /* search sits below navigation buttons */
     }
 
     .leaflet-control-search.search-exp .search-input,
@@ -465,7 +465,7 @@ body {
     }
 
     .proximity-controls {
-        top: 340px !important; /* increased gap below search */
+        top: 580px !important; /* increased gap below search */
         padding: 12px 14px;
     }
 

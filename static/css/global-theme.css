@@ -1,0 +1,291 @@
+/* 
+   Global Theme Colors & Styles
+  */
+
+:root {
+    /* Brand Colors */
+    --brand-primary: #2E8B57;      /* Dark Green */
+    --brand-secondary: #2E27F5;    /* Blue */
+    --brand-accent: #F5273F;       /* Red */
+    --brand-warning: #FFB86B;      /* Orange */
+    --brand-dark: #34495E;         /* Dark Gray */
+    --brand-light: #f8f9fa;        /* Light Gray */
+    
+    /* Text Colors */
+    --text-primary: #111;
+    --text-light: #fff;
+    --text-muted: #666;
+}
+
+/* 
+   Navigation & Headers
+   */
+
+.navbar.bg-primary,
+.navbar-primary {
+    background-color: var(--brand-primary) !important;
+}
+
+.navbar-dark .navbar-brand,
+.navbar-dark .nav-link,
+.navbar-dark .navbar-toggler-icon {
+    color: var(--text-light) !important;
+}
+
+.navbar-brand {
+    font-weight: 600;
+    font-size: 1.3rem;
+}
+
+/* 
+   Buttons - Global Styles
+   */
+
+.btn-primary {
+    background-color: var(--brand-primary);
+    border-color: var(--brand-primary);
+    color: var(--text-light);
+}
+
+.btn-primary:hover {
+    background-color: #1f5f3f;
+    border-color: #1f5f3f;
+}
+
+.btn-secondary {
+    background-color: var(--brand-secondary);
+    border-color: var(--brand-secondary);
+    color: var(--text-light);
+}
+
+.btn-secondary:hover {
+    background-color: #1d1ba3;
+    border-color: #1d1ba3;
+}
+
+.btn-accent {
+    background-color: var(--brand-accent);
+    border-color: var(--brand-accent);
+    color: var(--text-light);
+}
+
+.btn-accent:hover {
+    background-color: #c91d2e;
+    border-color: #c91d2e;
+}
+
+.btn-warning {
+    background-color: var(--brand-warning);
+    border-color: var(--brand-warning);
+    color: var(--text-primary);
+}
+
+.btn-warning:hover {
+    background-color: #e6a350;
+    border-color: #e6a350;
+}
+
+.btn-dark {
+    background-color: var(--brand-dark);
+    border-color: var(--brand-dark);
+    color: var(--text-light);
+}
+
+.btn-dark:hover {
+    background-color: #22343a;
+    border-color: #22343a;
+}
+
+/* 
+   Quick Navigation Buttons
+   */
+
+.quick-nav-button,
+.nav-button {
+    padding: 12px 18px;
+    border-radius: 8px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+}
+
+.nav-button-home {
+    background-color: var(--brand-primary);
+    color: var(--text-light);
+}
+
+.nav-button-home:hover {
+    background-color: #1f5f3f;
+}
+
+.nav-button-trails {
+    background-color: var(--brand-primary);
+    color: var(--text-light);
+}
+
+.nav-button-trails:hover {
+    background-color: #1f5f3f;
+}
+
+.nav-button-map {
+    background-color: var(--brand-secondary);
+    color: var(--text-light);
+}
+
+.nav-button-map:hover {
+    background-color: #1d1ba3;
+}
+
+.nav-button-accommodations {
+    background-color: var(--brand-accent);
+    color: var(--text-light);
+}
+
+.nav-button-accommodations:hover {
+    background-color: #c91d2e;
+}
+
+.nav-button-analytics {
+    background-color: var(--brand-warning);
+    color: var(--text-primary);
+}
+
+.nav-button-analytics:hover {
+    background-color: #e6a350;
+}
+
+.nav-button-admin {
+    background-color: var(--brand-dark);
+    color: var(--text-light);
+}
+
+.nav-button-admin:hover {
+    background-color: #22343a;
+}
+
+/* 
+   Body & Layout
+   */
+
+body {
+    background-color: var(--brand-light);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.main-content {
+    min-height: calc(100vh - 76px);
+}
+
+/* 
+   Footer
+    */
+
+footer {
+    background-color: var(--brand-light);
+    border-top: 1px solid #dee2e6;
+}
+
+footer .text-muted {
+    color: var(--text-muted) !important;
+}
+
+/* 
+   */
+
+.top-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.top-back,
+.back-button,
+.navbar-dark .top-back,
+.navbar-dark .back-button {
+    padding: 10px 16px !important;
+    background-color: var(--brand-primary) !important;
+    color: var(--text-light) !important;
+    border-radius: 6px;
+    text-decoration: none !important;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.top-back:hover,
+.back-button:hover,
+.navbar-dark .top-back:hover,
+.navbar-dark .back-button:hover {
+    background-color: #1f5f3f !important;
+    color: var(--text-light) !important;
+    transform: translateX(-2px);
+    box-shadow: 0 2px 8px rgba(46, 139, 87, 0.3);
+}
+
+.top-back:active,
+.back-button:active,
+.navbar-dark .top-back:active,
+.navbar-dark .back-button:active {
+    transform: translateX(-1px);
+}
+
+/* 
+   Cards & Containers
+    */
+
+.card {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    background-color: var(--brand-light);
+    border-bottom: 2px solid var(--brand-primary);
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* 
+   Links
+    */
+
+a {
+    color: var(--brand-primary);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+a:hover {
+    color: #1f5f3f;
+    text-decoration: underline;
+}
+
+/* 
+   Responsive Adjustments
+    */
+
+@media (max-width: 768px) {
+    .nav-button,
+    .quick-nav-button {
+        padding: 10px 14px;
+        font-size: 0.9rem;
+    }
+    
+    .navbar-brand {
+        font-size: 1.1rem;
+    }
+}
