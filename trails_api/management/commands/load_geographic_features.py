@@ -57,71 +57,84 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("✅ Geographic features loading complete!"))
 
     def load_rivers(self):
-        """Load rivers from sample data (can be extended with API)"""
-        self.stdout.write("🌊 Loading rivers...")
+        """Load rivers from Overpass API with fallback to sample data"""
+        self.stdout.write("📡 Attempting to load rivers from Overpass API...")
 
-        # Sample Irish rivers data (major rivers)
-        sample_rivers = [
-            {
-                "name": "River Shannon",
-                "coords": [(-9.5, 52.6), (-9.4, 52.7), (-9.3, 52.8), (-9.2, 53.0), (-9.1, 53.1)],
-            },
-            {
-                "name": "River Liffey",
-                "coords": [(-6.5, 53.0), (-6.4, 53.1), (-6.3, 53.15), (-6.2, 53.2), (-6.1, 53.25)],
-            },
-            {
-                "name": "River Lee",
-                "coords": [(-8.5, 51.8), (-8.4, 51.85), (-8.3, 51.9), (-8.2, 51.95)],
-            },
-            {
-                "name": "River Erne",
-                "coords": [(-7.6, 54.2), (-7.5, 54.3), (-7.4, 54.4), (-7.3, 54.5)],
-            },
-            {
-                "name": "River Nore",
-                "coords": [(-7.2, 52.4), (-7.1, 52.5), (-7.0, 52.6), (-6.9, 52.7)],
-            },
-            {
-                "name": "River Suir",
-                "coords": [(-7.8, 52.2), (-7.7, 52.3), (-7.6, 52.4), (-7.5, 52.5)],
-            },
-            {
-                "name": "River Barrow",
-                "coords": [(-6.9, 52.0), (-6.8, 52.1), (-6.7, 52.2), (-6.6, 52.3), (-6.5, 52.4)],
-            },
-            {
-                "name": "River Blackwater",
-                "coords": [(-8.0, 51.95), (-7.9, 52.0), (-7.8, 52.05), (-7.7, 52.1)],
-            },
-        ]
-
+        overpass_url = "https://overpass-api.de/api/interpreter"
+        
+        # Query for major rivers in Ireland
+        query = """
+        [bbox:51.3,-10.5,55.4,-5.3];
+        (
+          way["waterway"="river"]["name"];
+        );
+        out geom;
+        """
+        
+        rivers_data = []
+        
         try:
-            created_count = 0
-            for river in sample_rivers:
-                try:
-                    coords = river['coords']
-                    geom = LineString(coords, srid=4326)
-                    
-                    # Check if already exists
-                    if not GeographicBoundary.objects.filter(name=river['name'], boundary_type='river').exists():
-                        boundary = GeographicBoundary.objects.create(
-                            name=river['name'],
-                            boundary_type='river',
-                            geom=geom,
-                            description=f"River in Ireland"
-                        )
-                        created_count += 1
-                        self.stdout.write(f"  ✅ Created: {river['name']}")
-                        
-                except Exception as e:
-                    self.stdout.write(self.style.WARNING(f"  ⚠️ Error creating {river['name']}: {str(e)}"))
+            self.stdout.write("  Sending request to Overpass API...")
+            response = requests.post(overpass_url, data={'data': query}, timeout=180)
+            response.raise_for_status()
+            
+            data = response.json()
+            elements = data.get('elements', [])
+            
+            self.stdout.write(f"✅ Got {len(elements)} river features from Overpass API")
+            
+            for element in elements:
+                tags = element.get('tags', {})
+                river_name = tags.get('name')
+                if not river_name:
                     continue
-
-            self.stdout.write(self.style.SUCCESS(f"✅ Loaded {created_count} rivers"))
+                    
+                geometry = element.get('geometry', [])
+                if len(geometry) < 2:
+                    continue
+                
+                coords = [(g['lon'], g['lat']) for g in geometry]
+                rivers_data.append({'name': river_name, 'coords': coords})
 
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f"❌ Error loading rivers: {str(e)}"))
+            self.stdout.write(self.style.WARNING(f"⚠️ Overpass API failed ({str(e)}), using sample data instead..."))
+            
+            # Fallback to sample rivers
+            rivers_data = [
+                {"name": "River Shannon", "coords": [(-9.5, 52.6), (-9.4, 52.7), (-9.3, 52.8), (-9.2, 53.0), (-9.1, 53.1)]},
+                {"name": "River Liffey", "coords": [(-6.5, 53.0), (-6.4, 53.1), (-6.3, 53.15), (-6.2, 53.2), (-6.1, 53.25)]},
+                {"name": "River Lee", "coords": [(-8.5, 51.8), (-8.4, 51.85), (-8.3, 51.9), (-8.2, 51.95)]},
+                {"name": "River Erne", "coords": [(-7.6, 54.2), (-7.5, 54.3), (-7.4, 54.4), (-7.3, 54.5)]},
+                {"name": "River Nore", "coords": [(-7.2, 52.4), (-7.1, 52.5), (-7.0, 52.6), (-6.9, 52.7)]},
+                {"name": "River Suir", "coords": [(-7.8, 52.2), (-7.7, 52.3), (-7.6, 52.4), (-7.5, 52.5)]},
+                {"name": "River Barrow", "coords": [(-6.9, 52.0), (-6.8, 52.1), (-6.7, 52.2), (-6.6, 52.3), (-6.5, 52.4)]},
+                {"name": "River Blackwater", "coords": [(-8.0, 51.95), (-7.9, 52.0), (-7.8, 52.05), (-7.7, 52.1)]},
+            ]
+            self.stdout.write(f"  Using {len(rivers_data)} sample rivers")
+        
+        # Load rivers from data (whether from API or fallback)
+        created_count = 0
+        for river in rivers_data:
+            try:
+                coords = river['coords']
+                geom = LineString(coords, srid=4326)
+                
+                # Check if already exists
+                if not GeographicBoundary.objects.filter(name=str(river['name']), boundary_type='river').exists():
+                    boundary = GeographicBoundary.objects.create(
+                        name=str(river['name']),
+                        boundary_type='river',
+                        geom=geom,
+                        description=f"River in Ireland - from OpenStreetMap"
+                    )
+                    created_count += 1
+                    self.stdout.write(f"  ✅ Created: {river['name']}")
+                    
+            except Exception as e:
+                self.stdout.write(self.style.WARNING(f"  ⚠️ Error creating {river['name']}: {str(e)}"))
+                continue
+
+        self.stdout.write(self.style.SUCCESS(f"✅ Loaded {created_count} rivers"))
 
     def load_protected_areas(self):
         """Load land protected areas (national parks, nature reserves) from Overpass API"""
