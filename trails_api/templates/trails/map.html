@@ -16,6 +16,24 @@
   
   <style>
     #map { height: calc(100vh - 56px); width: 100%; }
+    
+    /* POI Marker Styles */
+    .poi-marker {
+      background: none;
+      border: none;
+    }
+    
+    .leaflet-popup-content {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    
+    /* POI Control Panel */
+    .poi-control {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      padding: 12px;
+    }
   </style>
 </head>
 
@@ -76,6 +94,9 @@
 
 <!-- ✅ Main map logic must come last) -->
 <script src="{% static 'trails_api/js/trails_map.js' %}"></script>
+
+<!-- ✅ POI and Boundary visualization -->
+<script src="{% static 'trails_api/js/pois_boundaries.js' %}"></script>
 
 
 

@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
 from django.contrib.gis.geos import Point
-from .models import Trail, Town  
+from .models import Trail, Town, PointOfInterest, TrailPOIIntersection, GeographicBoundary  
 
 
 # Serializer for listing basic trail info in lists
@@ -118,6 +118,7 @@ class BoundingBoxSerializer(serializers.Serializer):
             raise serializers.ValidationError("min_longitude must be less than max_longitude")
         return data
     
+    
 # Serializer for converting Town data into GeoJSON
 class TownGeoJSONSerializer(GeoFeatureModelSerializer):
     class Meta:
@@ -132,3 +133,74 @@ class TrailPathGeoSerializer(GeoFeatureModelSerializer):
         model = Trail
         geo_field = 'path'  # LineString
         fields = ('id', 'trail_name', 'county', 'distance_km', 'difficulty')
+
+
+# ===== NEW POI SERIALIZERS =====
+
+class PointOfInterestSerializer(serializers.ModelSerializer):
+    """Serializer for Points of Interest"""
+    latitude = serializers.ReadOnlyField()
+    longitude = serializers.ReadOnlyField()
+    
+    class Meta:
+        model = PointOfInterest
+        fields = [
+            'id', 'name', 'poi_type', 'description', 'county', 'region',
+            'phone', 'website', 'opening_hours', 'latitude', 'longitude'
+        ]
+
+
+class PointOfInterestGeoJSONSerializer(GeoFeatureModelSerializer):
+    """GeoJSON serializer for POIs for map display"""
+    class Meta:
+        model = PointOfInterest
+        geo_field = 'location'
+        fields = (
+            'id', 'name', 'poi_type', 'county', 'phone', 'website'
+        )
+
+
+class TrailPOIIntersectionSerializer(serializers.ModelSerializer):
+    """Serializer for trail-POI relationships"""
+    poi = PointOfInterestSerializer(read_only=True)
+    trail_name = serializers.CharField(source='trail.trail_name', read_only=True)
+    
+    class Meta:
+        model = TrailPOIIntersection
+        fields = [
+            'id', 'trail_name', 'poi', 'distance_meters', 
+            'proximity', 'on_trail_route'
+        ]
+
+
+class TrailWithPOISerializer(serializers.ModelSerializer):
+    """Detailed trail serializer including nearby POIs"""
+    latitude = serializers.ReadOnlyField()
+    longitude = serializers.ReadOnlyField()
+    nearby_pois = TrailPOIIntersectionSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = Trail
+        fields = [
+            'id', 'trail_name', 'county', 'region', 'distance_km',
+            'difficulty', 'elevation_gain_m', 'latitude', 'longitude',
+            'dogs_allowed', 'parking_available', 'nearby_pois'
+        ]
+
+
+class GeographicBoundarySerializer(serializers.ModelSerializer):
+    """Serializer for geographic boundaries"""
+    class Meta:
+        model = GeographicBoundary
+        fields = [
+            'id', 'name', 'boundary_type', 'description', 'established_date'
+        ]
+
+
+class BoundaryTrailIntersectionSerializer(serializers.Serializer):
+    """Serializer for boundary-trail intersection results"""
+    boundary = GeographicBoundarySerializer(read_only=True)
+    trails_crossing = TrailListSerializer(many=True, read_only=True)
+    trails_within = TrailListSerializer(many=True, read_only=True)
+    intersection_count = serializers.IntegerField(read_only=True)
+

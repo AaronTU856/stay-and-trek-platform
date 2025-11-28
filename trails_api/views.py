@@ -19,11 +19,12 @@ from drf_spectacular.utils import extend_schema, OpenApiExample
 from django_filters.rest_framework import DjangoFilterBackend
 
 import requests
-from .models import Trail, Town
+from .models import Trail, Town, PointOfInterest, TrailPOIIntersection, GeographicBoundary
 from .serializers import (
     TrailListSerializer, TrailDetailSerializer, TrailGeoJSONSerializer,
     TrailCreateSerializer, TrailSummarySerializer, DistanceSerializer,
-    BoundingBoxSerializer
+    BoundingBoxSerializer, PointOfInterestSerializer, PointOfInterestGeoJSONSerializer,
+    TrailPOIIntersectionSerializer, TrailWithPOISerializer, GeographicBoundarySerializer
 )
 from .serializers import TrailPathGeoSerializer
 from .filters import TrailFilter
@@ -443,3 +444,205 @@ def town_weather(request):
 
     data = requests.get(url).json()
     return Response(data)
+
+
+# POI ENDPOINTS 
+
+class PointOfInterestViewSet(generics.ListAPIView):
+    """Retrieve points of interest with filtering and geographic search."""
+    queryset = PointOfInterest.objects.all()
+    serializer_class = PointOfInterestSerializer
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['poi_type', 'county']
+    search_fields = ['name', 'description', 'county']
+    ordering_fields = ['name', 'poi_type', 'county']
+    ordering = ['poi_type', 'name']
+    pagination_class = StandardResultsSetPagination
+    permission_classes = [AllowAny]
+
+# POIs by Type Endpoint
+class POIByTypeView(generics.ListAPIView):
+    """Get POIs filtered by type (parking, cafe, attraction, etc.)."""
+    serializer_class = PointOfInterestSerializer
+    pagination_class = StandardResultsSetPagination
+    permission_classes = [AllowAny]
+    
+    def get_queryset(self):
+        poi_type = self.kwargs.get('poi_type')
+        if poi_type:
+            return PointOfInterest.objects.filter(poi_type=poi_type)
+        return PointOfInterest.objects.all()
+
+# POIs Near Trail Endpoint
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def pois_near_trail(request):
+    """Get all POIs near a specific trail."""
+    try:
+        trail_id = request.data.get('trail_id')
+        if not trail_id:
+            return Response({'error': 'trail_id required'}, status=400)
+        
+        trail = Trail.objects.get(id=trail_id)
+        
+        # Get trail's POI intersections sorted by distance
+        intersections = TrailPOIIntersection.objects.filter(trail=trail).order_by('distance_meters')
+        
+        return Response({
+            'trail': {
+                'id': trail.id,
+                'name': trail.trail_name,
+                'county': trail.county,
+            },
+            'pois_count': intersections.count(),
+            'pois': TrailPOIIntersectionSerializer(intersections, many=True).data
+        })
+    except Trail.DoesNotExist:
+        return Response({'error': 'Trail not found'}, status=404)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+# POIs within Radius Endpoint
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def pois_in_radius(request):
+    """Find POIs within a radius of given coordinates."""
+    try:
+        lat = request.data.get('latitude')
+        lng = request.data.get('longitude')
+        radius_km = float(request.data.get('radius_km', 5))
+        poi_type = request.data.get('poi_type')  # Optional filter
+        
+        if not lat or not lng:
+            return Response({'error': 'Latitude and longitude required'}, status=400)
+        
+        user_location = Point(float(lng), float(lat), srid=4326)
+        
+        # Query POIs within radius
+        pois = PointOfInterest.objects.annotate(
+            distance=DistanceFunction('location', user_location)
+        ).filter(
+            distance__lte=radius_km * 1000
+        ).order_by('distance')
+        
+        # Optional: filter by POI type
+        if poi_type:
+            pois = pois.filter(poi_type=poi_type)
+        
+        results = [
+            {
+                'id': p.id,
+                'name': p.name,
+                'type': p.poi_type,
+                'county': p.county,
+                'distance_km': round(p.distance.km, 2),
+                'latitude': p.latitude,
+                'longitude': p.longitude,
+                'phone': p.phone,
+                'website': p.website,
+            }
+            for p in pois
+        ]
+        
+        return Response({
+            'search_point': {'lat': lat, 'lng': lng},
+            'radius_km': radius_km,
+            'poi_type_filter': poi_type,
+            'total_found': len(results),
+            'pois': results
+        })
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+
+# GEOGRAPHIC BOUNDARY & INTERSECTION ENDPOINTS 
+
+class GeographicBoundaryViewSet(generics.ListAPIView):
+    """Retrieve geographic boundaries."""
+    queryset = GeographicBoundary.objects.all()
+    serializer_class = GeographicBoundarySerializer
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_fields = ['boundary_type']
+    search_fields = ['name', 'description']
+    permission_classes = [AllowAny]
+
+# Trails Crossing Boundary Endpoint
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def trails_crossing_boundary(request, boundary_id):
+    """Get trails that cross a specific geographic boundary."""
+    try:
+        boundary = GeographicBoundary.objects.get(id=boundary_id)
+        
+        # Get trails crossing this boundary
+        trails_crossing = boundary.trails_crossing()
+        trails_within = boundary.trails_within()
+        
+        return Response({
+            'boundary': {
+                'id': boundary.id,
+                'name': boundary.name,
+                'type': boundary.boundary_type,
+            },
+            'trails_crossing_count': trails_crossing.count(),
+            'trails_within_count': trails_within.count(),
+            'trails_crossing': TrailListSerializer(trails_crossing, many=True).data,
+            'trails_within': TrailListSerializer(trails_within, many=True).data,
+        })
+    except GeographicBoundary.DoesNotExist:
+        return Response({'error': 'Boundary not found'}, status=404)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+# Trails by County Boundary Endpoint
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def trails_by_county_boundary(request, county_name):
+    """Get all trails that intersect with a county boundary."""
+    try:
+        # Find boundary for this county
+        boundary = GeographicBoundary.objects.get(name__iexact=county_name, boundary_type='county')
+        
+        trails_crossing = boundary.trails_crossing()
+        trails_within = boundary.trails_within()
+        
+        return Response({
+            'county': county_name,
+            'trails_crossing': TrailListSerializer(trails_crossing, many=True).data,
+            'trails_within': TrailListSerializer(trails_within, many=True).data,
+            'total_in_area': trails_within.count() + trails_crossing.count(),
+        })
+    except GeographicBoundary.DoesNotExist:
+        # Fallback: just use county field
+        trails = Trail.objects.filter(county__iexact=county_name)
+        return Response({
+            'county': county_name,
+            'trails': TrailListSerializer(trails, many=True).data,
+            'count': trails.count(),
+        })
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+# Spatial Analysis Summary Endpoint
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def spatial_analysis_summary(request):
+    """Get comprehensive spatial analysis summary."""
+    return Response({
+        'total_trails': Trail.objects.count(),
+        'total_pois': PointOfInterest.objects.count(),
+        'pois_by_type': dict(
+            PointOfInterest.objects
+            .values('poi_type')
+            .annotate(count=Count('id'))
+            .values_list('poi_type', 'count')
+        ),
+        'geographic_boundaries': GeographicBoundary.objects.count(),
+        'trail_poi_intersections': TrailPOIIntersection.objects.count(),
+        'pois_near_trails': {
+            'very_close': TrailPOIIntersection.objects.filter(proximity='very_close').count(),
+            'close': TrailPOIIntersection.objects.filter(proximity='close').count(),
+            'moderate': TrailPOIIntersection.objects.filter(proximity='moderate').count(),
+        }
+    })
+
