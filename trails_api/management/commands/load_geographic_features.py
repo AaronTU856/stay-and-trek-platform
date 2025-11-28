@@ -57,7 +57,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("✅ Geographic features loading complete!"))
 
     def load_rivers(self):
-        """Load rivers from Overpass API with fallback to sample data"""
+        """Load rivers from Overpass API"""
         self.stdout.write("📡 Attempting to load rivers from Overpass API...")
 
         overpass_url = "https://overpass-api.de/api/interpreter"
@@ -97,22 +97,14 @@ class Command(BaseCommand):
                 rivers_data.append({'name': river_name, 'coords': coords})
 
         except Exception as e:
-            self.stdout.write(self.style.WARNING(f"⚠️ Overpass API failed ({str(e)}), using sample data instead..."))
-            
-            # Fallback to sample rivers
-            rivers_data = [
-                {"name": "River Shannon", "coords": [(-9.5, 52.6), (-9.4, 52.7), (-9.3, 52.8), (-9.2, 53.0), (-9.1, 53.1)]},
-                {"name": "River Liffey", "coords": [(-6.5, 53.0), (-6.4, 53.1), (-6.3, 53.15), (-6.2, 53.2), (-6.1, 53.25)]},
-                {"name": "River Lee", "coords": [(-8.5, 51.8), (-8.4, 51.85), (-8.3, 51.9), (-8.2, 51.95)]},
-                {"name": "River Erne", "coords": [(-7.6, 54.2), (-7.5, 54.3), (-7.4, 54.4), (-7.3, 54.5)]},
-                {"name": "River Nore", "coords": [(-7.2, 52.4), (-7.1, 52.5), (-7.0, 52.6), (-6.9, 52.7)]},
-                {"name": "River Suir", "coords": [(-7.8, 52.2), (-7.7, 52.3), (-7.6, 52.4), (-7.5, 52.5)]},
-                {"name": "River Barrow", "coords": [(-6.9, 52.0), (-6.8, 52.1), (-6.7, 52.2), (-6.6, 52.3), (-6.5, 52.4)]},
-                {"name": "River Blackwater", "coords": [(-8.0, 51.95), (-7.9, 52.0), (-7.8, 52.05), (-7.7, 52.1)]},
-            ]
-            self.stdout.write(f"  Using {len(rivers_data)} sample rivers")
+            self.stdout.write(self.style.ERROR(f"❌ Overpass API failed ({str(e)}). No fallback data available. Please try again later."))
+            return
         
-        # Load rivers from data (whether from API or fallback)
+        # Load rivers from API data
+        if not rivers_data:
+            self.stdout.write(self.style.WARNING("⚠️ No rivers returned from API"))
+            return
+        
         created_count = 0
         for river in rivers_data:
             try:
@@ -138,7 +130,7 @@ class Command(BaseCommand):
 
     def load_protected_areas(self):
         """Load land protected areas (national parks, nature reserves) from Overpass API"""
-        self.stdout.write("📡 Querying Overpass API for protected areas...")
+        self.stdout.write("📡 Attempting to load protected areas from Overpass API...")
 
         overpass_url = "https://overpass-api.de/api/interpreter"
         
@@ -154,19 +146,22 @@ class Command(BaseCommand):
         out geom;
         """
 
+        protected_areas_data = []
+        
         try:
-            response = requests.post(overpass_url, data={'data': query}, timeout=60)
+            self.stdout.write("  Sending request to Overpass API...")
+            response = requests.post(overpass_url, data={'data': query}, timeout=120)
             response.raise_for_status()
             
             data = response.json()
             elements = data.get('elements', [])
+            self.stdout.write(f"✅ Got {len(elements)} protected area features from Overpass API")
             
-            self.stdout.write(f"Found {len(elements)} protected area features")
-            
-            created_count = 0
             for element in elements:
                 tags = element.get('tags', {})
-                name = tags.get('name', 'Unnamed Protected Area')
+                name = tags.get('name')
+                if not name:
+                    continue
                 
                 # Determine boundary type
                 if tags.get('boundary') == 'national_park':
@@ -174,43 +169,53 @@ class Command(BaseCommand):
                 elif tags.get('leisure') == 'nature_reserve':
                     boundary_type = 'nature_reserve'
                 else:
-                    boundary_type = 'protected_area'
-                
-                try:
-                    geometry = element.get('geometry', [])
-                    if not geometry:
-                        continue
-                    
-                    # Convert to polygon
-                    coords = [(g['lon'], g['lat']) for g in geometry]
-                    if len(coords) < 3:
-                        continue
-                    
-                    # Close polygon if needed
-                    if coords[0] != coords[-1]:
-                        coords.append(coords[0])
-                    
-                    poly = Polygon(coords, srid=4326)
-                    
-                    # Check if already exists
-                    if not GeographicBoundary.objects.filter(name=name, boundary_type=boundary_type).exists():
-                        boundary = GeographicBoundary.objects.create(
-                            name=name,
-                            boundary_type=boundary_type,
-                            geom=poly,
-                            description=f"Protected area: {boundary_type.replace('_', ' ').title()}"
-                        )
-                        created_count += 1
-                        self.stdout.write(f"  ✅ Created: {name}")
-                        
-                except Exception as e:
-                    self.stdout.write(self.style.WARNING(f"  ⚠️ Error creating {name}: {str(e)}"))
                     continue
+                
+                geometry = element.get('geometry', [])
+                if len(geometry) < 3:
+                    continue
+                
+                coords = [(g['lon'], g['lat']) for g in geometry]
+                protected_areas_data.append({
+                    'name': name,
+                    'boundary_type': boundary_type,
+                    'coords': coords
+                })
 
-            self.stdout.write(self.style.SUCCESS(f"✅ Loaded {created_count} protected areas"))
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f"❌ Overpass API failed ({str(e)}). No fallback data available. Please try again later."))
+            return
+        
+        # Load protected areas from API data
+        if not protected_areas_data:
+            self.stdout.write(self.style.WARNING("⚠️ No protected areas returned from API"))
+            return
+        
+        created_count = 0
+        for area in protected_areas_data:
+            try:
+                coords = area['coords']
+                if coords[0] != coords[-1]:
+                    coords.append(coords[0])
+                
+                geom = Polygon(coords, srid=4326)
+                
+                # Check if already exists
+                if not GeographicBoundary.objects.filter(name=str(area['name']), boundary_type=area['boundary_type']).exists():
+                    boundary = GeographicBoundary.objects.create(
+                        name=str(area['name']),
+                        boundary_type=area['boundary_type'],
+                        geom=geom,
+                        description=f"Protected area: {area['boundary_type'].replace('_', ' ').title()}"
+                    )
+                    created_count += 1
+                    self.stdout.write(f"  ✅ Created: {area['name']}")
+                    
+            except Exception as e:
+                self.stdout.write(self.style.WARNING(f"  ⚠️ Error creating {area['name']}: {str(e)}"))
+                continue
 
-        except requests.exceptions.RequestException as e:
-            self.stdout.write(self.style.ERROR(f"❌ Error querying Overpass API: {str(e)}"))
+        self.stdout.write(self.style.SUCCESS(f"✅ Loaded {created_count} protected areas"))
     # Marine Protected Areas
     def load_marine_protected_areas(self):
         """Load marine protected areas from ArcGIS endpoint"""
