@@ -33,6 +33,12 @@
       background: #FFB86B;
       color: #111;
     }
+    footer {
+      margin-top: auto;
+      position: relative;
+      bottom: 0;
+      width: 100%;
+    }
   </style>
 {% endblock %}
 
@@ -52,4 +58,12 @@
     <a href="/advanced-js-mapping/" class="search">🏨 Accommodations</a>
     <a href="/advanced-js-mapping/analytics/" class="analytics">📈 Analytics</a>
   </div>
+
+{% endblock %}
+
+{% block footer %}
+  <footer class="bg-light text-center py-4">
+    <img src="{% static 'images/logo.png' %}" alt="Stay and Trek Logo" style="height: 100px; margin-bottom: 18px;">
+    <p class="mb-0">&copy; Stay and Trek Hiking 2025</p>
+  </footer>
 {% endblock %}
