@@ -245,6 +245,35 @@ function addBoundaryToMap(boundary) {
 }
 
 /**
+ * Load rivers from geographic boundaries API
+ */
+function loadRivers() {
+  console.log("🌊 Loading rivers...");
+
+  fetch("/api/trails/boundaries/?boundary_type=river")
+    .then((response) => response.json())
+    .then((data) => {
+      const rivers = data.results || data;
+      console.log(`Found ${rivers.length} rivers`);
+
+      rivers.forEach((river) => {
+        if (river.geom && river.geom.type === "LineString") {
+          // Create polyline from LineString coordinates
+          const coords = river.geom.coordinates.map(([lon, lat]) => [lat, lon]);
+          const polyline = L.polyline(coords, {
+            color: "#4D96FF",
+            weight: 3,
+            opacity: 0.7,
+          }).bindPopup(`<b>${river.name}</b><br/>${river.boundary_type}`);
+
+          polyline.addTo(window.trailsMap);
+        }
+      });
+    })
+    .catch((err) => console.error("❌ Error loading rivers:", err));
+}
+
+/**
  * Load trails that cross a specific boundary
  */
 function loadTrailsCrossingBoundary(boundaryId) {
@@ -389,6 +418,7 @@ document.addEventListener("DOMContentLoaded", function () {
       initializePOILayers();
       createPOIControlPanel();
       loadAllPOIs();
+      loadRivers();
       loadGeographicBoundaries();
       getSpatialAnalysisSummary();
     } else {
@@ -403,6 +433,7 @@ window.poiMap = {
   loadAllPOIs,
   loadPOIsNearTrail,
   loadPOIsInRadius,
+  loadRivers,
   loadGeographicBoundaries,
   loadTrailsCrossingBoundary,
   loadTrailsByCounty,
