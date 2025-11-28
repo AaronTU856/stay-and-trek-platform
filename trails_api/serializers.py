@@ -193,7 +193,7 @@ class GeographicBoundarySerializer(serializers.ModelSerializer):
     class Meta:
         model = GeographicBoundary
         fields = [
-            'id', 'name', 'boundary_type', 'description', 'established_date'
+            'id', 'name', 'boundary_type', 'description', 'established_date', 'geom'
         ]
 
 

@@ -248,29 +248,61 @@ function addBoundaryToMap(boundary) {
  * Load rivers from geographic boundaries API
  */
 function loadRivers() {
-  console.log("🌊 Loading rivers...");
+  console.log("🌊 Loading rivers from API...");
 
-  fetch("/api/trails/boundaries/?boundary_type=river")
-    .then((response) => response.json())
-    .then((data) => {
-      const rivers = data.results || data;
-      console.log(`Found ${rivers.length} rivers`);
+  // Fetch all rivers with pagination
+  let allRivers = [];
+  let page = 1;
+  const pageSize = 100;
 
-      rivers.forEach((river) => {
-        if (river.geom && river.geom.type === "LineString") {
-          // Create polyline from LineString coordinates
-          const coords = river.geom.coordinates.map(([lon, lat]) => [lat, lon]);
-          const polyline = L.polyline(coords, {
-            color: "#4D96FF",
-            weight: 3,
-            opacity: 0.7,
-          }).bindPopup(`<b>${river.name}</b><br/>${river.boundary_type}`);
+  function fetchPage() {
+    fetch(`/api/trails/boundaries/?boundary_type=river&limit=${pageSize}&offset=${(page-1)*pageSize}`)
+      .then((response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
+      })
+      .then((data) => {
+        const rivers = data.results || [];
+        console.log(`Fetched ${rivers.length} rivers from page ${page}`);
+        allRivers = allRivers.concat(rivers);
 
-          polyline.addTo(window.trailsMap);
+        // Check if there are more pages
+        if (data.next) {
+          page++;
+          fetchPage();
+        } else {
+          // Done fetching, render all rivers
+          console.log(`✅ Loaded ${allRivers.length} total rivers`);
+          renderRivers(allRivers);
         }
-      });
-    })
-    .catch((err) => console.error("❌ Error loading rivers:", err));
+      })
+      .catch((err) => console.error("❌ Error loading rivers:", err));
+  }
+
+  function renderRivers(rivers) {
+    rivers.forEach((river) => {
+      if (!river.geom) {
+        console.warn(`River ${river.name} has no geometry`);
+        return;
+      }
+
+      if (river.geom.type === "LineString") {
+        // Create polyline from LineString coordinates
+        const coords = river.geom.coordinates.map(([lon, lat]) => [lat, lon]);
+        if (coords.length < 2) return;
+
+        const polyline = L.polyline(coords, {
+          color: "#4D96FF",
+          weight: 2,
+          opacity: 0.6,
+        }).bindPopup(`<b>${river.name}</b><br/><small>${river.boundary_type}</small>`);
+
+        polyline.addTo(window.trailsMap);
+      }
+    });
+  }
+
+  fetchPage();
 }
 
 /**
