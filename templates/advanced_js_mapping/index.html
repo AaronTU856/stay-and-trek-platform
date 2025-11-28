@@ -1,5 +1,6 @@
 {% extends 'advanced_js_mapping/base.html' %}
 {% block title %}Accommodations{% endblock %}
+{% load static %}
 {% block content %}
 <div class="container py-4">
     <h1>Accommodations</h1>
@@ -8,5 +9,19 @@
         <a class="btn btn-primary" href="#">Browse Accommodations</a>
         <a class="btn btn-secondary" href="{% url 'advanced_js_mapping:analytics' %}">View Analytics</a>
     </p>
-</div>
+
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <img src="{% static 'images/accommodation.jpeg' %}" class="card-img-top" alt="Cozy Cottage">
+                <div class="card-body">
+                    <h5 class="card-title">Cozy Cottage</h5>
+                    <p class="card-text">A charming cottage located near the Wicklow Way, perfect for a peaceful retreat.</p>
+                </div>
+                <div class="card-footer">
+                    <a href="#" class="btn btn-primary">Book Now</a>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}
