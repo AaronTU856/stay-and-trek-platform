@@ -6,6 +6,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Irish Trails and Towns Dashboard{% endblock %}</title>
+    <!-- Global CSS -->
+    <link rel="stylesheet" href="{% static 'css/global-theme.css' %}">
 
     <!-- ✅ Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
@@ -18,22 +20,6 @@
           href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
     <link rel="stylesheet"
           href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
-
-    <style>
-        body { background-color: #f8f9fa; }
-        .main-content { min-height: calc(100vh - 76px); }
-    </style>
-    <!-- Override Bootstrap primary for dashboard navbar to match API theme -->
-    <style>
-        /* Use the same green as api_trails/advanced theme */
-        .navbar.bg-primary {
-            background-color: #2E8B57 !important;
-        }
-        .navbar-dark .navbar-brand,
-        .navbar-dark .nav-link {
-            color: #fff !important;
-        }
-    </style>
 
     {% block head_extra %}{% endblock %}
 </head>
