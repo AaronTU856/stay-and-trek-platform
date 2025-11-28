@@ -328,7 +328,7 @@ class TrailPOIIntersection(models.Model):
 
 # GEOGRAPHIC BOUNDARY MODEL
 class GeographicBoundary(models.Model):
-    """Model to represent geographic boundaries (counties, regions, protected areas)."""
+    """Model to represent geographic boundaries (counties, regions, protected areas, rivers)."""
     
     BOUNDARY_TYPE_CHOICES = [
         ('county', 'County'),
@@ -337,11 +337,14 @@ class GeographicBoundary(models.Model):
         ('national_park', 'National Park'),
         ('nature_reserve', 'Nature Reserve'),
         ('forest', 'Forest'),
+        ('river', 'River'),
+        ('marine_protected', 'Marine Protected Area'),
     ]
     
     name = models.CharField(max_length=200, db_index=True)
     boundary_type = models.CharField(max_length=50, choices=BOUNDARY_TYPE_CHOICES)
-    geom = gis_models.PolygonField(geography=True, db_index=True)
+    # Use GeometryField to support both Polygon and LineString
+    geom = gis_models.GeometryField(geography=True, db_index=True)
     
     description = models.TextField(blank=True)
     established_date = models.DateField(blank=True, null=True)

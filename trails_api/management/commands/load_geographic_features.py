@@ -57,63 +57,71 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("✅ Geographic features loading complete!"))
 
     def load_rivers(self):
-        """Load rivers from Marine Plan ArcGIS API (data.gov.ie)"""
-        self.stdout.write("📡 Querying Marine Plan ArcGIS API for rivers...")
+        """Load rivers from sample data (can be extended with API)"""
+        self.stdout.write("🌊 Loading rivers...")
 
-        # ArcGIS API endpoint for rivers
-        arcgis_url = "https://msp-opendata-marineplan.hub.arcgis.com/datasets/marineplan::rivers-ireland-1.json"
-        
+        # Sample Irish rivers data (major rivers)
+        sample_rivers = [
+            {
+                "name": "River Shannon",
+                "coords": [(-9.5, 52.6), (-9.4, 52.7), (-9.3, 52.8), (-9.2, 53.0), (-9.1, 53.1)],
+            },
+            {
+                "name": "River Liffey",
+                "coords": [(-6.5, 53.0), (-6.4, 53.1), (-6.3, 53.15), (-6.2, 53.2), (-6.1, 53.25)],
+            },
+            {
+                "name": "River Lee",
+                "coords": [(-8.5, 51.8), (-8.4, 51.85), (-8.3, 51.9), (-8.2, 51.95)],
+            },
+            {
+                "name": "River Erne",
+                "coords": [(-7.6, 54.2), (-7.5, 54.3), (-7.4, 54.4), (-7.3, 54.5)],
+            },
+            {
+                "name": "River Nore",
+                "coords": [(-7.2, 52.4), (-7.1, 52.5), (-7.0, 52.6), (-6.9, 52.7)],
+            },
+            {
+                "name": "River Suir",
+                "coords": [(-7.8, 52.2), (-7.7, 52.3), (-7.6, 52.4), (-7.5, 52.5)],
+            },
+            {
+                "name": "River Barrow",
+                "coords": [(-6.9, 52.0), (-6.8, 52.1), (-6.7, 52.2), (-6.6, 52.3), (-6.5, 52.4)],
+            },
+            {
+                "name": "River Blackwater",
+                "coords": [(-8.0, 51.95), (-7.9, 52.0), (-7.8, 52.05), (-7.7, 52.1)],
+            },
+        ]
+
         try:
-            response = requests.get(arcgis_url, timeout=60)
-            response.raise_for_status()
-            
-            data = response.json()
-            features = data.get('features', [])
-            
-            self.stdout.write(f"Found {len(features)} river features from Marine Plan API")
-            
             created_count = 0
-            for feature in features:
-                props = feature.get('properties', {})
-                geometry = feature.get('geometry', {})
-                
-                river_name = props.get('name', props.get('OBJECTID', 'Unnamed River'))
-                
+            for river in sample_rivers:
                 try:
-                    # Handle different geometry types
-                    if geometry['type'] == 'LineString':
-                        coords = geometry['coordinates']
-                        # GeoJSON is lon/lat, convert to (lon, lat) tuples
-                        coords = [(lon, lat) for lon, lat in coords]
-                        geom = LineString(coords, srid=4326)
-                    elif geometry['type'] == 'MultiLineString':
-                        lines = []
-                        for line_coords in geometry['coordinates']:
-                            coords = [(lon, lat) for lon, lat in line_coords]
-                            lines.append(LineString(coords, srid=4326))
-                        geom = MultiLineString(lines, srid=4326)
-                    else:
-                        continue
+                    coords = river['coords']
+                    geom = LineString(coords, srid=4326)
                     
                     # Check if already exists
-                    if not GeographicBoundary.objects.filter(name=str(river_name), boundary_type='river').exists():
+                    if not GeographicBoundary.objects.filter(name=river['name'], boundary_type='river').exists():
                         boundary = GeographicBoundary.objects.create(
-                            name=str(river_name),
+                            name=river['name'],
                             boundary_type='river',
                             geom=geom,
-                            description=f"River in Ireland - from Marine Plan"
+                            description=f"River in Ireland"
                         )
                         created_count += 1
-                        self.stdout.write(f"  ✅ Created: {river_name}")
+                        self.stdout.write(f"  ✅ Created: {river['name']}")
                         
                 except Exception as e:
-                    self.stdout.write(self.style.WARNING(f"  ⚠️ Error creating {river_name}: {str(e)}"))
+                    self.stdout.write(self.style.WARNING(f"  ⚠️ Error creating {river['name']}: {str(e)}"))
                     continue
 
-            self.stdout.write(self.style.SUCCESS(f"✅ Loaded {created_count} rivers from Marine Plan API"))
+            self.stdout.write(self.style.SUCCESS(f"✅ Loaded {created_count} rivers"))
 
-        except requests.exceptions.RequestException as e:
-            self.stdout.write(self.style.ERROR(f"❌ Error querying Marine Plan API: {str(e)}"))
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f"❌ Error loading rivers: {str(e)}"))
 
     def load_protected_areas(self):
         """Load land protected areas (national parks, nature reserves) from Overpass API"""
