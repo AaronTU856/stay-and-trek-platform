@@ -19,12 +19,24 @@
       margin: 0;
       padding: 0;
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .navbar {
+      flex-shrink: 0;
+    }
+
+    .quick-nav {
+      flex-shrink: 0;
     }
 
     .main-container {
       display: flex;
-      height: calc(100vh - 56px);
+      flex: 1;
       gap: 0;
+      overflow: hidden;
     }
 
     .sidebar {
@@ -56,6 +68,7 @@
     #map-container {
       flex: 1;
       position: relative;
+      overflow: hidden;
     }
 
     #map { 
@@ -142,6 +155,13 @@
       margin: 0 !important;
       right: auto !important;
     }
+
+    footer {
+      flex-shrink: 0;
+      background: #f8f9fa;
+      border-top: 1px solid #dee2e6;
+      padding: 20px;
+    }
   </style>
 </head>
 
@@ -158,7 +178,7 @@
   </nav>
 
   <!-- Quick Navigation -->
-  <div style="display:flex;gap:12px;flex-wrap:wrap;margin:12px;padding:0 12px;">
+  <div class="quick-nav" style="display:flex;gap:12px;flex-wrap:wrap;margin:12px;padding:0 12px;">
     <a href="/" style="padding:12px 18px;background:var(--brand-primary,#2E8B57);color:#fff;border-radius:8px;text-decoration:none;">🏠 Home</a>
     <a href="/dashboard/" style="padding:12px 18px;background:#8B4513;color:#fff;border-radius:8px;text-decoration:none;">📊 Dashboard</a>
     <a href="{% url 'advanced_js_mapping:map' %}" style="padding:12px 18px;background:#2E27F5;color:#fff;border-radius:8px;text-decoration:none;">🗺️ Interactive Map</a>
@@ -264,10 +284,10 @@
 <script src="{% static 'trails_api/js/pois_boundaries.js' %}"></script>
 
 <!-- Footer -->
-    <footer class="bg-light text-center py-4 mt-5">
-        <img src="{% static 'images/logo.png' %}" alt="Stay and Trek Logo" style="height: 100px; margin-bottom: 14px;">
-        <p class="mb-0">&copy; Stay and Trek Hiking 2025</p>
-    </footer>
+<footer class="bg-light text-center py-4">
+  <img src="{% static 'images/logo.png' %}" alt="Stay and Trek Logo" style="height: 60px; margin-bottom: 10px;">
+  <p class="mb-0">&copy; Stay and Trek Hiking 2025</p>
+</footer>
 
 </body>
 </html>
