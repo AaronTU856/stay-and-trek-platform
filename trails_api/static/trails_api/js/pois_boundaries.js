@@ -239,6 +239,76 @@ function loadRivers() {
   let nextUrl = "/api/trails/boundaries/?boundary_type=river&limit=100";
   let pageCount = 0;
   const maxPages = 10; // Load first 10 pages (~1000 rivers) for now
+  function addRiverToMap(feature) {
+    try {
+      const coords = feature.geometry.coordinates;
+      const latlngs = coords.map(c => [c[1], c[0]]);
+      const polyline = L.polyline(latlngs, { color: '#1e90ff', weight: 3, opacity: 0.8 }).addTo(window.trailsMap);
+      
+      // Extract boundary id and name
+      const boundaryId = feature.properties && (feature.properties.id || feature.properties.pk || feature.id);
+      const name = feature.properties && (feature.properties.name || feature.properties.Name || 'River');
+      
+      console.log(`Adding river: ${name} (ID: ${boundaryId})`);
+      
+      if (boundaryId) {
+        // Create popup as actual DOM element
+        const popupDiv = document.createElement('div');
+        popupDiv.style.fontFamily = 'Arial, sans-serif';
+        popupDiv.style.padding = '10px';
+        popupDiv.style.minWidth = '240px';
+        
+        // Title
+        const titleDiv = document.createElement('strong');
+        titleDiv.textContent = name;
+        titleDiv.style.fontSize = '14px';
+        titleDiv.style.display = 'block';
+        titleDiv.style.marginBottom = '10px';
+        popupDiv.appendChild(titleDiv);
+        
+        // Button 1: Crossing trails
+        const btn1 = document.createElement('button');
+        btn1.textContent = 'Show trails crossing';
+        btn1.style.width = '100%';
+        btn1.style.padding = '8px';
+        btn1.style.marginBottom = '6px';
+        btn1.style.background = '#4CAF50';
+        btn1.style.color = 'white';
+        btn1.style.border = 'none';
+        btn1.style.borderRadius = '4px';
+        btn1.style.cursor = 'pointer';
+        btn1.style.fontSize = '12px';
+        btn1.onclick = () => {
+          if (window.trailsMap && typeof window.trailsMap.loadTrailsCrossingBoundary === 'function') {
+            window.trailsMap.loadTrailsCrossingBoundary(boundaryId);
+          }
+        };
+        popupDiv.appendChild(btn1);
+        
+        // Button 2: Nearby trails
+        const btn2 = document.createElement('button');
+        btn2.textContent = 'Show nearby trails (1km)';
+        btn2.style.width = '100%';
+        btn2.style.padding = '8px';
+        btn2.style.background = '#2196F3';
+        btn2.style.color = 'white';
+        btn2.style.border = 'none';
+        btn2.style.borderRadius = '4px';
+        btn2.style.cursor = 'pointer';
+        btn2.style.fontSize = '12px';
+        btn2.onclick = () => {
+          if (window.trailsMap && typeof window.trailsMap.loadTrailsNearBoundary === 'function') {
+            window.trailsMap.loadTrailsNearBoundary(boundaryId, 1000);
+          }
+        };
+        popupDiv.appendChild(btn2);
+        
+        polyline.bindPopup(popupDiv, { maxWidth: 280, maxHeight: 200 });
+      }
+    } catch (e) {
+      console.error('Failed to render river polyline', e);
+    }
+  }
 
   function fetchPage(url) {
     if (pageCount >= maxPages) {
@@ -315,12 +385,76 @@ function loadRivers() {
             console.log(`   API coords (first 3): ${JSON.stringify(coords.slice(0, 3))}`);
           }
 
+          // Use addRiverToMap to get proper popup with buttons
           const polyline = L.polyline(coords, {
-            color: "#4D96FF",
-            weight: 2,
-            opacity: 0.6,
-          }).bindPopup(`<b>${river.name}</b><br/><small>${river.boundary_type}</small>`);
-
+            color: "#1e90ff",
+            weight: 3,
+            opacity: 0.8,
+          });
+          
+          // Build feature object that matches what addRiverToMap expects
+          const feature = {
+            properties: {
+              id: river.id || river.pk,
+              name: river.name
+            },
+            geometry: {
+              coordinates: coords
+            }
+          };
+          
+          // Extract and create popup manually here
+          const boundaryId = river.id || river.pk;
+          const name = river.name;
+          
+          const popupDiv = document.createElement('div');
+          popupDiv.style.fontFamily = 'Arial, sans-serif';
+          popupDiv.style.padding = '10px';
+          popupDiv.style.minWidth = '240px';
+          
+          const titleDiv = document.createElement('strong');
+          titleDiv.textContent = name;
+          titleDiv.style.fontSize = '14px';
+          titleDiv.style.display = 'block';
+          titleDiv.style.marginBottom = '10px';
+          popupDiv.appendChild(titleDiv);
+          
+          const btn1 = document.createElement('button');
+          btn1.textContent = 'Show trails crossing';
+          btn1.style.width = '100%';
+          btn1.style.padding = '8px';
+          btn1.style.marginBottom = '6px';
+          btn1.style.background = '#4CAF50';
+          btn1.style.color = 'white';
+          btn1.style.border = 'none';
+          btn1.style.borderRadius = '4px';
+          btn1.style.cursor = 'pointer';
+          btn1.style.fontSize = '12px';
+          btn1.onclick = () => {
+            if (window.trailsMap && typeof window.trailsMap.loadTrailsCrossingBoundary === 'function') {
+              window.trailsMap.loadTrailsCrossingBoundary(boundaryId);
+            }
+          };
+          popupDiv.appendChild(btn1);
+          
+          const btn2 = document.createElement('button');
+          btn2.textContent = 'Show nearby trails (1km)';
+          btn2.style.width = '100%';
+          btn2.style.padding = '8px';
+          btn2.style.background = '#2196F3';
+          btn2.style.color = 'white';
+          btn2.style.border = 'none';
+          btn2.style.borderRadius = '4px';
+          btn2.style.cursor = 'pointer';
+          btn2.style.fontSize = '12px';
+          btn2.onclick = () => {
+            if (window.trailsMap && typeof window.trailsMap.loadTrailsNearBoundary === 'function') {
+              window.trailsMap.loadTrailsNearBoundary(boundaryId, 1000);
+            }
+          };
+          popupDiv.appendChild(btn2);
+          
+          polyline.bindPopup(popupDiv, { maxWidth: 280, maxHeight: 200 });
           polyline.addTo(window.trailsMap);
           renderedCount++;
           

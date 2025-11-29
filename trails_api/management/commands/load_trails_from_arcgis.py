@@ -49,31 +49,27 @@ def coerce_float(val, default: float = 0.0) -> float:
         return default
 
 
-def longest_linestring_from_geometry(geom: GEOSGeometry) -> Optional[LineString]:
-    """Return a LineString for storage from LineString or MultiLineString.
+def to_multilinestring(geom: GEOSGeometry) -> Optional[MultiLineString]:
+    """Convert geometry to MultiLineString for storage, preserving multi-part routes.
 
-    - If LineString: return as-is
-    - If MultiLineString: pick the longest part
+    - If LineString: wrap in MultiLineString
+    - If MultiLineString: return as-is
     - Otherwise: None
     """
     if geom is None:
         return None
     if isinstance(geom, LineString):
-        return geom
+        return MultiLineString([geom])
     if isinstance(geom, MultiLineString):
-        if len(geom) == 0:
-            return None
-        # Select part with max length (geodesic not needed, relative is fine)
-        parts = list(geom)
-        parts.sort(key=lambda g: g.length if hasattr(g, "length") else 0.0, reverse=True)
-        return parts[0]
+        return geom
     return None
 
 
 def first_point_of_geometry(geom: GEOSGeometry) -> Optional[Point]:
-    ls = longest_linestring_from_geometry(geom)
-    if not ls:
+    mls = to_multilinestring(geom)
+    if not mls or len(mls) == 0:
         return None
+    ls = mls[0]
     coords = ls.coords
     if not coords:
         return None
@@ -169,7 +165,7 @@ class Command(BaseCommand):
 
                 path = None
                 if geom_obj is not None:
-                    path = longest_linestring_from_geometry(geom_obj)
+                    path = to_multilinestring(geom_obj)
 
                 # Find existing by trail_name (case-insensitive)
                 qs = Trail.objects.filter(trail_name__iexact=name)
