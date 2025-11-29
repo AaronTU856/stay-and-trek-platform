@@ -445,6 +445,9 @@ exit()
 ### Quick Database Statistics
 
 ```bash
+# Access the db
+docker compose exec db psql -U postgres -d trails_db -c "\dt"
+
 # Get quick stats via Docker
 docker compose exec db psql -U postgres -d trails_db -c "
 SELECT 
