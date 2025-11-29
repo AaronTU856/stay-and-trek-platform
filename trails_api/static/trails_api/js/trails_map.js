@@ -443,33 +443,99 @@ function addSearchControls() {
   // 🔁 Merge into one searchable group
   const searchableLayer = L.layerGroup(layers);
 
-  // 🔍 Trail name search
-  window.searchTrail = new L.Control.Search({
-    layer: searchableLayer,
-    propertyName: "title",
-    initial: false,
-    casesensitive: false,
-    textPlaceholder: "Search trail…",
-    marker: false,
-    position: "topleft",
-    collapsed: false,
-    moveToLocation: function (latlng, title, map) {
-      map.setView(latlng, 13); // zoom level 13 or adjust as you like
+  // Check if there's a sidebar search input
+  const sidebarSearchInput = document.querySelector('.sidebar input[placeholder*="Search"]');
+  
+  if (sidebarSearchInput) {
+    // Use sidebar search instead of map control
+    console.log("✅ Using sidebar search input");
+    
+    sidebarSearchInput.addEventListener('input', (e) => {
+      const searchTerm = e.target.value.toLowerCase();
+      const layers = searchableLayer.getLayers();
+      
+      if (searchTerm.length > 0) {
+        layers.forEach(layer => {
+          const sublayers = layer.getLayers();
+          sublayers.forEach(marker => {
+            const title = marker.options?.title || marker.properties?.title || '';
+            if (title.toLowerCase().includes(searchTerm)) {
+              marker.setOpacity(1);
+            } else {
+              marker.setOpacity(0.3);
+            }
+          });
+        });
+      } else {
+        layers.forEach(layer => {
+          const sublayers = layer.getLayers();
+          sublayers.forEach(marker => {
+            marker.setOpacity(1);
+          });
+        });
+      }
+    });
+    
+    sidebarSearchInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        const searchTerm = e.target.value.toLowerCase();
+        const layers = searchableLayer.getLayers();
+        
+        layers.forEach(layer => {
+          const sublayers = layer.getLayers();
+          sublayers.forEach(marker => {
+            const title = marker.options?.title || marker.properties?.title || '';
+            if (title.toLowerCase().includes(searchTerm)) {
+              window.trailsMap.setView(marker.getLatLng(), 13);
+              
+              // Highlight the marker
+              const circle = L.circleMarker(marker.getLatLng(), {
+                radius: 20,
+                color: 'orange',
+                weight: 3,
+                fillColor: 'yellow',
+                fillOpacity: 0.4,
+              }).addTo(window.trailsMap);
+              
+              setTimeout(() => circle.remove(), 1500);
+              return;
+            }
+          });
+        });
+      }
+    });
+  } else {
+    // Use map control search (positioned at topleft next to zoom)
+    console.log("✅ Using map control search");
+    
+    // 🔍 Trail name search
+    window.searchTrail = new L.Control.Search({
+      layer: searchableLayer,
+      propertyName: "title",
+      initial: false,
+      casesensitive: false,
+      textPlaceholder: "Search trail…",
+      marker: false,
+      position: "topleft",
+      collapsed: false,
+      moveToLocation: function (latlng, title, map) {
+        map.setView(latlng, 13);
 
-      // Highlights the marker briefly
-      const circle = L.circleMarker(latlng, {
-        radius: 20,
-        color: "orange",
-        weight: 3,
-        fillColor: "yellow",
-        fillOpacity: 0.4,
-      }).addTo(map);
+        // Highlights the marker briefly
+        const circle = L.circleMarker(latlng, {
+          radius: 20,
+          color: "orange",
+          weight: 3,
+          fillColor: "yellow",
+          fillOpacity: 0.4,
+        }).addTo(map);
 
-      setTimeout(() => {
-        map.removeLayer(circle);
-      }, 4000);
-    },
-  }).addTo(window.trailsMap);
+        setTimeout(() => {
+          map.removeLayer(circle);
+        }, 4000);
+      },
+    }).addTo(window.trailsMap);
+  }
 }
 
 

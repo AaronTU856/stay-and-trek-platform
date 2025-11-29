@@ -278,16 +278,21 @@ function loadRivers() {
         btn1.style.borderRadius = '4px';
         btn1.style.cursor = 'pointer';
         btn1.style.fontSize = '12px';
-        btn1.onclick = () => {
+        btn1.onclick = (e) => {
+          e.stopPropagation();
+          console.log('Button 1 clicked, boundaryId:', boundaryId);
           if (window.poiMap && typeof window.poiMap.loadTrailsCrossingBoundary === 'function') {
+            console.log('Calling loadTrailsCrossingBoundary');
             window.poiMap.loadTrailsCrossingBoundary(boundaryId);
+          } else {
+            console.warn('Function not available');
           }
         };
         popupDiv.appendChild(btn1);
         
         // Button 2: Nearby trails
         const btn2 = document.createElement('button');
-        btn2.textContent = 'Show nearby trails (1km)';
+        btn2.textContent = 'Show nearby trails (5km)';
         btn2.style.width = '100%';
         btn2.style.padding = '8px';
         btn2.style.background = '#2196F3';
@@ -296,9 +301,14 @@ function loadRivers() {
         btn2.style.borderRadius = '4px';
         btn2.style.cursor = 'pointer';
         btn2.style.fontSize = '12px';
-        btn2.onclick = () => {
+        btn2.onclick = (e) => {
+          e.stopPropagation();
+          console.log('Button 2 clicked, boundaryId:', boundaryId);
           if (window.poiMap && typeof window.poiMap.loadTrailsNearBoundary === 'function') {
-            window.poiMap.loadTrailsNearBoundary(boundaryId, 1000);
+            console.log('Calling loadTrailsNearBoundary');
+            window.poiMap.loadTrailsNearBoundary(boundaryId, 5000);
+          } else {
+            console.warn('Function not available');
           }
         };
         popupDiv.appendChild(btn2);
@@ -446,7 +456,7 @@ function loadRivers() {
             console.log('window.poiMap:', window.poiMap);
             if (window.poiMap && typeof window.poiMap.loadTrailsCrossingBoundary === 'function') {
               console.log('Calling loadTrailsCrossingBoundary');
-              window.poiMap.loadTrailsCrossingBoundary(boundaryId);
+              window.poiMap.loadTrailsCrossingBoundary(boundaryId, name);
             } else {
               console.warn('Function not available');
             }
@@ -454,7 +464,7 @@ function loadRivers() {
           popupDiv.appendChild(btn1);
           
           const btn2 = document.createElement('button');
-          btn2.textContent = 'Show nearby trails (1km)';
+          btn2.textContent = 'Show nearby trails (5km)';
           btn2.style.width = '100%';
           btn2.style.padding = '8px';
           btn2.style.background = '#2196F3';
@@ -468,7 +478,7 @@ function loadRivers() {
             console.log('window.poiMap exists:', !!window.poiMap);
             if (window.poiMap && typeof window.poiMap.loadTrailsNearBoundary === 'function') {
               console.log('Calling loadTrailsNearBoundary');
-              window.poiMap.loadTrailsNearBoundary(boundaryId, 1000);
+              window.poiMap.loadTrailsNearBoundary(boundaryId, 5000);
             } else {
               console.warn('Function not available');
             }
@@ -510,24 +520,6 @@ function loadRivers() {
 }
 
 /**
- * Load trails that cross a specific boundary
- */
-function loadTrailsCrossingBoundary(boundaryId) {
-  console.log(`🗺️ Loading trails crossing boundary ${boundaryId}...`);
-
-  fetch(`/api/trails/boundaries/${boundaryId}/trails-crossing/`)
-    .then((response) => response.json())
-    .then((data) => {
-      console.log(`Trails crossing: ${data.trails_crossing_count}`);
-      console.log(`Trails within: ${data.trails_within_count}`);
-
-      // Could highlight these trails or display in a list
-      console.log("Data:", data);
-    })
-    .catch((err) => console.error("❌ Error loading boundary trails:", err));
-}
-
-/**
  * Load trails near a boundary (start point within radius meters)
  */
 function loadTrailsNearBoundary(boundaryId, radiusMeters = 200) {
@@ -536,18 +528,67 @@ function loadTrailsNearBoundary(boundaryId, radiusMeters = 200) {
   console.log(`🛤️🔍 Fetching trails within ${radiusMeters}m of boundary ${boundaryId} ...`);
   fetch(url)
     .then((r) => r.json())
-    .then((trails) => {
+    .then((data) => {
+      console.log(`📥 Raw API response:`, data);
+      const trails = Array.isArray(data) ? data : data.results || [];
       console.log(`✅ ${trails.length} trails near boundary`);
-      trails.forEach((t) => {
-        if (!t.latitude || !t.longitude) return;
-        const marker = L.circleMarker([t.latitude, t.longitude], {
-          radius: 5,
+      console.log(`Trail data sample:`, trails.length > 0 ? trails[0] : 'no trails');
+      
+      if (trails.length === 0) {
+        console.log('No trails near this boundary');
+        alert('No trails found within 5km of this river.');
+        return;
+      }
+      
+      // Clear existing nearby trails layer
+      if (window.trailsMap._nearbyTrailsLayer) {
+        window.trailsMap._nearbyTrailsLayer.clearLayers();
+      } else {
+        window.trailsMap._nearbyTrailsLayer = L.layerGroup().addTo(window.trailsMap);
+      }
+      
+      let displayedCount = 0;
+      trails.forEach((t, index) => {
+        // Get coordinates from start_point (GeoJSON) or latitude/longitude
+        let lat, lng;
+        
+        if (t.start_point && t.start_point.coordinates) {
+          // GeoJSON format: [lng, lat]
+          [lng, lat] = t.start_point.coordinates;
+          console.log(`Trail ${index}: Using start_point [${lng}, ${lat}]`);
+        } else if (t.latitude !== undefined && t.longitude !== undefined) {
+          lat = t.latitude;
+          lng = t.longitude;
+          console.log(`Trail ${index}: Using lat/lng [${lat}, ${lng}]`);
+        } else {
+          console.warn(`Trail ${index}: No valid coordinates`, t);
+          return; // Skip if no coordinates
+        }
+        
+        const trailName = t.trail_name || t.name || 'Trail';
+        const county = t.county || 'Unknown';
+        
+        const marker = L.circleMarker([lat, lng], {
+          radius: 8,
           color: '#FF9F1C',
-          fillColor: '#FF9F1C',
+          fillColor: '#FFCC00',
           fillOpacity: 0.9,
-        }).bindPopup(`<b>${t.trail_name}</b><br/>${t.county}`);
-        marker.addTo(window.trailsMap);
+          weight: 3,
+        }).bindPopup(`<b>${trailName}</b><br/>📍 ${county}`);
+        
+        marker.addTo(window.trailsMap._nearbyTrailsLayer);
+        displayedCount++;
+        
+        if (displayedCount === 1) {
+          console.log(`✅ First nearby trail marker added at [${lat}, ${lng}]`);
+        }
       });
+      console.log(`✅ Displayed ${displayedCount} nearby trail markers`);
+      
+      // Ensure layer is on top
+      if (window.trailsMap._nearbyTrailsLayer) {
+        window.trailsMap._nearbyTrailsLayer.bringToFront();
+      }
     })
     .catch((e) => console.error('Error loading trails near boundary:', e));
 }
@@ -610,68 +651,113 @@ function togglePOIType(poiType) {
  * Create a control panel for POI filtering
  */
 function createPOIControlPanel() {
-  const controlHTML = `
-    <div style="
-      background: white;
-      padding: 12px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-      max-width: 250px;
-      margin: 8px;
-    ">
-      <h6 style="margin-top: 0;"> Points of Interest</h6>
-      <div style="font-size: 12px;">
-        ${Object.entries(POI_TYPES)
-          .map(
-            ([key, value]) => `
-          <label style="display: flex; align-items: center; margin: 6px 0; cursor: pointer;">
-            <input type="checkbox" data-poi-type="${key}" checked 
-              style="margin-right: 6px; cursor: pointer;">
-            <span style="color: ${value.color}; font-weight: bold;">${value.icon}</span>
-            <span style="margin-left: 6px;">${value.label}</span>
-          </label>
-        `
-          )
-          .join("")}
-      </div>
-      <button id="load-all-pois-btn" class="btn btn-sm btn-success w-100 mt-2">
-        Load All POIs
-      </button>
-      <button id="analysis-btn" class="btn btn-sm btn-success w-100 mt-2">
-        Spatial Analysis
-      </button>
-    </div>
-  `;
-
-  const controlDiv = document.createElement("div");
-  controlDiv.innerHTML = controlHTML;
-  controlDiv.style.position = "absolute";
-  controlDiv.style.top = "100px";
-  controlDiv.style.right = "12px";
-  controlDiv.style.zIndex = "1000";
-
-  document.querySelector("#map").appendChild(controlDiv);
-
-  // Add event listeners
-  document.querySelectorAll('input[data-poi-type]').forEach((checkbox) => {
-    checkbox.addEventListener("change", (e) => {
-      togglePOIType(e.target.dataset.poiType);
+  // Check if sidebar exists, if so populate it instead
+  const poiCheckboxesDiv = document.getElementById("poi-checkboxes");
+  
+  if (poiCheckboxesDiv) {
+    // Populate sidebar version
+    const checkboxHTML = Object.entries(POI_TYPES)
+      .map(
+        ([key, value]) => `
+      <label style="display: flex; align-items: center; margin: 6px 0; cursor: pointer;">
+        <input type="checkbox" data-poi-type="${key}" checked 
+          style="margin-right: 6px; cursor: pointer;">
+        <span style="color: ${value.color}; font-weight: bold;">${value.icon}</span>
+        <span style="margin-left: 6px; font-size: 12px;">${value.label}</span>
+      </label>
+    `
+      )
+      .join("");
+    
+    poiCheckboxesDiv.innerHTML = checkboxHTML;
+    
+    // Add event listeners for checkboxes
+    document.querySelectorAll('#poi-checkboxes input[data-poi-type]').forEach((checkbox) => {
+      checkbox.addEventListener("change", (e) => {
+        togglePOIType(e.target.dataset.poiType);
+      });
     });
-  });
+  } else {
+    // Fallback: create as floating control on map (old style)
+    const controlHTML = `
+      <div style="
+        background: white;
+        padding: 12px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        max-width: 250px;
+        margin: 8px;
+      ">
+        <h6 style="margin-top: 0;"> Points of Interest</h6>
+        <div style="font-size: 12px;">
+          ${Object.entries(POI_TYPES)
+            .map(
+              ([key, value]) => `
+            <label style="display: flex; align-items: center; margin: 6px 0; cursor: pointer;">
+              <input type="checkbox" data-poi-type="${key}" checked 
+                style="margin-right: 6px; cursor: pointer;">
+              <span style="color: ${value.color}; font-weight: bold;">${value.icon}</span>
+              <span style="margin-left: 6px;">${value.label}</span>
+            </label>
+          `
+            )
+            .join("")}
+        </div>
+        <button id="load-all-pois-btn" class="btn btn-sm btn-success w-100 mt-2">
+          Load All POIs
+        </button>
+        <button id="analysis-btn" class="btn btn-sm btn-success w-100 mt-2">
+          Spatial Analysis
+        </button>
+      </div>
+    `;
 
-  document.getElementById("load-all-pois-btn").addEventListener("click", () => {
-    loadAllPOIs();
-  });
+    const controlDiv = document.createElement("div");
+    controlDiv.innerHTML = controlHTML;
+    controlDiv.style.position = "absolute";
+    controlDiv.style.top = "100px";
+    controlDiv.style.right = "12px";
+    controlDiv.style.zIndex = "1000";
 
-  document.getElementById("analysis-btn").addEventListener("click", () => {
-    getSpatialAnalysisSummary();
-  });
+    document.querySelector("#map-container").appendChild(controlDiv);
+
+    // Add event listeners for fallback version
+    document.querySelectorAll('input[data-poi-type]').forEach((checkbox) => {
+      checkbox.addEventListener("change", (e) => {
+        togglePOIType(e.target.dataset.poiType);
+      });
+    });
+
+    document.getElementById("load-all-pois-btn").addEventListener("click", () => {
+      loadAllPOIs();
+    });
+
+    document.getElementById("analysis-btn").addEventListener("click", () => {
+      getSpatialAnalysisSummary();
+    });
+  }
+
+  // Add event listeners to sidebar buttons if they exist
+  const loadPoiBtn = document.getElementById("load-all-pois-btn");
+  const analysisBtn = document.getElementById("analysis-btn");
+  
+  if (loadPoiBtn) {
+    loadPoiBtn.addEventListener("click", () => {
+      loadAllPOIs();
+    });
+  }
+  
+  if (analysisBtn) {
+    analysisBtn.addEventListener("click", () => {
+      getSpatialAnalysisSummary();
+    });
+  }
 }
 
 /**
  * Load trails that cross a boundary and draw them from GeoJSON
  */
-function loadTrailsCrossingBoundary(boundaryId) {
+function loadTrailsCrossingBoundary(boundaryId, boundaryName) {
   if (!window.trailsMap) {
     console.warn("Map not ready");
     return;
@@ -694,6 +780,7 @@ function loadTrailsCrossingBoundary(boundaryId) {
       
       if (features.length === 0) {
         console.log('No crossing trails found for this boundary');
+        alert(`No trails crossing "${boundaryName || 'this river'}" found.`);
         return;
       }
       
