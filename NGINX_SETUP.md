@@ -11,7 +11,7 @@ docker-compose build
 docker-compose up -d
 ```
 
-### 2. Access Your Application
+### 2. Access Application
 
 | Service | URL | Purpose |
 |---------|-----|---------|
