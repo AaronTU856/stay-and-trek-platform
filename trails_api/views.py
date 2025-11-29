@@ -5,6 +5,7 @@ from django.db import models
 from django.db.models import Count, Q
 from django.contrib.gis.geos import Point
 from django.contrib.gis.db.models.functions import Distance as DistanceFunction
+from django.contrib.gis.measure import Distance as D
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
@@ -589,6 +590,39 @@ def trails_crossing_boundary(request, boundary_id):
             'trails_crossing': TrailListSerializer(trails_crossing, many=True).data,
             'trails_within': TrailListSerializer(trails_within, many=True).data,
         })
+    except GeographicBoundary.DoesNotExist:
+        return Response({'error': 'Boundary not found'}, status=404)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+# Trails Crossing Boundary as GeoJSON (trail paths)
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def trails_crossing_boundary_geojson(request, boundary_id):
+    """Return trails that cross a boundary as GeoJSON LineStrings of trail paths."""
+    try:
+        boundary = GeographicBoundary.objects.get(id=boundary_id)
+        trails_crossing = boundary.trails_crossing()
+        serializer = TrailPathGeoSerializer(trails_crossing, many=True)
+        return Response(serializer.data)
+    except GeographicBoundary.DoesNotExist:
+        return Response({'error': 'Boundary not found'}, status=404)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+# Trails near a boundary (by start point proximity) when full path is unavailable
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def trails_near_boundary(request, boundary_id):
+    """Return trails whose start point is within N meters of the boundary geometry.
+    Query param: radius_m (default 200).
+    """
+    try:
+        radius_m = int(request.GET.get('radius_m', 200))
+        boundary = GeographicBoundary.objects.get(id=boundary_id)
+        qs = Trail.objects.filter(start_point__distance_lte=(boundary.geom, D(m=radius_m)))
+        qs = qs.annotate(distance=DistanceFunction('start_point', boundary.geom)).order_by('distance')
+        return Response(TrailListSerializer(qs, many=True).data)
     except GeographicBoundary.DoesNotExist:
         return Response({'error': 'Boundary not found'}, status=404)
     except Exception as e:

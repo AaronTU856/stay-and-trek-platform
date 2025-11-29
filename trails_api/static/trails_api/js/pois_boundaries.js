@@ -373,6 +373,31 @@ function loadTrailsCrossingBoundary(boundaryId) {
 }
 
 /**
+ * Load trails near a boundary (start point within radius meters)
+ */
+function loadTrailsNearBoundary(boundaryId, radiusMeters = 200) {
+  if (!window.trailsMap) return;
+  const url = `/api/trails/boundaries/${boundaryId}/trails-near/?radius_m=${radiusMeters}`;
+  console.log(`🛤️🔍 Fetching trails within ${radiusMeters}m of boundary ${boundaryId} ...`);
+  fetch(url)
+    .then((r) => r.json())
+    .then((trails) => {
+      console.log(`✅ ${trails.length} trails near boundary`);
+      trails.forEach((t) => {
+        if (!t.latitude || !t.longitude) return;
+        const marker = L.circleMarker([t.latitude, t.longitude], {
+          radius: 5,
+          color: '#FF9F1C',
+          fillColor: '#FF9F1C',
+          fillOpacity: 0.9,
+        }).bindPopup(`<b>${t.trail_name}</b><br/>${t.county}`);
+        marker.addTo(window.trailsMap);
+      });
+    })
+    .catch((e) => console.error('Error loading trails near boundary:', e));
+}
+
+/**
  * Load trails by county
  */
 function loadTrailsByCounty(countyName) {
@@ -489,6 +514,46 @@ function createPOIControlPanel() {
 }
 
 /**
+ * Load trails that cross a boundary and draw them from GeoJSON
+ */
+function loadTrailsCrossingBoundary(boundaryId) {
+  if (!window.trailsMap) {
+    console.warn("Map not ready");
+    return;
+  }
+  if (!boundaryId) {
+    console.warn("No boundaryId provided to loadTrailsCrossingBoundary");
+    return;
+  }
+  const url = `/api/trails/boundaries/${boundaryId}/trails-crossing/geojson/`;
+  console.log(`🛤️ Fetching trails crossing boundary ${boundaryId} ...`);
+  fetch(url)
+    .then((r) => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
+    })
+    .then((features) => {
+      console.log(`✅ Received ${features.length} trail paths`);
+      const layer = L.geoJSON(features, {
+        style: {
+          color: '#FF6B6B',
+          weight: 3,
+          opacity: 0.9,
+        },
+        onEachFeature: (feature, layer) => {
+          const props = feature.properties || {};
+          const name = props.trail_name || props.name || 'Trail';
+          layer.bindPopup(`<b>${name}</b>`);
+        },
+      }).addTo(window.trailsMap);
+      try {
+        window.trailsMap.fitBounds(layer.getBounds(), { padding: [20, 20] });
+      } catch (e) {}
+    })
+    .catch((err) => console.error('❌ Error loading crossing trails:', err));
+}
+
+/**
  * Initialize everything when DOM is ready
  */
 document.addEventListener("DOMContentLoaded", function () {
@@ -517,6 +582,7 @@ window.poiMap = {
   loadRivers,
   loadGeographicBoundaries,
   loadTrailsCrossingBoundary,
+  loadTrailsNearBoundary,
   loadTrailsByCounty,
   getSpatialAnalysisSummary,
   togglePOIType,

@@ -358,15 +358,15 @@ class GeographicBoundary(models.Model):
     
     def trails_crossing(self):
         """Get all trails that cross this boundary."""
-        return Trail.objects.filter(route__crosses=self.geom)
+        return Trail.objects.filter(path__crosses=self.geom, path__isnull=False)
     
     def trails_within(self):
         """Get all trails within this boundary."""
-        return Trail.objects.filter(route__within=self.geom)
+        return Trail.objects.filter(path__within=self.geom, path__isnull=False)
     
     def trail_intersection_points(self, trail):
         """Get points where a trail intersects this boundary."""
-        if trail.route:
-            return trail.route.intersection(self.geom)
+        if trail.path:
+            return trail.path.intersection(self.geom)
         return None
 
