@@ -107,7 +107,8 @@ class Command(BaseCommand):
                     try:
                         lat = float(nd.get('lat'))
                         lon = float(nd.get('lon'))
-                        coords.append((lat, lon))
+                        # LineString expects (lon, lat) for geographic coords
+                        coords.append((lon, lat))
                     except (ValueError, TypeError):
                         continue
                 

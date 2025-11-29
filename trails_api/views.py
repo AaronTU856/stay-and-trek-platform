@@ -34,9 +34,9 @@ import json
 # Pagination for API results
 class StandardResultsSetPagination(PageNumberPagination):
     """Custom pagination for API endpoints."""
-    page_size = 20
+    page_size = 500  # Default page size for faster loading
     page_size_query_param = 'page_size'
-    max_page_size = 100
+    max_page_size = 2000  # Allow up to 2000 results per page
 
 
 
@@ -566,6 +566,7 @@ class GeographicBoundaryViewSet(generics.ListAPIView):
     filterset_fields = ['boundary_type']
     search_fields = ['name', 'description']
     permission_classes = [AllowAny]
+    pagination_class = StandardResultsSetPagination
 
 # Trails Crossing Boundary Endpoint
 @api_view(['GET'])
@@ -599,12 +600,23 @@ def trails_crossing_boundary(request, boundary_id):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def trails_crossing_boundary_geojson(request, boundary_id):
-    """Return trails that cross a boundary as GeoJSON LineStrings of trail paths."""
+    """Return trails that cross a boundary as GeoJSON FeatureCollection."""
     try:
         boundary = GeographicBoundary.objects.get(id=boundary_id)
         trails_crossing = boundary.trails_crossing()
         serializer = TrailPathGeoSerializer(trails_crossing, many=True)
-        return Response(serializer.data)
+        features = serializer.data
+        
+        # Wrap in FeatureCollection if it's just a list
+        if isinstance(features, list):
+            geojson_response = {
+                "type": "FeatureCollection",
+                "features": features
+            }
+        else:
+            geojson_response = features
+            
+        return Response(geojson_response)
     except GeographicBoundary.DoesNotExist:
         return Response({'error': 'Boundary not found'}, status=404)
     except Exception as e:

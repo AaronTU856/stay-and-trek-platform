@@ -236,9 +236,9 @@ function loadRivers() {
   }
 
   let allRivers = [];
-  let nextUrl = "/api/trails/boundaries/?boundary_type=river&limit=100";
+  let nextUrl = "/api/trails/boundaries/?boundary_type=river&limit=500";  // Larger page size for faster loading
   let pageCount = 0;
-  const maxPages = 10; // Load first 10 pages (~1000 rivers) for now
+  const maxPages = 6; // Load ~3000 rivers (6 pages of 500 each)
   function addRiverToMap(feature) {
     try {
       const coords = feature.geometry.coordinates;
@@ -279,8 +279,8 @@ function loadRivers() {
         btn1.style.cursor = 'pointer';
         btn1.style.fontSize = '12px';
         btn1.onclick = () => {
-          if (window.trailsMap && typeof window.trailsMap.loadTrailsCrossingBoundary === 'function') {
-            window.trailsMap.loadTrailsCrossingBoundary(boundaryId);
+          if (window.poiMap && typeof window.poiMap.loadTrailsCrossingBoundary === 'function') {
+            window.poiMap.loadTrailsCrossingBoundary(boundaryId);
           }
         };
         popupDiv.appendChild(btn1);
@@ -297,8 +297,8 @@ function loadRivers() {
         btn2.style.cursor = 'pointer';
         btn2.style.fontSize = '12px';
         btn2.onclick = () => {
-          if (window.trailsMap && typeof window.trailsMap.loadTrailsNearBoundary === 'function') {
-            window.trailsMap.loadTrailsNearBoundary(boundaryId, 1000);
+          if (window.poiMap && typeof window.poiMap.loadTrailsNearBoundary === 'function') {
+            window.poiMap.loadTrailsNearBoundary(boundaryId, 1000);
           }
         };
         popupDiv.appendChild(btn2);
@@ -353,9 +353,15 @@ function loadRivers() {
     console.log(`🎨 Rendering ${rivers.length} rivers on map (batch mode)...`);
     console.log("Map check before rendering:", window.trailsMap ? "✅ EXISTS" : "❌ MISSING");
     
+    // Create a layer group for rivers if it doesn't exist
+    if (!window.trailsMap._riversLayer) {
+      window.trailsMap._riversLayer = L.layerGroup().addTo(window.trailsMap);
+      console.log("✅ Created rivers layer group");
+    }
+    
     let renderedCount = 0;
     let skippedCount = 0;
-    const batchSize = 50; // Render in batches of 50
+    const batchSize = 200; // Render in batches of 200 for faster performance
     let batchIndex = 0;
     let firstRiverCoords = null;
 
@@ -371,22 +377,26 @@ function loadRivers() {
             continue;
           }
 
-          const coords = river.geom.coordinates; // Already in [lat, lon] format from API
-          if (coords.length < 2) {
-            console.warn(`⚠️ River ${river.name} has ${coords.length} coordinates`);
+          const coords = river.geom.coordinates; // GeoJSON format: [lon, lat]
+          // Convert to Leaflet format [lat, lon]
+          const latlngs = coords.map(c => [c[1], c[0]]);
+          
+          if (latlngs.length < 2) {
+            console.warn(`⚠️ River ${river.name} has ${latlngs.length} coordinates`);
             skippedCount++;
             continue;
           }
 
           // Store first river's coords for debugging
           if (renderedCount === 0 && !firstRiverCoords) {
-            firstRiverCoords = coords.slice(0, 3);
+            firstRiverCoords = latlngs.slice(0, 3);
             console.log(`📍 First river: ${river.name}`);
-            console.log(`   API coords (first 3): ${JSON.stringify(coords.slice(0, 3))}`);
+            console.log(`   Raw API coords (first 3): ${JSON.stringify(coords.slice(0, 3))}`);
+            console.log(`   Converted latlngs (first 3): ${JSON.stringify(latlngs.slice(0, 3))}`);
           }
 
           // Use addRiverToMap to get proper popup with buttons
-          const polyline = L.polyline(coords, {
+          const polyline = L.polyline(latlngs, {
             color: "#1e90ff",
             weight: 3,
             opacity: 0.8,
@@ -399,7 +409,7 @@ function loadRivers() {
               name: river.name
             },
             geometry: {
-              coordinates: coords
+              coordinates: latlngs
             }
           };
           
@@ -430,9 +440,15 @@ function loadRivers() {
           btn1.style.borderRadius = '4px';
           btn1.style.cursor = 'pointer';
           btn1.style.fontSize = '12px';
-          btn1.onclick = () => {
-            if (window.trailsMap && typeof window.trailsMap.loadTrailsCrossingBoundary === 'function') {
-              window.trailsMap.loadTrailsCrossingBoundary(boundaryId);
+          btn1.onclick = (e) => {
+            console.log('Button 1 clicked, boundaryId:', boundaryId);
+            console.log('window.poiMap exists:', !!window.poiMap);
+            console.log('window.poiMap:', window.poiMap);
+            if (window.poiMap && typeof window.poiMap.loadTrailsCrossingBoundary === 'function') {
+              console.log('Calling loadTrailsCrossingBoundary');
+              window.poiMap.loadTrailsCrossingBoundary(boundaryId);
+            } else {
+              console.warn('Function not available');
             }
           };
           popupDiv.appendChild(btn1);
@@ -447,15 +463,20 @@ function loadRivers() {
           btn2.style.borderRadius = '4px';
           btn2.style.cursor = 'pointer';
           btn2.style.fontSize = '12px';
-          btn2.onclick = () => {
-            if (window.trailsMap && typeof window.trailsMap.loadTrailsNearBoundary === 'function') {
-              window.trailsMap.loadTrailsNearBoundary(boundaryId, 1000);
+          btn2.onclick = (e) => {
+            console.log('Button 2 clicked, boundaryId:', boundaryId);
+            console.log('window.poiMap exists:', !!window.poiMap);
+            if (window.poiMap && typeof window.poiMap.loadTrailsNearBoundary === 'function') {
+              console.log('Calling loadTrailsNearBoundary');
+              window.poiMap.loadTrailsNearBoundary(boundaryId, 1000);
+            } else {
+              console.warn('Function not available');
             }
           };
           popupDiv.appendChild(btn2);
           
           polyline.bindPopup(popupDiv, { maxWidth: 280, maxHeight: 200 });
-          polyline.addTo(window.trailsMap);
+          polyline.addTo(window.trailsMap._riversLayer);
           renderedCount++;
           
           if (i === start && renderedCount === 1) {
@@ -666,25 +687,49 @@ function loadTrailsCrossingBoundary(boundaryId) {
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       return r.json();
     })
-    .then((features) => {
-      console.log(`✅ Received ${features.length} trail paths`);
-      const layer = L.geoJSON(features, {
-        style: {
-          color: '#FF6B6B',
-          weight: 3,
-          opacity: 0.9,
-        },
-        onEachFeature: (feature, layer) => {
-          const props = feature.properties || {};
-          const name = props.trail_name || props.name || 'Trail';
-          layer.bindPopup(`<b>${name}</b>`);
-        },
-      }).addTo(window.trailsMap);
+    .then((data) => {
+      // Handle GeoJSON FeatureCollection
+      const features = data.features || data;
+      console.log(`✅ Received ${features.length} crossing trail(s)`);
+      
+      if (features.length === 0) {
+        console.log('No crossing trails found for this boundary');
+        return;
+      }
+      
+      console.log(`Creating GeoJSON layer with ${features.length} features...`);
+      
       try {
-        window.trailsMap.fitBounds(layer.getBounds(), { padding: [20, 20] });
-      } catch (e) {}
+        const layer = L.geoJSON(features, {
+          style: {
+            color: '#FF0000',  // Bright red
+            weight: 6,
+            opacity: 1.0,
+            lineCap: 'round',
+            lineJoin: 'round',
+          },
+          onEachFeature: (feature, layer) => {
+            const props = feature.properties || {};
+            const name = props.trail_name || props.name || 'Trail';
+            layer.bindPopup(`<b>${name}</b>`);
+          },
+        });
+        
+        // Add to crossing trails layer
+        if (!window.trailsMap._crossingTrailsLayer) {
+          window.trailsMap._crossingTrailsLayer = L.layerGroup().addTo(window.trailsMap);
+        }
+        
+        layer.addTo(window.trailsMap._crossingTrailsLayer);
+        console.log(`✅ Displayed ${features.length} crossing trail(s) on map`);
+      } catch (e) {
+        console.error(`❌ Error displaying crossing trails:`, e);
+      }
     })
-    .catch((err) => console.error('❌ Error loading crossing trails:', err));
+    .catch((err) => {
+      console.error('❌ Error loading crossing trails:', err);
+      console.error('Error stack:', err.stack);
+    });
 }
 
 /**
