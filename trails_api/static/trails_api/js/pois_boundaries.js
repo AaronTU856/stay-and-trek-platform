@@ -215,94 +215,143 @@ function loadPOIsInRadius(lat, lng, radiusKm = 5, poiType = null) {
 }
 
 /**
- * Load geographic boundaries (counties, protected areas)
+ * Load geographic boundaries (counties, protected areas, rivers)
+ * Combines rivers and protected areas into a single efficient load
  */
 function loadGeographicBoundaries() {
   console.log("🗺️ Loading geographic boundaries...");
-
-  fetch("/api/trails/boundaries/")
-    .then((response) => response.json())
-    .then((data) => {
-      const boundaries = data.results || data;
-      console.log(`Found ${boundaries.length} boundaries`);
-
-      boundaries.forEach((boundary) => addBoundaryToMap(boundary));
-    })
-    .catch((err) => console.error("❌ Error loading boundaries:", err));
-}
-
-/**
- * Add a boundary polygon to the map
- * Note: This requires the boundary's geom field to be returned
- */
-function addBoundaryToMap(boundary) {
-  // This would need GeoJSON representation of the polygon
-  // For now, create a boundary visualization based on trails in it
-  console.log(`Adding boundary: ${boundary.name} (${boundary.boundary_type})`);
-
-  // Note: Full implementation would require GeoJSON geometry from API
-  // This is a placeholder for the visual layer
+  // Rivers are loaded separately via loadRivers() - skip duplicate call
 }
 
 /**
  * Load rivers from geographic boundaries API
  */
 function loadRivers() {
-  console.log("🌊 Loading rivers from API...");
+  console.log("🌊 Loading rivers from API (nationwide coverage)...");
+  console.log("Map object check:", window.trailsMap ? "✅ EXISTS" : "❌ MISSING");
 
-  // Fetch all rivers with pagination
+  if (!window.trailsMap) {
+    console.error("❌ Map object (window.trailsMap) not initialized!");
+    return;
+  }
+
   let allRivers = [];
-  let page = 1;
-  const pageSize = 100;
+  let nextUrl = "/api/trails/boundaries/?boundary_type=river&limit=100";
+  let pageCount = 0;
+  const maxPages = 10; // Load first 10 pages (~1000 rivers) for now
 
-  function fetchPage() {
-    fetch(`/api/trails/boundaries/?boundary_type=river&limit=${pageSize}&offset=${(page-1)*pageSize}`)
+  function fetchPage(url) {
+    if (pageCount >= maxPages) {
+      console.warn(`⚠️ Reached max pages limit (${maxPages}), starting render...`);
+      renderAllRivers(allRivers);
+      return;
+    }
+
+    pageCount++;
+    console.log(`📍 Fetching page ${pageCount}...`);
+    
+    fetch(url)
       .then((response) => {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         return response.json();
       })
       .then((data) => {
         const rivers = data.results || [];
-        console.log(`Fetched ${rivers.length} rivers from page ${page}`);
+        console.log(`  ✓ Page ${pageCount}: Got ${rivers.length} rivers (total so far: ${allRivers.length + rivers.length})`);
+        
         allRivers = allRivers.concat(rivers);
 
-        // Check if there are more pages
-        if (data.next) {
-          page++;
-          fetchPage();
+        // Check if there are more pages and we haven't hit max
+        if (data.next && pageCount < maxPages) {
+          // Continue fetching
+          setTimeout(() => fetchPage(data.next), 100); // Small delay to prevent blocking
         } else {
-          // Done fetching, render all rivers
-          console.log(`✅ Loaded ${allRivers.length} total rivers`);
-          renderRivers(allRivers);
+          console.log(`✅ Finished loading rivers. Total: ${allRivers.length}`);
+          renderAllRivers(allRivers);
         }
       })
-      .catch((err) => console.error("❌ Error loading rivers:", err));
+      .catch((err) => {
+        console.error("❌ Error fetching rivers:", err);
+        if (allRivers.length > 0) {
+          console.log(`Rendering ${allRivers.length} rivers collected so far`);
+          renderAllRivers(allRivers);
+        }
+      });
   }
 
-  function renderRivers(rivers) {
-    rivers.forEach((river) => {
-      if (!river.geom) {
-        console.warn(`River ${river.name} has no geometry`);
-        return;
+  function renderAllRivers(rivers) {
+    console.log(`🎨 Rendering ${rivers.length} rivers on map (batch mode)...`);
+    console.log("Map check before rendering:", window.trailsMap ? "✅ EXISTS" : "❌ MISSING");
+    
+    let renderedCount = 0;
+    let skippedCount = 0;
+    const batchSize = 50; // Render in batches of 50
+    let batchIndex = 0;
+    let firstRiverCoords = null;
+
+    function renderBatch() {
+      const start = batchIndex * batchSize;
+      const end = Math.min(start + batchSize, rivers.length);
+      
+      for (let i = start; i < end; i++) {
+        const river = rivers[i];
+        try {
+          if (!river.geom || river.geom.type !== "LineString") {
+            skippedCount++;
+            continue;
+          }
+
+          const coords = river.geom.coordinates; // Already in [lat, lon] format from API
+          if (coords.length < 2) {
+            console.warn(`⚠️ River ${river.name} has ${coords.length} coordinates`);
+            skippedCount++;
+            continue;
+          }
+
+          // Store first river's coords for debugging
+          if (renderedCount === 0 && !firstRiverCoords) {
+            firstRiverCoords = coords.slice(0, 3);
+            console.log(`📍 First river: ${river.name}`);
+            console.log(`   API coords (first 3): ${JSON.stringify(coords.slice(0, 3))}`);
+          }
+
+          const polyline = L.polyline(coords, {
+            color: "#4D96FF",
+            weight: 2,
+            opacity: 0.6,
+          }).bindPopup(`<b>${river.name}</b><br/><small>${river.boundary_type}</small>`);
+
+          polyline.addTo(window.trailsMap);
+          renderedCount++;
+          
+          if (i === start && renderedCount === 1) {
+            console.log(`  ✅ First polyline added to map`);
+            console.log(`     Polyline bounds:`, polyline.getBounds());
+          }
+        } catch (err) {
+          console.warn(`⚠️ Error rendering ${river.name}: ${err.message}`);
+          console.error(err);
+          skippedCount++;
+        }
       }
 
-      if (river.geom.type === "LineString") {
-        // Create polyline from LineString coordinates
-        const coords = river.geom.coordinates.map(([lon, lat]) => [lat, lon]);
-        if (coords.length < 2) return;
+      console.log(`  ✓ Batch ${batchIndex + 1}: Rendered ${end - start} rivers (total: ${renderedCount})`);
+      batchIndex++;
 
-        const polyline = L.polyline(coords, {
-          color: "#4D96FF",
-          weight: 2,
-          opacity: 0.6,
-        }).bindPopup(`<b>${river.name}</b><br/><small>${river.boundary_type}</small>`);
-
-        polyline.addTo(window.trailsMap);
+      // Continue next batch if there are more
+      if (end < rivers.length) {
+        setTimeout(renderBatch, 50); // 50ms delay between batches
+      } else {
+        console.log(`✅ Finished rendering! Total: ${renderedCount} rivers | Skipped: ${skippedCount}`);
+        console.log(`   Map bounds:`, window.trailsMap.getBounds());
+        console.log(`   Map center:`, window.trailsMap.getCenter());
       }
-    });
+    }
+
+    renderBatch();
   }
 
-  fetchPage();
+  fetchPage(nextUrl);
 }
 
 /**

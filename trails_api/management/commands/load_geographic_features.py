@@ -57,50 +57,66 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("✅ Geographic features loading complete!"))
 
     def load_rivers(self):
-        """Load rivers from EPA Ireland GIS API"""
-        self.stdout.write("📡 Attempting to load rivers from EPA Ireland GIS...")
+        """Load rivers from Overpass API (nationwide Ireland coverage)"""
+        self.stdout.write("📡 Attempting to load rivers from Overpass API (nationwide)...")
 
-        epa_url = "https://services-eu1.arcgis.com/jD89j6JX786MpRBU/arcgis/rest/services/NMPF_24_Wastewater_Treatment_and_Disposal/FeatureServer/3/query"
+        # Ireland bounding box: [minlat, minlon, maxlat, maxlon]
+        # Roughly: 51.5°N to 55.4°N, 10.5°W to 5.4°W
+        bbox = "51.5,-10.5,55.4,-5.4"
         
-        params = {
-            'where': '1=1',
-            'outFields': '*',
-            'f': 'geojson',
-            'resultRecordCount': 2000,
-        }
+        overpass_url = "https://overpass-api.de/api/interpreter"
+        
+        # Overpass QL query for rivers and streams only (exclude lakes/water bodies)
+        query = f"""
+        [bbox:{bbox}];
+        (way["waterway"="river"];
+         way["waterway"="stream"];
+        );
+        out geom;
+        """
         
         rivers_data = []
         
         try:
-            self.stdout.write("  Sending request to EPA GIS API...")
-            response = requests.get(epa_url, params=params, timeout=60)
+            self.stdout.write("  Sending request to Overpass API...")
+            response = requests.post(overpass_url, data={'data': query}, timeout=120)
             response.raise_for_status()
             
-            geojson = response.json()
-            features = geojson.get('features', [])
+            # Parse OSM XML response
+            import xml.etree.ElementTree as ET
+            root = ET.fromstring(response.content)
             
-            self.stdout.write(f"✅ Got {len(features)} water body features from EPA GIS API")
+            ways = root.findall('.//way')
+            self.stdout.write(f"✅ Got {len(ways)} ways from Overpass API")
             
-            # Extract unique rivers from features
+            # Extract rivers from ways
             seen_rivers = set()
-            for feature in features:
-                props = feature.get('properties', {})
-                river_name = props.get('EPA_NAME', '').strip()
-                
-                if not river_name or river_name in seen_rivers or river_name == ' ':
+            for way in ways:
+                # Get river name
+                name_tag = way.find(".//tag[@k='name']")
+                if name_tag is None:
+                    continue
+                    
+                river_name = name_tag.get('v', '').strip()
+                if not river_name or river_name in seen_rivers:
                     continue
                 
-                geometry = feature.get('geometry', {})
-                coords = geometry.get('coordinates', [])
+                # Extract coordinates from nd elements with lat/lon attributes
+                coords = []
+                for nd in way.findall('.//nd[@lat][@lon]'):
+                    try:
+                        lat = float(nd.get('lat'))
+                        lon = float(nd.get('lon'))
+                        coords.append((lat, lon))
+                    except (ValueError, TypeError):
+                        continue
                 
-                if geometry.get('type') == 'LineString' and len(coords) >= 2:
-                    # Swap lon/lat to lat/lon
-                    coords = [(lon, lat) for lon, lat in coords]
+                if len(coords) >= 2:
                     rivers_data.append({'name': river_name, 'coords': coords})
                     seen_rivers.add(river_name)
 
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f"❌ EPA GIS API failed ({str(e)}). No fallback data available. Please try again later."))
+            self.stdout.write(self.style.ERROR(f"❌ Overpass API failed ({str(e)}). No fallback data available. Please try again later."))
             return
         
         # Load rivers from API data
