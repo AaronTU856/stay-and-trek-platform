@@ -134,6 +134,10 @@ async function performSpatialSearch(polygonGeometry) {
     }
 }
 
+/**
+ * Retrieve CSRF token from cookies for secure API requests
+ * @returns {string} The CSRF token value from document cookies
+ */
 function getCsrfToken() {
     const name = 'csrftoken';
     let cookieValue = null;

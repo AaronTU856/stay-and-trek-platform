@@ -5,7 +5,11 @@
 
 console.log("✅ pois_boundaries.js loaded");
 
-// Get CSRF token from cookie
+/**
+ * Retrieves a cookie value by name from the document's cookies
+ * @param {string} name - The name of the cookie to retrieve
+ * @returns {string|null} The cookie value or null if not found
+ */
 function getCookie(name) {
   let cookieValue = null;
   if (document.cookie && document.cookie !== '') {
@@ -89,6 +93,17 @@ function loadAllPOIs() {
 
 /**
  * Add a single POI marker to the map
+ * @param {Object} poi - Point of Interest object containing location and type information
+ * @param {number} poi.latitude - The latitude coordinate of the POI
+ * @param {number} poi.longitude - The longitude coordinate of the POI
+ * @param {string} poi.name - The name of the POI
+ * @param {string} poi.poi_type - The type of POI (parking, cafe, attraction, etc.)
+ * @param {string} [poi.county] - Optional county information
+ * @param {string} [poi.description] - Optional description of the POI
+ * @param {string} [poi.phone] - Optional phone number
+ * @param {string} [poi.website] - Optional website URL
+ * @param {string} [poi.opening_hours] - Optional opening hours
+ * @returns {L.Marker} The created Leaflet marker object
  */
 function addPOIMarker(poi) {
   if (!poi.latitude || !poi.longitude) return;
@@ -149,6 +164,8 @@ function addPOIMarker(poi) {
 
 /**
  * Load POIs of a specific type near a trail
+ * @param {number} trailId - The ID of the trail to search around
+ * @param {string|null} [poiType=null] - Optional filter to show only a specific POI type
  */
 function loadPOIsNearTrail(trailId, poiType = null) {
   console.log(`📍 Loading POIs near trail ${trailId}...`);
@@ -182,7 +199,11 @@ function loadPOIsNearTrail(trailId, poiType = null) {
 }
 
 /**
- * Load POIs within a radius
+ * Load POIs within a specified radius from a given point
+ * @param {number} lat - The latitude coordinate for the search center
+ * @param {number} lng - The longitude coordinate for the search center
+ * @param {number} [radiusKm=5] - The search radius in kilometers
+ * @param {string|null} [poiType=null] - Optional filter to show only a specific POI type
  */
 function loadPOIsInRadius(lat, lng, radiusKm = 5, poiType = null) {
   console.log(`📍 Loading POIs within ${radiusKm}km of (${lat}, ${lng})...`);
@@ -219,12 +240,12 @@ function loadPOIsInRadius(lat, lng, radiusKm = 5, poiType = null) {
  * Combines rivers and protected areas into a single efficient load
  */
 function loadGeographicBoundaries() {
-  console.log("🗺️ Loading geographic boundaries...");
   // Rivers are loaded separately via loadRivers() - skip duplicate call
 }
 
 /**
- * Load rivers from geographic boundaries API
+ * Load all rivers from the geographic boundaries API and render them on the map
+ * Fetches paginated river data and displays as polylines with interactive popups
  */
 function loadRivers() {
   console.log("🌊 Loading rivers from API (nationwide coverage)...");
@@ -520,7 +541,10 @@ function loadRivers() {
 }
 
 /**
- * Load trails near a boundary (start point within radius meters)
+ * Load trails that start near a boundary (river)
+ * @param {number} boundaryId - The ID of the geographic boundary (river)
+ * @param {number} [radiusMeters=200] - The search radius in meters from the boundary
+ * Displays nearby trail markers on the map with popups showing trail details
  */
 function loadTrailsNearBoundary(boundaryId, radiusMeters = 200) {
   if (!window.trailsMap) return;
@@ -594,7 +618,8 @@ function loadTrailsNearBoundary(boundaryId, radiusMeters = 200) {
 }
 
 /**
- * Load trails by county
+ * Load and display all trails for a specific county
+ * @param {string} countyName - The name of the county to load trails for
  */
 function loadTrailsByCounty(countyName) {
   console.log(`🗺️ Loading trails in ${countyName}...`);
@@ -608,7 +633,9 @@ function loadTrailsByCounty(countyName) {
 }
 
 /**
- * Get spatial analysis summary
+/**
+ * Get and display summary statistics for spatial analysis
+ * @returns {Object} Summary data including counts of trails, rivers, and POIs loaded
  */
 function getSpatialAnalysisSummary() {
   console.log("📊 Loading spatial analysis summary...");
@@ -630,7 +657,8 @@ function getSpatialAnalysisSummary() {
 }
 
 /**
- * Toggle POI type visibility
+ * Toggle the visibility of a specific POI type on the map
+ * @param {string} poiType - The POI type to toggle (parking, cafe, attraction, etc.)
  */
 function togglePOIType(poiType) {
   if (selectedPOITypes.has(poiType)) {
@@ -648,7 +676,9 @@ function togglePOIType(poiType) {
 }
 
 /**
- * Create a control panel for POI filtering
+ * Create a control panel for filtering and displaying different POI types
+ * Generates checkboxes for each POI category and attaches them to the map sidebar
+ * @returns {L.Control} The control object added to the Leaflet map
  */
 function createPOIControlPanel() {
   // Check if sidebar exists, if so populate it instead
@@ -755,7 +785,10 @@ function createPOIControlPanel() {
 }
 
 /**
- * Load trails that cross a boundary and draw them from GeoJSON
+ * Load and display trails that cross through a specific boundary (river)
+ * Retrieves GeoJSON trail geometries and renders them as lines on the map
+ * @param {number} boundaryId - The ID of the geographic boundary (river)
+ * @param {string} boundaryName - The name of the boundary for display in alerts and popups
  */
 function loadTrailsCrossingBoundary(boundaryId, boundaryName) {
   if (!window.trailsMap) {

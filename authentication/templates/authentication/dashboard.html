@@ -3,6 +3,108 @@
 {% block title %}Dashboard - Web Mapping Project{% endblock %}
 
 {% block content %}
+<style>
+    /* Dashboard styling to match application theme */
+    body {
+        background: #f5f5f5;
+    }
+
+    .dashboard-header {
+        background: linear-gradient(135deg, #2E8B57 0%, #1e6f42 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+    }
+
+    .dashboard-header h2 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 600;
+    }
+
+    .dashboard-header p {
+        font-size: 16px;
+        opacity: 0.9;
+    }
+
+    .feature-card {
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        height: 100%;
+        margin-bottom: 20px;
+        background: white;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 12px rgba(46, 139, 87, 0.15);
+    }
+
+    .feature-icon {
+        font-size: 48px;
+        color: #2E8B57;
+        margin: 20px 0;
+    }
+
+    .feature-card .btn-primary {
+        background-color: #2E8B57;
+        border-color: #2E8B57;
+    }
+
+    .feature-card .btn-primary:hover {
+        background-color: #1e6f42;
+        border-color: #1e6f42;
+    }
+
+    .dashboard-card {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+
+    .dashboard-card .card-header {
+        background-color: #f0f0f0;
+        border-bottom: 2px solid #2E8B57;
+        padding: 15px;
+    }
+
+    .dashboard-card .card-header h5 {
+        color: #2E8B57;
+        margin: 0;
+        font-weight: 600;
+    }
+
+    .dashboard-card .card-body {
+        padding: 20px;
+    }
+
+    .text-success {
+        color: #2E8B57 !important;
+    }
+
+    .text-info {
+        color: #0dcaf0 !important;
+    }
+
+    .btn-outline-primary {
+        color: #2E8B57;
+        border-color: #2E8B57;
+    }
+
+    .btn-outline-primary:hover {
+        background-color: #2E8B57;
+        border-color: #2E8B57;
+    }
+
+    .container {
+        max-width: 1200px;
+    }
+</style>
+
 <div class="container mt-4">
     <div class="row">
         <div class="col-12">

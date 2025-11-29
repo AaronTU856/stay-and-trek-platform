@@ -158,7 +158,6 @@ def trails_within_radius(request):
         })
 
     except Exception as e:
-        print("❌ Error in trails_within_radius:", e)
         return Response({"error": str(e)}, status=500)
 
 
