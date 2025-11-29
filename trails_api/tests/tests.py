@@ -6,7 +6,7 @@ class TrailsWithinRadiusAPITest(APITestCase):
     """Automated test for validating spatial query input handling."""
 
     def test_missing_fields_returns_400(self):
-        url = reverse('trails-within-radius')  # name from urls.py
+        url = reverse('trails:trails-within-radius')  # name from urls.py
         response = self.client.post(url, {}, format='json')
 
         # Assert correct status code
