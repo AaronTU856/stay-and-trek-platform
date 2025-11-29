@@ -26,3 +26,6 @@ if data.get('results'):
     if 'geom' in first_result:
         print(f"  Geom type: {type(first_result['geom'])}")
         print(f"  Geom keys: {list(first_result['geom'].keys()) if isinstance(first_result['geom'], dict) else 'N/A'}")
+        
+        
+        

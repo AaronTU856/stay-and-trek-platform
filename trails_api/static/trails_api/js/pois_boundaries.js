@@ -169,7 +169,7 @@ function addPOIMarker(poi) {
  */
 function loadPOIsNearTrail(trailId, poiType = null) {
   console.log(`📍 Loading POIs near trail ${trailId}...`);
-
+  // Clear existing POI markers and reload
   fetch("/api/trails/pois/near-trail/", {
     method: "POST",
     headers: {
@@ -221,7 +221,7 @@ function loadPOIsInRadius(lat, lng, radiusKm = 5, poiType = null) {
       poi_type: poiType,
     }),
   })
-    .then((response) => response.json())
+    .then((response) => response.json()) // Parse JSON response
     .then((data) => {
       if (!data.pois) return;
 
@@ -255,7 +255,7 @@ function loadRivers() {
     console.error("❌ Map object (window.trailsMap) not initialized!");
     return;
   }
-
+  // Store all rivers fetched
   let allRivers = [];
   let nextUrl = "/api/trails/boundaries/?boundary_type=river&limit=500";  // Larger page size for faster loading
   let pageCount = 0;
@@ -279,7 +279,7 @@ function loadRivers() {
         popupDiv.style.padding = '10px';
         popupDiv.style.minWidth = '240px';
         
-        // Title
+        // Title 
         const titleDiv = document.createElement('strong');
         titleDiv.textContent = name;
         titleDiv.style.fontSize = '14px';
@@ -340,7 +340,7 @@ function loadRivers() {
       console.error('Failed to render river polyline', e);
     }
   }
-
+  // Recursive function to fetch pages
   function fetchPage(url) {
     if (pageCount >= maxPages) {
       console.warn(`⚠️ Reached max pages limit (${maxPages}), starting render...`);
@@ -379,7 +379,7 @@ function loadRivers() {
         }
       });
   }
-
+  // Render all rivers in batches for performance
   function renderAllRivers(rivers) {
     console.log(`🎨 Rendering ${rivers.length} rivers on map (batch mode)...`);
     console.log("Map check before rendering:", window.trailsMap ? "✅ EXISTS" : "❌ MISSING");
@@ -395,7 +395,7 @@ function loadRivers() {
     const batchSize = 200; // Render in batches of 200 for faster performance
     let batchIndex = 0;
     let firstRiverCoords = null;
-
+     // Function to render a single batch
     function renderBatch() {
       const start = batchIndex * batchSize;
       const end = Math.min(start + batchSize, rivers.length);
@@ -403,7 +403,7 @@ function loadRivers() {
       for (let i = start; i < end; i++) {
         const river = rivers[i];
         try {
-          if (!river.geom || river.geom.type !== "LineString") {
+          if (!river.geom || river.geom.type !== "LineString") { // Skip non-LineString geometries
             skippedCount++;
             continue;
           }
@@ -460,6 +460,7 @@ function loadRivers() {
           titleDiv.style.marginBottom = '10px';
           popupDiv.appendChild(titleDiv);
           
+            // Button 1: Crossing trails
           const btn1 = document.createElement('button');
           btn1.textContent = 'Show trails crossing';
           btn1.style.width = '100%';
@@ -483,7 +484,7 @@ function loadRivers() {
             }
           };
           popupDiv.appendChild(btn1);
-          
+          // Button 2: Nearby trails
           const btn2 = document.createElement('button');
           btn2.textContent = 'Show nearby trails (5km)';
           btn2.style.width = '100%';
@@ -505,7 +506,7 @@ function loadRivers() {
             }
           };
           popupDiv.appendChild(btn2);
-          
+          // Bind popup to polyline
           polyline.bindPopup(popupDiv, { maxWidth: 280, maxHeight: 200 });
           polyline.addTo(window.trailsMap._riversLayer);
           renderedCount++;
@@ -520,7 +521,7 @@ function loadRivers() {
           skippedCount++;
         }
       }
-
+      // Log batch completion
       console.log(`  ✓ Batch ${batchIndex + 1}: Rendered ${end - start} rivers (total: ${renderedCount})`);
       batchIndex++;
 
@@ -591,7 +592,7 @@ function loadTrailsNearBoundary(boundaryId, radiusMeters = 200) {
         
         const trailName = t.trail_name || t.name || 'Trail';
         const county = t.county || 'Unknown';
-        
+        // Create circle marker
         const marker = L.circleMarker([lat, lng], {
           radius: 8,
           color: '#FF9F1C',
