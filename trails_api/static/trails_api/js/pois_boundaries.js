@@ -742,7 +742,7 @@ function createPOIControlPanel() {
         </button>
       </div>
     `;
-
+            // Create a container div for the control
     const controlDiv = document.createElement("div");
     controlDiv.innerHTML = controlHTML;
     controlDiv.style.position = "absolute";
@@ -800,7 +800,7 @@ function loadTrailsCrossingBoundary(boundaryId, boundaryName) {
     console.warn("No boundaryId provided to loadTrailsCrossingBoundary");
     return;
   }
-  const url = `/api/trails/boundaries/${boundaryId}/trails-crossing/geojson/`;
+  const url = `/api/trails/boundaries/${boundaryId}/trails-crossing/geojson/`; // GeoJSON endpoint 
   console.log(`🛤️ Fetching trails crossing boundary ${boundaryId} ...`);
   fetch(url)
     .then((r) => {
@@ -812,6 +812,7 @@ function loadTrailsCrossingBoundary(boundaryId, boundaryName) {
       const features = data.features || data;
       console.log(`✅ Received ${features.length} crossing trail(s)`);
       
+      // Clear existing crossing trails layer
       if (features.length === 0) {
         console.log('No crossing trails found for this boundary');
         alert(`No trails crossing "${boundaryName || 'this river'}" found.`);
@@ -840,7 +841,7 @@ function loadTrailsCrossingBoundary(boundaryId, boundaryName) {
         if (!window.trailsMap._crossingTrailsLayer) {
           window.trailsMap._crossingTrailsLayer = L.layerGroup().addTo(window.trailsMap);
         }
-        
+        // Clear existing crossing trails
         layer.addTo(window.trailsMap._crossingTrailsLayer);
         console.log(`✅ Displayed ${features.length} crossing trail(s) on map`);
       } catch (e) {
