@@ -6,12 +6,12 @@ from .models import Trail, Town, PointOfInterest, TrailPOIIntersection, Geograph
 
 # Serializer for listing basic trail info in lists
 class TrailListSerializer(serializers.ModelSerializer):
-    """Serializer for listing cities"""
+    """Serializer for listing basic trail information in list views"""
     latitude = serializers.ReadOnlyField()
     longitude = serializers.ReadOnlyField()
     
-    # Trail model fields to include
     class Meta:
+        """Meta configuration specifying model and fields to serialize"""
         model = Trail
         fields = [
             'id', 'trail_name', 'county', 'region', 'distance_km',
@@ -33,11 +33,12 @@ class TrailDetailSerializer(serializers.ModelSerializer):
         
 # Serializer for GeoJSON representation of trails
 class TrailGeoJSONSerializer(GeoFeatureModelSerializer):
+    """Serializer for rendering trails in GeoJSON format with geographic coordinates"""
     latitude = serializers.SerializerMethodField()
     longitude = serializers.SerializerMethodField()
 
-    # Meta information for the TrailGeoJSONSerializer
     class Meta:
+        """Meta configuration specifying model and fields for GeoJSON output"""
         model = Trail
         geo_field = 'start_point'
         fields = (
@@ -47,24 +48,23 @@ class TrailGeoJSONSerializer(GeoFeatureModelSerializer):
             'parking_available'
         )
  
-        
-# Get latitude from the start_point geometry
     def get_latitude(self, obj):
+        """Extract latitude from the start_point geometry field"""
         return obj.start_point.y if obj.start_point else None
   
-    
-# Get longitude from the start_point geometry
     def get_longitude(self, obj):
+        """Extract longitude from the start_point geometry field"""
         return obj.start_point.x if obj.start_point else None
    
         
 # Serializer for creating new trails via API
 class TrailCreateSerializer(serializers.ModelSerializer):
+    """Serializer for validating and creating new trail records via POST requests"""
     latitude = serializers.FloatField(write_only=True)
     longitude = serializers.FloatField(write_only=True)
 
-    # Trail model fields to include
     class Meta:
+        """Meta configuration specifying Trail model and writable fields"""
         model = Trail
         fields = [
             'trail_name', 'county', 'region', 'distance_km',
@@ -73,15 +73,12 @@ class TrailCreateSerializer(serializers.ModelSerializer):
             'parking_available'
         ]
 
-
-# Used for debugging input data during creation
     def validate(self, data):
-        print("Incoming data:", data)
+        """Validate incoming trail data before creation"""
         return data
 
-
-# Converts lat/lon into a GeoDjango Point and saves the new Trail
     def create(self, validated_data):
+        """Convert latitude/longitude to GeoDjango Point and create the trail"""
         latitude = validated_data.pop('latitude')
         longitude = validated_data.pop('longitude')
         validated_data['start_point'] = Point(longitude, latitude, srid=4326)
@@ -89,12 +86,13 @@ class TrailCreateSerializer(serializers.ModelSerializer):
 
 # Serializer for returning summary statistics about trails       
 class TrailSummarySerializer(serializers.Serializer):
-        total_trails = serializers.IntegerField()
-        average_distance_km = serializers.FloatField()
-        max_elevation_gain = serializers.FloatField()
-        easy_count = serializers.IntegerField()
-        moderate_count = serializers.IntegerField()
-        hard_count = serializers.IntegerField()
+    """Serializer for aggregated statistics about trails in the database"""
+    total_trails = serializers.IntegerField()
+    average_distance_km = serializers.FloatField()
+    max_elevation_gain = serializers.FloatField()
+    easy_count = serializers.IntegerField()
+    moderate_count = serializers.IntegerField()
+    hard_count = serializers.IntegerField()
            
 # Serializer used when searching for trails within a radius
 class DistanceSerializer(serializers.Serializer):
@@ -193,7 +191,7 @@ class GeographicBoundarySerializer(serializers.ModelSerializer):
     class Meta:
         model = GeographicBoundary
         fields = [
-            'id', 'name', 'boundary_type', 'description', 'established_date'
+            'id', 'name', 'boundary_type', 'description', 'established_date', 'geom'
         ]
 
 

@@ -75,7 +75,7 @@ class Trail(models.Model):
         srid=4326,
         help_text="Trail start coordinates (longitude, latitude)",
     )
-    path = gis_models.LineStringField(srid=4326, null=True, blank=True)
+    path = gis_models.MultiLineStringField(srid=4326, null=True, blank=True)
     
     # Amenities & Features
     dogs_allowed = models.BooleanField(default=True, null=True, blank=True) # Whether dogs are allowed on the trail
@@ -328,7 +328,7 @@ class TrailPOIIntersection(models.Model):
 
 # GEOGRAPHIC BOUNDARY MODEL
 class GeographicBoundary(models.Model):
-    """Model to represent geographic boundaries (counties, regions, protected areas)."""
+    """Model to represent geographic boundaries (counties, regions, protected areas, rivers)."""
     
     BOUNDARY_TYPE_CHOICES = [
         ('county', 'County'),
@@ -337,11 +337,14 @@ class GeographicBoundary(models.Model):
         ('national_park', 'National Park'),
         ('nature_reserve', 'Nature Reserve'),
         ('forest', 'Forest'),
+        ('river', 'River'),
+        ('marine_protected', 'Marine Protected Area'),
     ]
     
     name = models.CharField(max_length=200, db_index=True)
     boundary_type = models.CharField(max_length=50, choices=BOUNDARY_TYPE_CHOICES)
-    geom = gis_models.PolygonField(geography=True, db_index=True)
+    # Use GeometryField to support both Polygon and LineString
+    geom = gis_models.GeometryField(geography=True, db_index=True)
     
     description = models.TextField(blank=True)
     established_date = models.DateField(blank=True, null=True)
@@ -354,16 +357,16 @@ class GeographicBoundary(models.Model):
         return f"{self.name} ({self.get_boundary_type_display()})"
     
     def trails_crossing(self):
-        """Get all trails that cross this boundary."""
-        return Trail.objects.filter(route__crosses=self.geom)
+        """Get all trails that intersect this boundary (more inclusive than crosses)."""
+        return Trail.objects.filter(path__intersects=self.geom, path__isnull=False)
     
     def trails_within(self):
         """Get all trails within this boundary."""
-        return Trail.objects.filter(route__within=self.geom)
+        return Trail.objects.filter(path__within=self.geom, path__isnull=False)
     
     def trail_intersection_points(self, trail):
         """Get points where a trail intersects this boundary."""
-        if trail.route:
-            return trail.route.intersection(self.geom)
+        if trail.path:
+            return trail.path.intersection(self.geom)
         return None
 

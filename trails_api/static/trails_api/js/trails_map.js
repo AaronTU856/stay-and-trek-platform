@@ -18,6 +18,10 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 // Initialize map
+/**
+ * Initialize the Leaflet map with base tiles, zoom controls, and event listeners
+ * Creates a global reference at window.trailsMap for use throughout the application
+ */
 function initializeMap() {
   console.log("🗺️ Map initializing...");
 
@@ -65,7 +69,11 @@ function initializeMap() {
   console.log("✅ Map and base layer ready!");
 }
 
-// Load trails from GeoJSON endpoint
+/**
+ * Load trail start points from the GeoJSON API endpoint
+ * Fetches all trails and displays them as markers on the map
+ * Handles loading state and error reporting
+ */
 function loadTrails() {
   console.log("🚀 Loading trails...");
   showLoading(true);
@@ -197,9 +205,12 @@ fetch("/api/trails/towns/geojson/")
     }).addTo(window.trailsMap);
   });
 
-// Load trails paths
+/**
+ * Load trail path geometries from the GeoJSON API endpoint
+ * Displays full trail routes as polylines on the map
+ * Creates a layer that can be toggled on and off
+ */
 let trailPathsLayer;
-
 
 function loadTrailPaths() {
   fetch("/api/trails/paths/geojson/")
@@ -232,7 +243,11 @@ function loadTrailPaths() {
     .catch((err) => console.error("❌ Error loading trail paths:", err));
 }
 
-
+/**
+ * Load trail data from the regular API endpoint (fallback method)
+ * Used as a backup when the GeoJSON endpoint is unavailable
+ * @returns {Promise} Promise resolving to the trail data
+ */
 function loadTrailsFromRegularAPI() {
   console.log("Trying regular API endpoint...");
 
@@ -321,7 +336,10 @@ function loadTrailsFromRegularAPI() {
     });
 }
 
-// Display trails on map
+/**
+ * Display trail markers and popups on the Leaflet map
+ * @param {Array} trails - Array of trail objects to display
+ */
 function displayTrailsOnMap(trails) {
   if (!window.trailsMap) {
     console.error("❌ trailsMap not initialized before displaying trails");
@@ -426,6 +444,10 @@ function displayTrailsOnMap(trails) {
   }, 1000);
 }
 
+/**
+ * Add search control panel to the map sidebar
+ * Creates input field and search button for trail name searches
+ */
 function addSearchControls() {
   if (!window.trailsMap) return;
   if (window.searchTrail) return;
@@ -443,36 +465,106 @@ function addSearchControls() {
   // 🔁 Merge into one searchable group
   const searchableLayer = L.layerGroup(layers);
 
-  // 🔍 Trail name search
-  window.searchTrail = new L.Control.Search({
-    layer: searchableLayer,
-    propertyName: "title",
-    initial: false,
-    casesensitive: false,
-    textPlaceholder: "Search trail…",
-    marker: false,
-    position: "topleft",
-    collapsed: false,
-    moveToLocation: function (latlng, title, map) {
-      map.setView(latlng, 13); // zoom level 13 or adjust as you like
+  // Check if there's a sidebar search input
+  const sidebarSearchInput = document.querySelector('.sidebar input[placeholder*="Search"]');
+  
+  if (sidebarSearchInput) {
+    // Use sidebar search instead of map control
+    console.log("✅ Using sidebar search input");
+    
+    sidebarSearchInput.addEventListener('input', (e) => {
+      const searchTerm = e.target.value.toLowerCase();
+      const layers = searchableLayer.getLayers();
+      
+      if (searchTerm.length > 0) {
+        layers.forEach(layer => {
+          const sublayers = layer.getLayers();
+          sublayers.forEach(marker => {
+            const title = marker.options?.title || marker.properties?.title || '';
+            if (title.toLowerCase().includes(searchTerm)) {
+              marker.setOpacity(1);
+            } else {
+              marker.setOpacity(0.3);
+            }
+          });
+        });
+      } else {
+        layers.forEach(layer => {
+          const sublayers = layer.getLayers();
+          sublayers.forEach(marker => {
+            marker.setOpacity(1);
+          });
+        });
+      }
+    });
+    
+    sidebarSearchInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        const searchTerm = e.target.value.toLowerCase();
+        const layers = searchableLayer.getLayers();
+        
+        layers.forEach(layer => {
+          const sublayers = layer.getLayers();
+          sublayers.forEach(marker => {
+            const title = marker.options?.title || marker.properties?.title || '';
+            if (title.toLowerCase().includes(searchTerm)) {
+              window.trailsMap.setView(marker.getLatLng(), 13);
+              
+              // Highlight the marker
+              const circle = L.circleMarker(marker.getLatLng(), {
+                radius: 20,
+                color: 'orange',
+                weight: 3,
+                fillColor: 'yellow',
+                fillOpacity: 0.4,
+              }).addTo(window.trailsMap);
+              
+              setTimeout(() => circle.remove(), 1500);
+              return;
+            }
+          });
+        });
+      }
+    });
+  } else {
+    // Use map control search (positioned at topleft next to zoom)
+    console.log("✅ Using map control search");
+    
+    // 🔍 Trail name search
+    window.searchTrail = new L.Control.Search({
+      layer: searchableLayer,
+      propertyName: "title",
+      initial: false,
+      casesensitive: false,
+      textPlaceholder: "Search trail…",
+      marker: false,
+      position: "topleft",
+      collapsed: false,
+      moveToLocation: function (latlng, title, map) {
+        map.setView(latlng, 13);
 
-      // Highlights the marker briefly
-      const circle = L.circleMarker(latlng, {
-        radius: 20,
-        color: "orange",
-        weight: 3,
-        fillColor: "yellow",
-        fillOpacity: 0.4,
-      }).addTo(map);
+        // Highlights the marker briefly
+        const circle = L.circleMarker(latlng, {
+          radius: 20,
+          color: "orange",
+          weight: 3,
+          fillColor: "yellow",
+          fillOpacity: 0.4,
+        }).addTo(map);
 
-      setTimeout(() => {
-        map.removeLayer(circle);
-      }, 4000);
-    },
-  }).addTo(window.trailsMap);
+        setTimeout(() => {
+          map.removeLayer(circle);
+        }, 4000);
+      },
+    }).addTo(window.trailsMap);
+  }
 }
 
 
+/**
+ * Execute a trail search based on user input from the search field
+ * Filters trails by name and updates the map display
+ */
 function performSearch() {
   const query = document.getElementById("trail-search").value.trim();
 
@@ -567,6 +659,11 @@ function performSearch() {
     });
 }
 
+/**
+ * Calculate appropriate marker size based on population
+ * @param {number} population - The population value
+ * @returns {number} Marker radius in pixels
+ */
 function getMarkerSize(population) {
   const pop = parseInt(population) || 0;
 
@@ -581,6 +678,10 @@ function getMarkerSize(population) {
   return 24;
 }
 
+/**
+ * Display detailed information about a trail in a sidebar popup
+ * @param {Object} trail - The trail object to display
+ */
 function showTrailInfo(trail) {
   const infoPanel = document.getElementById("trail-info");
 
@@ -723,6 +824,10 @@ function showTrailInfo(trail) {
   infoPanel.scrollIntoView({ behavior: "smooth" });
 }
 
+/**
+ * Set up event listeners for map interactions and form controls
+ * Binds button clicks and form submissions to their respective handlers
+ */
 function setupEventListeners() {
   // Search functionality
 
@@ -784,6 +889,10 @@ function setupEventListeners() {
   }
 }
 
+/**
+ * Save a new trail to the database via the API
+ * Validates form input and sends POST request with trail data
+ */
 function saveNewTrail() {
   const nameInput = document.getElementById("trail-name");
   const countryInput = document.getElementById("trail-country");
@@ -861,6 +970,10 @@ function saveNewTrail() {
 }
 
 // Utility functions
+/**
+ * Center and zoom the map to a specific trail's start point
+ * @param {number} trailId - The ID of the trail to zoom to
+ */
 function zoomToTrail(trailId) {
   const trail = allTrailsData.find(
     (c) => c.properties.id === parseInt(trailId)
@@ -875,6 +988,10 @@ function zoomToTrail(trailId) {
   }
 }
 
+/**
+ * Update the trail count display in the UI
+ * @param {number} count - The number of trails to display
+ */
 function updateTrailCount(count) {
   const countElement = document.getElementById("trail-count");
 
@@ -883,6 +1000,10 @@ function updateTrailCount(count) {
   }
 }
 
+/**
+ * Show or hide the loading indicator
+ * @param {boolean} show - true to display loading indicator, false to hide
+ */
 function showLoading(show) {
   const searchBtn = document.getElementById("search-btn");
   if (searchBtn) {
@@ -898,6 +1019,11 @@ function showLoading(show) {
   }
 }
 
+/**
+ * Display an alert message to the user
+ * @param {string} message - The message text to display
+ * @param {string} type - The alert type (success, error, info, warning)
+ */
 function showAlert(message, type) {
   // Create alert element
 
@@ -926,6 +1052,10 @@ function showAlert(message, type) {
   }, 5000);
 }
 
+/**
+ * Retrieve CSRF token from page cookies for secure API requests
+ * @returns {string} The CSRF token value
+ */
 function getCsrfToken() {
   // Try multiple methods to get CSRF token
 
@@ -964,6 +1094,10 @@ function getCsrfToken() {
 console.log("✅ trails_map.js fully loaded");
 
 // Proximity Search Functionality
+/**
+ * Enable proximity-based trail search functionality
+ * Allows users to find trails within a specified radius of a clicked point
+ */
 function enableProximitySearch() {
   const toggleBtn = document.getElementById("toggle-search");
   const radiusInput = document.getElementById("radius-input");
@@ -1108,6 +1242,10 @@ async function performProximitySearch(lat, lng) {
 }
 
 // Display numbered trail markers
+/**
+ * Display nearest trails found in proximity search with numbered markers
+ * @param {Array} trails - Array of trail objects to display
+ */
 function displayNearestTrails(trails) {
   if (!window.nearestTrailsLayer)
     window.nearestTrailsLayer = L.layerGroup().addTo(window.trailsMap);
@@ -1151,6 +1289,11 @@ function displayNearestTrails(trails) {
 }
 
 // Simple numbered marker icon
+/**
+ * Create a numbered icon for numbered markers
+ * @param {number} number - The number to display on the icon
+ * @returns {L.DivIcon} A Leaflet icon object with the number
+ */
 function getNumberedIcon(number) {
   return L.divIcon({
     className: "numbered-marker",
@@ -1161,6 +1304,10 @@ function getNumberedIcon(number) {
 }
 
 // Side results panel
+/**
+ * Update the results panel with nearest trails information
+ * @param {Object} data - The search results data containing trails array
+ */
 function updateResultsPanel(data) {
   let resultsPanel = document.getElementById("proximity-results");
   if (!resultsPanel) {
@@ -1208,6 +1355,9 @@ function updateResultsPanel(data) {
 }
 
 // Clear markers and panel
+/**
+ * Clear proximity search results and remove temporary markers from the map
+ */
 function clearProximityResults() {
   if (window.searchMarker) {
     window.trailsMap.removeLayer(window.searchMarker);

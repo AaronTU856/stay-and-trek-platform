@@ -43,6 +43,8 @@ urlpatterns = [
     # GEOGRAPHIC BOUNDARY ENDPOINTS 
     path('boundaries/', views.GeographicBoundaryViewSet.as_view(), name='boundaries-list'),
     path('boundaries/<int:boundary_id>/trails-crossing/', views.trails_crossing_boundary, name='trails-crossing-boundary'),
+    path('boundaries/<int:boundary_id>/trails-crossing/geojson/', views.trails_crossing_boundary_geojson, name='trails-crossing-boundary-geojson'),
+    path('boundaries/<int:boundary_id>/trails-near/', views.trails_near_boundary, name='trails-near-boundary'),
     path('boundaries/county/<str:county_name>/trails/', views.trails_by_county_boundary, name='trails-by-county'),
     
     # Spatial analysis

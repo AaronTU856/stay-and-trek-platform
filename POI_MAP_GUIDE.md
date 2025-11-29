@@ -2,8 +2,6 @@
 
 ## How to Use the POI Map Features
 
-### What's Now on Your Map:
-
 1. **POI Markers** - Colored emoji icons for:
    - 🅿️ Parking (Red)
    - ☕ Cafés (Yellow)
@@ -64,7 +62,7 @@ window.poiMap.togglePOIType('parking')
 
 ### Loading Sample Data
 
-To make the map useful, you need to add POI data to the database. You can do this via:
+To make the map useful, need to add POI data to the database. You can do this via:
 
 1. **Django Admin** (`/admin/`):
    - Go to `Trails API > Points of Interest`
@@ -107,7 +105,7 @@ parking = PointOfInterest.objects.create(
 
 ### How the Map Updates:
 
-1. When you open the map, it automatically:
+1. When open the map, it automatically:
    - Loads all trails
    - Creates POI layer groups for each type
    - Creates the control panel

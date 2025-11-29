@@ -25,7 +25,7 @@ def test_towns_geojson(client):
 # Test that the trails within radius endpoint works correctly with valid input
 @pytest.mark.django_db
 def test_trails_within_radius(client):
-    url = reverse('trails:trails_within_radius')
+    url = reverse('trails:trails-within-radius')
     response = client.post(
         url,
         {'latitude': 53.0, 'longitude': -6.0, 'radius_km': 100},

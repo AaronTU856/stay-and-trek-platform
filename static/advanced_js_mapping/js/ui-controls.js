@@ -1,6 +1,10 @@
 /* UI controls (compat shim) */
 console.log('🎛️ Loading UI controls shim...');
 
+/**
+ * Initialize placeholder UI controls for compatibility
+ * Provides minimal stub functions to prevent JavaScript errors
+ */
 function initializeUIControls() {
     // minimal placeholder to avoid JS errors
     window.UIControls = {

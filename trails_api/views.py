@@ -5,6 +5,7 @@ from django.db import models
 from django.db.models import Count, Q
 from django.contrib.gis.geos import Point
 from django.contrib.gis.db.models.functions import Distance as DistanceFunction
+from django.contrib.gis.measure import Distance as D
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
@@ -33,9 +34,9 @@ import json
 # Pagination for API results
 class StandardResultsSetPagination(PageNumberPagination):
     """Custom pagination for API endpoints."""
-    page_size = 20
+    page_size = 500  # Default page size for faster loading
     page_size_query_param = 'page_size'
-    max_page_size = 100
+    max_page_size = 2000  # Allow up to 2000 results per page
 
 
 
@@ -157,7 +158,6 @@ def trails_within_radius(request):
         })
 
     except Exception as e:
-        print("❌ Error in trails_within_radius:", e)
         return Response({"error": str(e)}, status=500)
 
 
@@ -565,6 +565,7 @@ class GeographicBoundaryViewSet(generics.ListAPIView):
     filterset_fields = ['boundary_type']
     search_fields = ['name', 'description']
     permission_classes = [AllowAny]
+    pagination_class = StandardResultsSetPagination
 
 # Trails Crossing Boundary Endpoint
 @api_view(['GET'])
@@ -589,6 +590,50 @@ def trails_crossing_boundary(request, boundary_id):
             'trails_crossing': TrailListSerializer(trails_crossing, many=True).data,
             'trails_within': TrailListSerializer(trails_within, many=True).data,
         })
+    except GeographicBoundary.DoesNotExist:
+        return Response({'error': 'Boundary not found'}, status=404)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+# Trails Crossing Boundary as GeoJSON (trail paths)
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def trails_crossing_boundary_geojson(request, boundary_id):
+    """Return trails that cross a boundary as GeoJSON FeatureCollection."""
+    try:
+        boundary = GeographicBoundary.objects.get(id=boundary_id)
+        trails_crossing = boundary.trails_crossing()
+        serializer = TrailPathGeoSerializer(trails_crossing, many=True)
+        features = serializer.data
+        
+        # Wrap in FeatureCollection if it's just a list
+        if isinstance(features, list):
+            geojson_response = {
+                "type": "FeatureCollection",
+                "features": features
+            }
+        else:
+            geojson_response = features
+            
+        return Response(geojson_response)
+    except GeographicBoundary.DoesNotExist:
+        return Response({'error': 'Boundary not found'}, status=404)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+# Trails near a boundary (by start point proximity) when full path is unavailable
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def trails_near_boundary(request, boundary_id):
+    """Return trails whose start point is within N meters of the boundary geometry.
+    Query param: radius_m (default 200).
+    """
+    try:
+        radius_m = int(request.GET.get('radius_m', 200))
+        boundary = GeographicBoundary.objects.get(id=boundary_id)
+        qs = Trail.objects.filter(start_point__distance_lte=(boundary.geom, D(m=radius_m)))
+        qs = qs.annotate(distance=DistanceFunction('start_point', boundary.geom)).order_by('distance')
+        return Response(TrailListSerializer(qs, many=True).data)
     except GeographicBoundary.DoesNotExist:
         return Response({'error': 'Boundary not found'}, status=404)
     except Exception as e:
