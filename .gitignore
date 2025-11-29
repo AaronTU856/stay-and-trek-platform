@@ -34,4 +34,8 @@ stay-and-trek-mobile/.expo-shared/
 stay-and-trek-mobile/dist/
 stay-and-trek-mobile/web-build/
 stay-and-trek-mobile/package-lock.json
+
+# Development notes and reference documentation (local only, not for submission)
+# Keep all development notes, implementation guides, and reference files here
 _REFERENCE_NOTES/
+
