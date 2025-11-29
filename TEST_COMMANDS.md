@@ -227,34 +227,7 @@ The project uses:
 - Nginx: `http://localhost:80`
 - PostgreSQL: `localhost:5432`
 
-## Test Results Example
 
-```
-Django Tests:
-test_coordinates_properties ... ok
-test_distance_field ... ok
-test_geojson_format ... ok
-test_statistics_endpoint ... ok
-test_string_representation ... ok
-test_trail_creation ... ok
-test_trail_detail ... ok
-test_trail_list ... ok
-test_within_radius_query ... ok
-
-Ran 9 tests in 2.041s
-
-OK
-
-Pytest Tests:
-test_api.py::test_list_trails PASSED                    [ 16%]
-test_api.py::test_towns_geojson PASSED                  [ 33%]
-test_api.py::test_trails_within_radius PASSED           [ 50%]
-test_model.py::test_trail_str PASSED                    [ 66%]
-test_model.py::test_town_str PASSED                     [ 83%]
-tests.py::test_missing_fields_returns_400 PASSED        [100%]
-
-6 passed in 1.06s
-```
 
 ## Troubleshooting
 
@@ -305,3 +278,179 @@ echo "✅ All tests passed!"
 ```
 
 Save as `run_tests.sh` and run with `bash run_tests.sh`
+
+## Database Access & Management
+
+### Connect to PostgreSQL Database
+
+```bash
+# Connect to the database container
+docker compose exec db psql -U postgres -d trails_db
+```
+
+Once connected, you're in the PostgreSQL shell (`trails_db=#`).
+
+### List All Tables
+
+```sql
+\dt
+```
+
+This shows all tables in the current database with schema, name, type, and owner.
+
+### View Table Structure
+
+```sql
+# Show columns for a specific table
+\d table_name
+
+# Example: View trails table structure
+\d trails_api_trail
+```
+
+### Query Data from Tables
+
+```sql
+-- View all trails
+SELECT * FROM trails_api_trail;
+
+-- View all towns
+SELECT * FROM trails_api_town;
+
+-- View all users
+SELECT * FROM auth_user;
+
+-- View all geographic boundaries (rivers)
+SELECT * FROM trails_api_geographicboundary;
+
+-- Count records in each table
+SELECT COUNT(*) as trail_count FROM trails_api_trail;
+SELECT COUNT(*) as town_count FROM trails_api_town;
+SELECT COUNT(*) as user_count FROM auth_user;
+SELECT COUNT(*) as boundary_count FROM trails_api_geographicboundary;
+```
+
+### View Schema Information
+
+```sql
+-- List all schemas
+\dn
+
+-- List all tables in public schema
+SELECT table_name FROM information_schema.tables 
+WHERE table_schema = 'public';
+
+-- List all columns in trails table
+SELECT column_name, data_type FROM information_schema.columns 
+WHERE table_name = 'trails_api_trail';
+```
+
+### Useful PostgreSQL Commands
+
+```sql
+-- Show databases
+\l
+
+-- Switch to different database
+\c database_name
+
+-- Show current user
+SELECT current_user;
+
+-- Show current database
+SELECT current_database();
+
+-- List all views
+\dv
+
+-- Show table sizes
+SELECT schemaname, tablename, pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) 
+FROM pg_tables WHERE schemaname = 'public' ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
+
+-- Exit psql
+\q
+```
+
+### Query Spatial Data (GeoDjango/PostGIS)
+
+```sql
+-- View trails with their geographic information
+SELECT id, name, difficulty, ST_AsText(start_point) as start_point FROM trails_api_trail;
+
+-- Find trails within a radius (5km) of a point
+SELECT id, name, ST_Distance(start_point, ST_SetSRID(ST_MakePoint(-6.0, 53.0), 4326)) as distance_m
+FROM trails_api_trail
+WHERE ST_DWithin(start_point, ST_SetSRID(ST_MakePoint(-6.0, 53.0), 4326), 5000)
+ORDER BY distance_m;
+
+-- View geographic boundaries
+SELECT id, name, ST_AsText(geometry) as geometry FROM trails_api_geographicboundary LIMIT 5;
+
+-- Check PostGIS version
+SELECT PostGIS_version();
+```
+
+### Export Data
+
+```sql
+-- Export table to CSV
+\copy (SELECT * FROM trails_api_trail) TO '/tmp/trails.csv' WITH CSV HEADER;
+
+-- Export with specific columns
+\copy (SELECT id, name, difficulty FROM trails_api_trail) TO '/tmp/trails_simple.csv' WITH CSV HEADER;
+```
+
+### Exit Database Shell
+
+```sql
+\q
+```
+
+Or press `Ctrl+D`
+
+### Django Shell (Alternative Database Access)
+
+You can also use Django shell to interact with the database:
+
+```bash
+# Access Django shell
+docker compose exec web python manage.py shell
+
+# In the Django shell:
+from trails_api.models import Trail, Town, GeographicBoundary
+from django.contrib.auth.models import User
+
+# View all trails
+trails = Trail.objects.all()
+print(f"Total trails: {trails.count()}")
+for trail in trails[:5]:
+    print(f"  - {trail.name}: {trail.difficulty}")
+
+# View all towns
+towns = Town.objects.all()
+print(f"Total towns: {towns.count()}")
+
+# View all users
+users = User.objects.all()
+print(f"Total users: {users.count()}")
+
+# View geographic boundaries
+boundaries = GeographicBoundary.objects.all()
+print(f"Total boundaries: {boundaries.count()}")
+
+# Exit Django shell
+exit()
+```
+
+### Quick Database Statistics
+
+```bash
+# Get quick stats via Docker
+docker compose exec db psql -U postgres -d trails_db -c "
+SELECT 
+  (SELECT COUNT(*) FROM trails_api_trail) as total_trails,
+  (SELECT COUNT(*) FROM trails_api_town) as total_towns,
+  (SELECT COUNT(*) FROM auth_user) as total_users,
+  (SELECT COUNT(*) FROM trails_api_geographicboundary) as total_boundaries;
+"
+```
