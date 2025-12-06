@@ -764,25 +764,18 @@ function addSearchControls() {
             if (layer.options && layer.options.title === title) {
               // Found the marker - now we need to get the trail ID
               // Since we don't have it stored, we'll query the API by name
-              trailId = true; // Mark that we found it
+              trailId = layer.options.trailId;   // Use the stored trails ID instead of querying the API
+              console.log(`Found trail ID: ${trailId}`);
               break;
             }
           }
+
           
           if (trailId) {
-            // Query the API to find the trail ID by name
-            fetch(`/api/trails/?search=${encodeURIComponent(title)}`)
-              .then((response) => response.json())
-              .then((data) => {
-                let results = data.results || data;
-                if (Array.isArray(results) && results.length > 0) {
-                  const foundTrail = results[0];
-                  displaySearchedTrail(foundTrail.id, title);
-                }
-              })
-              .catch((err) => console.error("Error finding trail:", err));
+            displaySearchedTrail(trailId, title);
           } else {
             // Fallback: just zoom to location
+            console.warn("Trail ID not found, zooming to location only");
             map.setView(latlng, 13);
             const circle = L.circleMarker(latlng, {
               radius: 20,
