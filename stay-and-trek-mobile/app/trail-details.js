@@ -74,8 +74,8 @@ export default function TrailDetails() {
   const router = useRouter();
   const { largeText } = useAccessibility();
   
-  // Get trail data based on ID
-  const trail = TRAILS_DATA[parseInt(id) || 1];
+  // Get trail data based on ID - use default if not found
+  const trail = TRAILS_DATA[parseInt(id) || 1] || TRAILS_DATA[1];
   
   const titleFontSize = largeText ? 28 : 24;
   const headingFontSize = largeText ? 18 : 16;
@@ -93,7 +93,7 @@ export default function TrailDetails() {
         >
           <Text style={{ fontSize: headingFontSize, color: '#2E7D32' }}>← Back</Text>
         </TouchableOpacity>
-        <Text style={[styles.title, { fontSize: titleFontSize }]}>{trail.name}</Text>
+        <Text style={[styles.title, { fontSize: titleFontSize }]}>{trail?.name || "Trail Details"}</Text>
       </View>
 
       {/* Quick stats section */}
