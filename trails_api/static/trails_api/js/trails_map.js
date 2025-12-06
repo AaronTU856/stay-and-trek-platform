@@ -6,6 +6,7 @@
 console.log("✅ trails_map.js loaded");
 let map;
 let allTrailsData = [];
+let allSearchableTrails = L.layerGroup(); // Hidden layer for searching all trails
 
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -15,6 +16,9 @@ document.addEventListener("DOMContentLoaded", function () {
   loadTrailPaths();
   setupEventListeners();
   enableProximitySearch();
+  
+  // Load all trails into searchable layer (hidden from map view)
+  loadAllTrailsForSearch();
   
   // Initialize empty search control so it's visible from the start
   setTimeout(() => {
@@ -254,6 +258,63 @@ fetch("/api/trails/towns/geojson/")
       },
     }).addTo(window.trailsMap);
   });
+
+/**
+ * Load all trails from database into a hidden searchable layer
+ * These trails won't be displayed but will be searchable
+ * When a trail is found via search, it will be displayed on the map
+ */
+function loadAllTrailsForSearch() {
+  console.log("📚 Loading all trails for global search...");
+  
+  fetch("/api/trails/")
+    .then((response) => {
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      return response.json();
+    })
+    .then((data) => {
+      let trailsArray = [];
+      
+      // Handle paginated response
+      if (data && data.results && Array.isArray(data.results)) {
+        trailsArray = data.results;
+      } else if (Array.isArray(data)) {
+        trailsArray = data;
+      }
+      
+      console.log(`📚 Found ${trailsArray.length} trails in database`);
+      
+      // Add each trail to the searchable layer (but don't display them)
+      trailsArray.forEach((trail) => {
+        try {
+          const lat = parseFloat(trail.latitude);
+          const lng = parseFloat(trail.longitude);
+          
+          if (isNaN(lat) || isNaN(lng)) return;
+          
+          const name = trail.name || trail.trail_name || "Unnamed Trail";
+          const county = trail.county || "Unknown";
+          
+          const marker = L.marker([lat, lng], {
+            title: name,
+            county: county,
+          }).bindPopup(`<b>${name}</b><br/>📍 ${county}`);
+          
+          allSearchableTrails.addLayer(marker);
+        } catch (err) {
+          console.error("Error adding trail to searchable layer:", err);
+        }
+      });
+      
+      console.log(`✅ ${allSearchableTrails.getLayers().length} trails loaded for search`);
+      
+      // Update the search control to include these trails
+      addSearchControls();
+    })
+    .catch((err) => {
+      console.error("❌ Error loading trails for search:", err);
+    });
+}
 
 /**
  * Load trail path geometries from the GeoJSON API endpoint
@@ -510,6 +571,10 @@ function addSearchControls() {
   if (window.nearestTrailsLayer instanceof L.LayerGroup) {
     layers.push(window.nearestTrailsLayer);
     console.log(`   nearestTrailsLayer: ${window.nearestTrailsLayer.getLayers().length} items`);
+  }
+  if (allSearchableTrails instanceof L.LayerGroup) {
+    layers.push(allSearchableTrails);
+    console.log(`   allSearchableTrails: ${allSearchableTrails.getLayers().length} items`);
   }
 
   // 🔁 Merge into one searchable group (even if empty)
