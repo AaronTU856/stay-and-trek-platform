@@ -395,8 +395,13 @@ function loadRivers() {
     const batchSize = 200; // Render in batches of 200 for faster performance
     let batchIndex = 0;
     let firstRiverCoords = null;
+
      // Function to render a single batch
     function renderBatch() {
+      if (!window.trailsMap._riversLayer) {
+    window.trailsMap._riversLayer = L.featureGroup();
+    window.trailsMap._riversLayer.addTo(window.trailsMap);
+  }
       const start = batchIndex * batchSize;
       const end = Math.min(start + batchSize, rivers.length);
       
@@ -432,7 +437,17 @@ function loadRivers() {
             weight: 3,
             opacity: 0.8,
           });
-          
+        if(river.name && coords.length > 0) {
+          const [startLng, startLat] = coords[0];
+          const startMarker = L.circleMarker([startLat, startLng], {
+            radius: 5,
+            fillColor: "#4A90E2",
+            color:"#fff",
+            weight: 2,
+            opacity: 0.8,
+            fillOpacity: 0.8,
+          });
+         
           // Build feature object that matches what addRiverToMap expects
           const feature = {
             properties: {
@@ -506,10 +521,17 @@ function loadRivers() {
             }
           };
           popupDiv.appendChild(btn2);
+
+      
+          
+
           // Bind popup to polyline
           polyline.bindPopup(popupDiv, { maxWidth: 280, maxHeight: 200 });
           polyline.addTo(window.trailsMap._riversLayer);
+          startMarker.bindPopup(popupDiv, { maxWidth: 280, maxHeight: 200 });
+          startMarker.addTo(window.trailsMap._riversLayer);
           renderedCount++;
+        }
           // Log first polyline details
           if (i === start && renderedCount === 1) {
             console.log(`  ✅ First polyline added to map`);
@@ -521,6 +543,7 @@ function loadRivers() {
           skippedCount++;
         }
       }
+    
       // Log batch completion
       console.log(`  ✓ Batch ${batchIndex + 1}: Rendered ${end - start} rivers (total: ${renderedCount})`);
       batchIndex++;
@@ -566,11 +589,10 @@ function loadTrailsNearBoundary(boundaryId, radiusMeters = 200) {
       }
       
       // Clear existing nearby trails layer
-      if (window.trailsMap._nearbyTrailsLayer) {
-        window.trailsMap._nearbyTrailsLayer.clearLayers();
-      } else {
-        window.trailsMap._nearbyTrailsLayer = L.layerGroup().addTo(window.trailsMap);
+      if (!window.nearestTrailsLayer) {
+        window.nearestTrailsLayer = L.layerGroup().addTo(window.trailsMap);
       }
+      window.nearestTrailsLayer.clearLayers();
       
       let displayedCount = 0;
       trails.forEach((t, index) => {
@@ -601,7 +623,7 @@ function loadTrailsNearBoundary(boundaryId, radiusMeters = 200) {
           weight: 3,
         }).bindPopup(`<b>${trailName}</b><br/>📍 ${county}`);
         
-        marker.addTo(window.trailsMap._nearbyTrailsLayer);
+        marker.addTo(window.nearestTrailsLayer);
         displayedCount++;
         
         if (displayedCount === 1) {
@@ -610,10 +632,10 @@ function loadTrailsNearBoundary(boundaryId, radiusMeters = 200) {
       });
       console.log(`✅ Displayed ${displayedCount} nearby trail markers`);
       
-      // Ensure layer is on top
-      if (window.trailsMap._nearbyTrailsLayer) {
-        window.trailsMap._nearbyTrailsLayer.bringToFront();
-      }
+      // // Ensure layer is on top
+      // if (window.trailsMap._nearbyTrailsLayer) {
+      //   window.trailsMap._nearbyTrailsLayer.bringToFront();
+      // }
     })
     .catch((e) => console.error('Error loading trails near boundary:', e));
 }

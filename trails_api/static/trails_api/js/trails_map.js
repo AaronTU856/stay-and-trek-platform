@@ -15,6 +15,11 @@ document.addEventListener("DOMContentLoaded", function () {
   loadTrailPaths();
   setupEventListeners();
   enableProximitySearch();
+  
+  // Initialize empty search control so it's visible from the start
+  setTimeout(() => {
+    addSearchControls();
+  }, 1000);
 });
 
 
@@ -479,39 +484,35 @@ function displayTrailsOnMap(trails) {
     console.warn("⚠️ No valid markers to display or invalid trailMarkers type");
   }
 
-  // ✅ Add search controls only when markers exist
+  // ✅ Add search controls
   setTimeout(() => {
-    if (
-      typeof L.Control.Search === "function" &&
-      window.trailMarkers.getLayers().length > 0
-    ) {
       addSearchControls();
-      console.log("✅ Search controls initialized after markers loaded");
-    } else {
-      console.warn("❌ Search plugin or markers not ready yet");
-    }
-  }, 1000);
+      console.log("✅ Search controls initialized");
+  }, 500);
 }
 
 /**
  * Add search control panel to the map sidebar
  * Creates input field and search button for trail name searches
+ * Updates existing search control if new layers are added
  */
 function addSearchControls() {
   if (!window.trailsMap) return;
-  if (window.searchTrail) return;
+
+  console.log("📌 Initializing/updating search controls...");
 
   // ✅ Collect only existing, non-empty layers
   const layers = [];
-  if (window.trailMarkers && window.trailMarkers.getLayers().length > 0)
+  if (window.trailMarkers instanceof L.LayerGroup) {
     layers.push(window.trailMarkers);
-  if (
-    window.nearestTrailsLayer &&
-    window.nearestTrailsLayer.getLayers().length > 0
-  )
+    console.log(`   trailMarkers: ${window.trailMarkers.getLayers().length} items`);
+  }
+  if (window.nearestTrailsLayer instanceof L.LayerGroup) {
     layers.push(window.nearestTrailsLayer);
+    console.log(`   nearestTrailsLayer: ${window.nearestTrailsLayer.getLayers().length} items`);
+  }
 
-  // 🔁 Merge into one searchable group
+  // 🔁 Merge into one searchable group (even if empty)
   const searchableLayer = L.layerGroup(layers);
 
   // Check if there's a sidebar search input
@@ -579,33 +580,40 @@ function addSearchControls() {
     // Use map control search (positioned at topleft next to zoom)
     console.log("✅ Using map control search");
     
-    // 🔍 Trail name search
-    window.searchTrail = new L.Control.Search({
-      layer: searchableLayer,
-      propertyName: "title",
-      initial: false,
-      casesensitive: false,
-      textPlaceholder: "Search trail…",
-      marker: false,
-      position: "topleft",
-      collapsed: false,
-      moveToLocation: function (latlng, title, map) {
-        map.setView(latlng, 13);
+    if (window.searchTrail) {
+      // Update existing search control with new layers
+      console.log("🔄 Updating existing search control with new layers");
+      window.searchTrail._layer = searchableLayer;
+    } else {
+      // Create new search control (even if no layers yet)
+      window.searchTrail = new L.Control.Search({
+        layer: searchableLayer,
+        propertyName: "title",
+        initial: false,
+        casesensitive: false,
+        textPlaceholder: "Search trail…",
+        marker: false,
+        position: "topleft",
+        collapsed: false,
+        moveToLocation: function (latlng, title, map) {
+          map.setView(latlng, 13);
 
-        // Highlights the marker briefly
-        const circle = L.circleMarker(latlng, {
-          radius: 20,
-          color: "orange",
-          weight: 3,
-          fillColor: "yellow",
-          fillOpacity: 0.4,
-        }).addTo(map);
+          // Highlights the marker briefly
+          const circle = L.circleMarker(latlng, {
+            radius: 20,
+            color: "orange",
+            weight: 3,
+            fillColor: "yellow",
+            fillOpacity: 0.4,
+          }).addTo(map);
 
-        setTimeout(() => {
-          map.removeLayer(circle);
-        }, 4000);
-      },
-    }).addTo(window.trailsMap);
+          setTimeout(() => {
+            map.removeLayer(circle);
+          }, 4000);
+        },
+      }).addTo(window.trailsMap);
+      console.log("✨ Search control created and added to map");
+    }
   }
 }
 
