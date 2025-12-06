@@ -11,11 +11,56 @@ let allTrailsData = [];
 document.addEventListener("DOMContentLoaded", function () {
   console.log("📍 DOM loaded, initializing map...");
   initializeMap();
-  loadTrails();
+  //loadTrails(); // Don't load all trails by default
   loadTrailPaths();
   setupEventListeners();
   enableProximitySearch();
 });
+
+
+/*Load trails from the start point when search radius is performed
+  This calls performProximitySearch instead*/
+
+  function loadTrailsForSearch() {
+    console.log("Loading trails for proximity search...");
+
+    return fetch("/api/trails/geojson/")
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        let features = [];
+
+        if (data && data.type === "FeatureCollection" && Array.isArray(data.features)) {
+          features = data.features.features
+        } else if (Array.isArray(data)) {
+          features = data.map((trail) => ({
+            type: "Feature",
+            geometry: {
+              type: "Point",
+              coordinates: [parseFloat(trail.longitude || 0), parseFloat(trail.latitude || 0)],
+            },
+            properties: trail,
+          }));
+        }
+
+        if (features.length > 0) {
+          console.log(`✅ Loaded ${features.length} trail features for search`);
+          allTrailsData = features;
+          return allTrailsData;
+        }
+        throw new Error("No valid features found in API response for search");
+      })
+      .catch((error) => {
+        console.error("❌ Error loading trails for search:", error);
+        return [];
+      });
+
+}
+
 
 // Initialize map
 /**
@@ -1164,7 +1209,7 @@ async function performProximitySearch(lat, lng) {
   }
 
   window.searchCircle = L.circle([lat, lng], {
-    radius: radiusKm * 1000, // convert km → meters
+    radius: radiusKm * 1000, // convert km to meters
     color: "blue",
     weight: 2,
     fillColor: "blue",
