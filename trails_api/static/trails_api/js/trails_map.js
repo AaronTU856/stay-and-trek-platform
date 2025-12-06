@@ -317,6 +317,97 @@ function loadAllTrailsForSearch() {
 }
 
 /**
+ * Display a searched trail on the map
+ * Fetches full trail data and adds it to the visible trail markers layer
+ * @param {number} trailId - The ID of the trail to display
+ * @param {string} trailName - The name of the trail (for logging)
+ */
+function displaySearchedTrail(trailId, trailName) {
+  console.log(`🔍 Displaying searched trail: ${trailName} (ID: ${trailId})`);
+  
+  // Ensure trailMarkers layer exists
+  if (!window.trailMarkers || !(window.trailMarkers instanceof L.LayerGroup)) {
+    window.trailMarkers = L.layerGroup().addTo(window.trailsMap);
+  }
+  
+  // Fetch the full trail data
+  fetch(`/api/trails/${trailId}/`)
+    .then((response) => {
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      return response.json();
+    })
+    .then((trail) => {
+      const lat = parseFloat(trail.latitude);
+      const lng = parseFloat(trail.longitude);
+      
+      if (isNaN(lat) || isNaN(lng)) {
+        console.error("Invalid coordinates for trail", trail);
+        return;
+      }
+      
+      const name = trail.name || trail.trail_name || "Unnamed Trail";
+      const county = trail.county || "Unknown";
+      const town = trail.nearest_town || trail.town || "Unknown";
+      const distance = trail.distance_km || "?";
+      const difficulty = trail.difficulty || "Unknown";
+      
+      // Create marker icon
+      const markerIcon = L.icon({
+        iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png",
+        shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41],
+      });
+      
+      // Create popup with full details
+      const popupHTML = `
+        <div style="width: 228px; font-family: Arial, sans-serif;">
+          <h5 style="margin: 0 0 8px; color: #2f6b3a;">${name}</h5>
+          <hr style="margin: 8px 0;">
+          <p style="margin: 5px 0;"><strong>County:</strong> ${county}</p>
+          <p style="margin: 5px 0;"><strong>Town:</strong> ${town}</p>
+          <p style="margin: 5px 0;"><strong>Parking:</strong> ${trail.parking_available === "Yes" ? "✅ Yes" : "❌ No"}</p>
+          <p style="margin: 5px 0;"><strong>Dogs Allowed:</strong> ${trail.dogs_allowed === "Yes" ? "✅ Yes" : "❌ No"}</p>
+          <p style="margin: 5px 0;"><strong>Distance:</strong> ${distance} km</p>
+          <p style="margin: 5px 0;"><strong>Difficulty:</strong> ${difficulty}</p>
+        </div>
+      `;
+      
+      // Create and add marker
+      const marker = L.marker([lat, lng], {
+        icon: markerIcon,
+        title: name,
+        county: county,
+      }).bindPopup(popupHTML);
+      
+      window.trailMarkers.addLayer(marker);
+      
+      // Center map on the trail
+      window.trailsMap.setView([lat, lng], 13);
+      
+      // Highlight with orange circle
+      const circle = L.circleMarker([lat, lng], {
+        radius: 20,
+        color: "orange",
+        weight: 3,
+        fillColor: "yellow",
+        fillOpacity: 0.4,
+      }).addTo(window.trailsMap);
+      
+      setTimeout(() => {
+        window.trailsMap.removeLayer(circle);
+      }, 4000);
+      
+      console.log(`✅ Searched trail displayed: ${name}`);
+    })
+    .catch((err) => {
+      console.error("❌ Error fetching searched trail data:", err);
+    });
+}
+
+/**
  * Load trail path geometries from the GeoJSON API endpoint
  * Displays full trail routes as polylines on the map
  * Creates a layer that can be toggled on and off
@@ -661,20 +752,45 @@ function addSearchControls() {
         position: "topleft",
         collapsed: false,
         moveToLocation: function (latlng, title, map) {
-          map.setView(latlng, 13);
-
-          // Highlights the marker briefly
-          const circle = L.circleMarker(latlng, {
-            radius: 20,
-            color: "orange",
-            weight: 3,
-            fillColor: "yellow",
-            fillOpacity: 0.4,
-          }).addTo(map);
-
-          setTimeout(() => {
-            map.removeLayer(circle);
-          }, 4000);
+          console.log(`🎯 Search selected: ${title}`);
+          
+          // Find the trail in allSearchableTrails to get its ID
+          const allTrails = allSearchableTrails.getLayers();
+          let trailId = null;
+          
+          for (let layer of allTrails) {
+            if (layer.options && layer.options.title === title) {
+              // Found the marker - now we need to get the trail ID
+              // Since we don't have it stored, we'll query the API by name
+              trailId = true; // Mark that we found it
+              break;
+            }
+          }
+          
+          if (trailId) {
+            // Query the API to find the trail ID by name
+            fetch(`/api/trails/?search=${encodeURIComponent(title)}`)
+              .then((response) => response.json())
+              .then((data) => {
+                let results = data.results || data;
+                if (Array.isArray(results) && results.length > 0) {
+                  const foundTrail = results[0];
+                  displaySearchedTrail(foundTrail.id, title);
+                }
+              })
+              .catch((err) => console.error("Error finding trail:", err));
+          } else {
+            // Fallback: just zoom to location
+            map.setView(latlng, 13);
+            const circle = L.circleMarker(latlng, {
+              radius: 20,
+              color: "orange",
+              weight: 3,
+              fillColor: "yellow",
+              fillOpacity: 0.4,
+            }).addTo(map);
+            setTimeout(() => map.removeLayer(circle), 4000);
+          }
         },
       }).addTo(window.trailsMap);
       console.log("✨ Search control created and added to map");
