@@ -294,6 +294,7 @@ function loadAllTrailsForSearch() {
           
           const name = trail.name || trail.trail_name || "Unnamed Trail";
           const county = trail.county || "Unknown";
+          const trailId = trail.id || trail.pk; //store Id
           
           const marker = L.marker([lat, lng], {
             title: name,
