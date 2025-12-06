@@ -1499,12 +1499,14 @@ function displayNearestTrails(trails) {
     const name = trail.name || trail.trail_name || "Unnamed Trail";
     const town = trail.nearest_town || trail.town || "";
     const county = trail.county || "Unknown";
+    const trailId = trail.id || trail.pk; // Store trail ID
 
     const marker = L.marker([lat, lng], {
       icon: getNumberedIcon(index + 1),
       title: name,
       town: town,
       county: county,
+      trailId: trailId,  // Store trail ID in marker options
     }).bindPopup(`
             <strong>#${index + 1} ${name}</strong><br>
             County: ${trail.county || "Unknown"}<br>
