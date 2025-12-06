@@ -202,10 +202,10 @@ function loadPOIsNearTrail(trailId, poiType = null) {
  * Load POIs within a specified radius from a given point
  * @param {number} lat - The latitude coordinate for the search center
  * @param {number} lng - The longitude coordinate for the search center
- * @param {number} [radiusKm=5] - The search radius in kilometers
+ * @param {number} [radiusKm=10] - The search radius in kilometers
  * @param {string|null} [poiType=null] - Optional filter to show only a specific POI type
  */
-function loadPOIsInRadius(lat, lng, radiusKm = 5, poiType = null) {
+function loadPOIsInRadius(lat, lng, radiusKm = 10, poiType = null) {
   console.log(`📍 Loading POIs within ${radiusKm}km of (${lat}, ${lng})...`);
 
   fetch("/api/trails/pois/radius-search/", {
@@ -313,7 +313,7 @@ function loadRivers() {
         
         // Button 2: Nearby trails
         const btn2 = document.createElement('button');
-        btn2.textContent = 'Show nearby trails 5km)';
+        btn2.textContent = 'Show nearby trails (10km)';
         btn2.style.width = '100%';
         btn2.style.padding = '8px';
         btn2.style.background = '#2196F3';
@@ -327,7 +327,7 @@ function loadRivers() {
           console.log('Button 2 clicked, boundaryId:', boundaryId);
           if (window.poiMap && typeof window.poiMap.loadTrailsNearBoundary === 'function') {
             console.log('Calling loadTrailsNearBoundary');
-            window.poiMap.loadTrailsNearBoundary(boundaryId, 5000);
+            window.poiMap.loadTrailsNearBoundary(boundaryId, 10000);
           } else {
             console.warn('Function not available');
           }
@@ -440,7 +440,7 @@ function loadRivers() {
         if(river.name && coords.length > 0) {
           const [startLng, startLat] = coords[0];
           const startMarker = L.circleMarker([startLat, startLng], {
-            radius: 5,
+            radius: 6,
             fillColor: "#4A90E2",
             color:"#fff",
             weight: 2,
@@ -501,7 +501,7 @@ function loadRivers() {
           popupDiv.appendChild(btn1);
           // Button 2: Nearby trails
           const btn2 = document.createElement('button');
-          btn2.textContent = 'Show nearby trails (5km)';
+          btn2.textContent = 'Show nearby trails (10km)';
           btn2.style.width = '100%';
           btn2.style.padding = '8px';
           btn2.style.background = '#2196F3';
@@ -515,7 +515,7 @@ function loadRivers() {
             console.log('window.poiMap exists:', !!window.poiMap);
             if (window.poiMap && typeof window.poiMap.loadTrailsNearBoundary === 'function') {
               console.log('Calling loadTrailsNearBoundary');
-              window.poiMap.loadTrailsNearBoundary(boundaryId, 5000);
+              window.poiMap.loadTrailsNearBoundary(boundaryId, 10000);
             } else {
               console.warn('Function not available');
             }
@@ -584,7 +584,7 @@ function loadTrailsNearBoundary(boundaryId, radiusMeters = 200) {
       
       if (trails.length === 0) {
         console.log('No trails near this boundary');
-        alert('No trails found within 5km of this river.');
+        alert('No trails found within 10km of this river.');
         return;
       }
       
