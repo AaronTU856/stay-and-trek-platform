@@ -327,7 +327,7 @@ class TrailPOIIntersection(models.Model):
 
 
 # GEOGRAPHIC BOUNDARY MODEL
-class GeographicBoundary(models.Model):
+class Rivers(models.Model):
     """Model to represent geographic boundaries (counties, regions, protected areas, rivers)."""
     
     BOUNDARY_TYPE_CHOICES = [
@@ -352,6 +352,7 @@ class GeographicBoundary(models.Model):
     class Meta:
         verbose_name = "Geographic Boundary"
         verbose_name_plural = "Geographic Boundaries"
+        db_table = 'trails_api_geographicboundary'
     
     def __str__(self):
         return f"{self.name} ({self.get_boundary_type_display()})"

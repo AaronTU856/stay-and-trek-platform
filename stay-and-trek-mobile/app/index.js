@@ -149,6 +149,7 @@ const styles = StyleSheet.create({
   toggleButtonTextOn: { color: "#fff" },
   toggleOn: { backgroundColor: "#2f6b3aff" },
   toggleOff: { backgroundColor: "#ccccccff" },
-  iconRow: { flexDirection: 'row', marginTop: 18, justifyContent: 'center', width: '100%', flexWrap: 'wrap' },
-  searchResult: { marginTop: 12, fontSize: 16, color: '#333' },
+
+  // iconRow: { flexDirection: 'row', marginTop: 18, justifyContent: 'center', width: '100%', flexWrap: 'wrap' },
+  // searchResult: { marginTop: 12, fontSize: 16, color: '#333' },
 });

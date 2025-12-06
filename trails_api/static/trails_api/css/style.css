@@ -444,4 +444,124 @@ body {
             border: none;
             outline: none;
         }
+
+
+
+    /* HIGH CONTRAST MODE */
+    body.high-contrast-mode {
+      --high-contrast: true;
+    }
+
+    body.high-contrast-mode {
+      background-color: #fff !important;
+      color: #000 !important;
+    }
+
+    body.high-contrast-mode .sidebar {
+      background: #fff !important;
+      border-right: 3px solid #000 !important;
+    }
+
+    body.high-contrast-mode .sidebar .card {
+      border: 2px solid #000 !important;
+      background: #fff !important;
+    }
+
+    body.high-contrast-mode .sidebar .card-header {
+      background-color: #000 !important;
+      color: #fff !important;
+      border-bottom: 2px solid #000 !important;
+      font-weight: 700 !important;
+    }
+
+    body.high-contrast-mode .sidebar .card-body {
+      border-top: 2px solid #000 !important;
+    }
+
+    body.high-contrast-mode .sidebar h6 {
+      color: #000 !important;
+      font-weight: 700 !important;
+      border-bottom: 2px solid #000;
+      padding-bottom: 8px;
+    }
+
+    body.high-contrast-mode .sidebar button {
+      border: 2px solid #000 !important;
+      font-weight: 600 !important;
+    }
+
+    body.high-contrast-mode .btn-success {
+      background-color: #008000 !important;
+      border-color: #000 !important;
+      color: #fff !important;
+    }
+
+    body.high-contrast-mode .btn-secondary {
+      background-color: #333 !important;
+      border-color: #000 !important;
+      color: #fff !important;
+    }
+
+    body.high-contrast-mode .btn-warning {
+      background-color: #FFB81C !important;
+      border-color: #000 !important;
+      color: #000 !important;
+      font-weight: 700 !important;
+    }
+
+    body.high-contrast-mode .navbar {
+      background-color: #000 !important;
+      border-bottom: 3px solid #fff !important;
+    }
+
+    body.high-contrast-mode .navbar-brand {
+      color: #fff !important;
+      font-weight: 700 !important;
+    }
+
+    body.high-contrast-mode .quick-nav a {
+      border: 2px solid #000 !important;
+      font-weight: 600 !important;
+    }
+
+    body.high-contrast-mode input[type="number"],
+    body.high-contrast-mode input[type="text"],
+    body.high-contrast-mode select {
+      border: 2px solid #000 !important;
+      color: #000 !important;
+      background: #fff !important;
+      font-weight: 500 !important;
+    }
+
+    body.high-contrast-mode .leaflet-control-search input {
+      border: 3px solid #000 !important;
+      font-weight: 600 !important;
+      background: #fff !important;
+      color: #000 !important;
+    }
+
+    body.high-contrast-mode #map {
+      filter: contrast(1.3) saturate(1.2);
+    }
+
+    body.high-contrast-mode footer {
+      background: #000 !important;
+      color: #fff !important;
+      border-top: 3px solid #fff !important;
+    }
+
+    body.high-contrast-mode footer p {
+      color: #fff !important;
+    }
+
+    /* Ensure button state is visible */
+    body.high-contrast-mode #high-contrast-toggle[aria-pressed="true"] {
+      background-color: #008000 !important;
+      color: #fff !important;
+    }
+
+    body.high-contrast-mode #high-contrast-toggle[aria-pressed="false"] {
+      background-color: #FFB81C !important;
+      color: #000 !important;
+    }
         
