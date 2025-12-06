@@ -426,7 +426,7 @@ function loadRivers() {
             console.log(`   Converted latlngs (first 3): ${JSON.stringify(latlngs.slice(0, 3))}`);
           }
 
-          // Use addRiverToMap to get proper popup with buttons
+          // Use addRiverToMap to get popup with buttons
           const polyline = L.polyline(latlngs, {
             color: "#1e90ff",
             weight: 3,
@@ -496,7 +496,7 @@ function loadRivers() {
           btn2.style.cursor = 'pointer';
           btn2.style.fontSize = '12px';
           btn2.onclick = (e) => {
-            console.log('Button 2 clicked, boundaryId:', boundaryId);
+            console.log('Button 2 clicked, boundaryId:', boundaryId);  // Nearby trails
             console.log('window.poiMap exists:', !!window.poiMap);
             if (window.poiMap && typeof window.poiMap.loadTrailsNearBoundary === 'function') {
               console.log('Calling loadTrailsNearBoundary');
@@ -510,7 +510,7 @@ function loadRivers() {
           polyline.bindPopup(popupDiv, { maxWidth: 280, maxHeight: 200 });
           polyline.addTo(window.trailsMap._riversLayer);
           renderedCount++;
-          
+          // Log first polyline details
           if (i === start && renderedCount === 1) {
             console.log(`  ✅ First polyline added to map`);
             console.log(`     Polyline bounds:`, polyline.getBounds());
@@ -589,7 +589,7 @@ function loadTrailsNearBoundary(boundaryId, radiusMeters = 200) {
           console.warn(`Trail ${index}: No valid coordinates`, t);
           return; // Skip if no coordinates
         }
-        
+        // Prepare trail info
         const trailName = t.trail_name || t.name || 'Trail';
         const county = t.county || 'Unknown';
         // Create circle marker
