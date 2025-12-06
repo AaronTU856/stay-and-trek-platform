@@ -887,9 +887,34 @@ document.addEventListener("DOMContentLoaded", function () {
       initializePOILayers();
       createPOIControlPanel();
       loadAllPOIs();
-      loadRivers();
+      // loadRivers();
       loadGeographicBoundaries();
       getSpatialAnalysisSummary();
+
+      // Setup river load/clear buttons
+      const loadRiversBtn = document.getElementById("load-rivers-btn");
+      const clearRiversBtn = document.getElementById("clear-rivers-btn");
+      
+      if (loadRiversBtn) {
+        loadRiversBtn.addEventListener("click", () => {
+          console.log("Loading rivers...");
+          loadRivers();
+          loadRiversBtn.style.display = "none";
+          clearRiversBtn.style.display = "block";
+        });
+      }
+      
+      if (clearRiversBtn) {
+        clearRiversBtn.addEventListener("click", () => {
+          console.log("Clearing rivers...");
+          if (window.trailsMap._riversLayer) {
+            window.trailsMap.removeLayer(window.trailsMap._riversLayer);
+            window.trailsMap._riversLayer = null;
+          }
+          clearRiversBtn.style.display = "none";
+          loadRiversBtn.style.display = "block";
+        });
+      }
     } else {
       console.warn("⚠️ Main map not ready, retrying...");
       setTimeout(arguments.callee, 500);
@@ -902,7 +927,7 @@ window.poiMap = {
   loadAllPOIs,
   loadPOIsNearTrail,
   loadPOIsInRadius,
-  loadRivers,
+  loadRivers, // removed to initialise button only
   loadGeographicBoundaries,
   loadTrailsCrossingBoundary,
   loadTrailsNearBoundary,
