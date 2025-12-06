@@ -438,20 +438,24 @@ function displayTrailsOnMap(trails) {
       // ✅ Use the correct name field from your data
       const name = props.name || props.trail_name || "Unnamed Trail";
       const county = props.county || "Unknown";
+      const town = props.nearest_town || props.town || "Unknown";
       const distance = props.distance_km || "?";
       const difficulty = props.difficulty || "Unknown";
 
       const popupHTML = `
-                <strong>${name}</strong><br>
-                County: ${county}<br>
-                Parking: ${
+        <div style="width: 228px; font-family: Ariel, sans-serif;">
+          <h5 style="margin: 0, 0, 8px; color: #2f6b3a;">${name}</h5>
+          <hr style="margin: 8px 0;">
+          <p style="margin: 5px 0;><strong>County:</strong> ${county}</p>
+          <p style="margin: 5px 0;"><strong>Town:</strong> ${town}</p>
+          <p style="margin: 5px 0;"><strong>Parking:</strong> ${
                   props.parking_available === "Yes" ? "✅ Yes" : "❌ No"
-                }<br>
-                Dogs Allowed: ${
+                }</p>
+          <p style="margin: 5px 0;"><strong>Dogs Allowed:</strong> ${
                   props.dogs_allowed === "Yes" ? "✅ Yes" : "❌ No"
-                }<br>
-                Distance: ${distance} km<br>
-                Difficulty: ${difficulty}
+                }</p>
+          <p style="margin: 5px 0;"><strong>Distance:</strong> ${distance} km</p>
+          <p style="margin: 5px 0;"><strong>Difficulty:</strong> ${difficulty}</p>
             `;
 
       const marker = L.marker([lat, lng], {
@@ -1028,7 +1032,7 @@ function zoomToTrail(trailId) {
     const [lng, lat] = trail.geometry.coordinates;
 
     if (!isNaN(lat) && !isNaN(lng)) {
-      map.setView([lat, lng], 12);
+      window.trailsMap.setView([lat, lng], 13); // Zoom level 13
     }
   }
 }
@@ -1161,6 +1165,7 @@ function enableProximitySearch() {
     toggleBtn.classList.toggle("btn-success", !searchEnabled);
 
     if (searchEnabled) {
+      
       showAlert("🧭 Click on the map to search trails within radius", "info");
     } else {
       clearProximityResults();
@@ -1177,6 +1182,8 @@ function enableProximitySearch() {
 // Main proximity search
 async function performProximitySearch(lat, lng) {
   clearProximityResults();
+
+  //await loadTrails();
 
   const radiusKm = parseFloat(
     document.getElementById("radius-input").value || 10
@@ -1241,11 +1248,11 @@ async function performProximitySearch(lat, lng) {
       await findNearestTown(lat, lng);
       return;
     }
-
+    displayTrailsOnMap(data.nearest_trails);
     displayNearestTrails(data.nearest_trails);
     updateResultsPanel(data);
     showAlert(`✅ Found ${data.nearest_trails.length} trails`, "success");
-
+    
     // ✅ Always call this after trail results are shown
     await findNearestTown(lat, lng);
   } catch (err) {
