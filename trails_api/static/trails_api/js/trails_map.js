@@ -284,7 +284,7 @@ function loadAllTrailsForSearch() {
       
       console.log(`📚 Found ${trailsArray.length} trails in database`);
       
-      // Add each trail to the searchable layer (but don't display them)
+      // Add each trail to the searchable layer but not displayed
       trailsArray.forEach((trail) => {
         try {
           const lat = parseFloat(trail.latitude);
@@ -298,6 +298,7 @@ function loadAllTrailsForSearch() {
           const marker = L.marker([lat, lng], {
             title: name,
             county: county,
+            trailId: trail.id, // Store trail ID for lookup
           }).bindPopup(`<b>${name}</b><br/>📍 ${county}`);
           
           allSearchableTrails.addLayer(marker);
