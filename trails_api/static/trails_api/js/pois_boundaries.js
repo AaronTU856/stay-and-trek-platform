@@ -313,7 +313,7 @@ function loadRivers() {
         
         // Button 2: Nearby trails
         const btn2 = document.createElement('button');
-        btn2.textContent = 'Show nearby trails (5km)';
+        btn2.textContent = 'Show nearby trails 5km)';
         btn2.style.width = '100%';
         btn2.style.padding = '8px';
         btn2.style.background = '#2196F3';
@@ -614,7 +614,7 @@ function loadTrailsNearBoundary(boundaryId, radiusMeters = 200) {
         // Prepare trail info
         const trailName = t.trail_name || t.name || 'Trail';
         const county = t.county || 'Unknown';
-        // Create circle marker
+        // Create circle marker with yellow/orange color for visibility
         const marker = L.circleMarker([lat, lng], {
           radius: 8,
           color: '#FF9F1C',

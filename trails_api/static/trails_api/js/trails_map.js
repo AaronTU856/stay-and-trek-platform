@@ -294,12 +294,15 @@ function loadAllTrailsForSearch() {
           
           const name = trail.name || trail.trail_name || "Unnamed Trail";
           const county = trail.county || "Unknown";
-          const trailId = trail.id || trail.pk; //store Id
+          const trailId = trail.id || trail.pk;
           
+          // Create an invisible marker that can be searched but won't show on the map
           const marker = L.marker([lat, lng], {
             title: name,
             county: county,
-            trailId: trail.id, // Store trail ID for lookup
+            trailId: trailId,
+            opacity: 0, // Make invisible
+            interactive: false, // Don't respond to clicks
           }).bindPopup(`<b>${name}</b><br/>📍 ${county}`);
           
           allSearchableTrails.addLayer(marker);
