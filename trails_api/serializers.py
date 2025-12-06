@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
 from django.contrib.gis.geos import Point
-from .models import Trail, Town, PointOfInterest, TrailPOIIntersection, GeographicBoundary  
+from .models import Trail, Town, PointOfInterest, TrailPOIIntersection, Rivers  
 
 
 # Serializer for listing basic trail info in lists
@@ -189,7 +189,7 @@ class TrailWithPOISerializer(serializers.ModelSerializer):
 class GeographicBoundarySerializer(serializers.ModelSerializer):
     """Serializer for geographic boundaries"""
     class Meta:
-        model = GeographicBoundary
+        model = Rivers
         fields = [
             'id', 'name', 'boundary_type', 'description', 'established_date', 'geom'
         ]

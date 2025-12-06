@@ -20,7 +20,7 @@ from drf_spectacular.utils import extend_schema, OpenApiExample
 from django_filters.rest_framework import DjangoFilterBackend
 
 import requests
-from .models import Trail, Town, PointOfInterest, TrailPOIIntersection, GeographicBoundary
+from .models import Trail, Town, PointOfInterest, TrailPOIIntersection, Rivers
 from .serializers import (
     TrailListSerializer, TrailDetailSerializer, TrailGeoJSONSerializer,
     TrailCreateSerializer, TrailSummarySerializer, DistanceSerializer,
@@ -559,7 +559,7 @@ def pois_in_radius(request):
 
 class GeographicBoundaryViewSet(generics.ListAPIView):
     """Retrieve geographic boundaries."""
-    queryset = GeographicBoundary.objects.all()
+    queryset = Rivers.objects.all()
     serializer_class = GeographicBoundarySerializer
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = ['boundary_type']
@@ -573,7 +573,7 @@ class GeographicBoundaryViewSet(generics.ListAPIView):
 def trails_crossing_boundary(request, boundary_id):
     """Get trails that cross a specific geographic boundary."""
     try:
-        boundary = GeographicBoundary.objects.get(id=boundary_id)
+        boundary = Rivers.objects.get(id=boundary_id)
         
         # Get trails crossing this boundary
         trails_crossing = boundary.trails_crossing()
@@ -590,7 +590,7 @@ def trails_crossing_boundary(request, boundary_id):
             'trails_crossing': TrailListSerializer(trails_crossing, many=True).data,
             'trails_within': TrailListSerializer(trails_within, many=True).data,
         })
-    except GeographicBoundary.DoesNotExist:
+    except Rivers.DoesNotExist:
         return Response({'error': 'Boundary not found'}, status=404)
     except Exception as e:
         return Response({'error': str(e)}, status=500)
@@ -601,7 +601,7 @@ def trails_crossing_boundary(request, boundary_id):
 def trails_crossing_boundary_geojson(request, boundary_id):
     """Return trails that cross a boundary as GeoJSON FeatureCollection."""
     try:
-        boundary = GeographicBoundary.objects.get(id=boundary_id)
+        boundary = Rivers.objects.get(id=boundary_id)
         trails_crossing = boundary.trails_crossing()
         serializer = TrailPathGeoSerializer(trails_crossing, many=True)
         features = serializer.data
@@ -616,7 +616,7 @@ def trails_crossing_boundary_geojson(request, boundary_id):
             geojson_response = features
             
         return Response(geojson_response)
-    except GeographicBoundary.DoesNotExist:
+    except Rivers.DoesNotExist:
         return Response({'error': 'Boundary not found'}, status=404)
     except Exception as e:
         return Response({'error': str(e)}, status=500)
@@ -630,11 +630,11 @@ def trails_near_boundary(request, boundary_id):
     """
     try:
         radius_m = int(request.GET.get('radius_m', 200))
-        boundary = GeographicBoundary.objects.get(id=boundary_id)
+        boundary = Rivers.objects.get(id=boundary_id)
         qs = Trail.objects.filter(start_point__distance_lte=(boundary.geom, D(m=radius_m)))
         qs = qs.annotate(distance=DistanceFunction('start_point', boundary.geom)).order_by('distance')
         return Response(TrailListSerializer(qs, many=True).data)
-    except GeographicBoundary.DoesNotExist:
+    except Rivers.DoesNotExist:
         return Response({'error': 'Boundary not found'}, status=404)
     except Exception as e:
         return Response({'error': str(e)}, status=500)
@@ -646,7 +646,7 @@ def trails_by_county_boundary(request, county_name):
     """Get all trails that intersect with a county boundary."""
     try:
         # Find boundary for this county
-        boundary = GeographicBoundary.objects.get(name__iexact=county_name, boundary_type='county')
+        boundary = Rivers.objects.get(name__iexact=county_name, boundary_type='county')
         
         trails_crossing = boundary.trails_crossing()
         trails_within = boundary.trails_within()
@@ -657,7 +657,7 @@ def trails_by_county_boundary(request, county_name):
             'trails_within': TrailListSerializer(trails_within, many=True).data,
             'total_in_area': trails_within.count() + trails_crossing.count(),
         })
-    except GeographicBoundary.DoesNotExist:
+    except Rivers.DoesNotExist:
         # Fallback: just use county field
         trails = Trail.objects.filter(county__iexact=county_name)
         return Response({
@@ -682,7 +682,7 @@ def spatial_analysis_summary(request):
             .annotate(count=Count('id'))
             .values_list('poi_type', 'count')
         ),
-        'geographic_boundaries': GeographicBoundary.objects.count(),
+        'geographic_boundaries': Rivers.objects.count(),
         'trail_poi_intersections': TrailPOIIntersection.objects.count(),
         'pois_near_trails': {
             'very_close': TrailPOIIntersection.objects.filter(proximity='very_close').count(),
