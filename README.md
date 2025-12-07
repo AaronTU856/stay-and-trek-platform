@@ -1,146 +1,148 @@
 # 🥾 Irish Trails Web Mapping Application
 
 ## 1. Project Overview
-The Trails API and web mapping project is a Django + GeoDjango based web application
-that provides RESTful and GeoJSON endpoints for Irish hiking trail data.
-The project integrates PostGIS, Leaflet and Mapbox for spatial analysis radius and bounding box queries.
-and visualization using Leaflet and Mapbox.
+This is a full-stack application for exploring Irish hiking trails. It includes a REST API backend built with Django and GeoDjango, a web-based map interface, and a mobile app built with React Native and Expo. The system stores trail data with geographic information in PostgreSQL with PostGIS, allowing users to search, view, and discover trails across Ireland.
 
 
-## 2. Features Implemented
-### Core
-- REST API for Trails (`/api/trails/`)
-- GeoJSON endpoint (`/api/trails/geojson/`)
-- Map view with Leaflet and Mapbox tiles
-- Spatial queries:
-  - `within-radius`
-  - `in-bounding-box`
-- Interactive Leaflet map (`/api/trails/map/`)
-- API info endpoint (`/api/trails/info/`)
+## 2. Features
 
-### Additional
-- Django admin for Trails
-- Custom management command `create_sample_trails`
-- Interactive Leaflet map (`/api/trails/map/`)
-- Pagination, filtering, and search via Django REST Framework
-- CORS support for external clients
-- DRF Spectacular for auto-generated Swagger documentation
+### Backend API
+- REST API endpoints for accessing trail data
+- GeoJSON support for geographic data
+- Spatial queries to find trails within a radius or bounding box
+- Search and filtering by location, difficulty, and distance
+- Trail statistics and metadata endpoints
 
+### Web Interface
+- Interactive map with Leaflet and Mapbox
+- Proximity search - click on the map to find nearby trails
+- Trail details view with distance and difficulty information
+- Responsive design that works on desktop and tablets
+
+### Mobile App
+- Cross-platform mobile app built with React Native and Expo
+- Browse all trails in an easy-to-read list
+- View detailed trail information including distance, difficulty, and elevation
+- Accessibility features for font scaling and high contrast mode
+- Works with the live API to display real trail data
+- Fallback to sample data if API is unavailable
 
 
 ## 3. Technologies Used
 
- **Backend**  Django 4.2 , GeoDjango 
- **Database**  PostgreSQL , PostGIS 
- **Frontend**  Leaflet.js , Bootstrap 
- **API** Django REST Framework , drf_spectacular 
- **Spatial Tools**  Mapbox, django-geojson 
- **Dev Environment**  Homebrew GDAL/GEOS/PROJ setup 
+The backend is built with Django 4.2 and GeoDjango for geographic capabilities. Data is stored in PostgreSQL with PostGIS for spatial queries. The web interface uses Leaflet.js and Mapbox for mapping. The mobile app uses React Native with Expo for cross-platform development. Django REST Framework provides the API layer with DRF Spectacular for API documentation.
 
 
+## 4. Getting Started
 
-## 4. Installation & Setup
+### Backend Setup
 
-# Clone project
+Clone the project and navigate to the root directory:
+
+```
 git clone https://github.com/AaronTU856/hiking-trails-ireland.git
-cd trails_api
+cd awm_assignment
+```
 
-# Activate environment
+Create a virtual environment and install dependencies:
+
+```
+python -m venv venv
 source venv/bin/activate
-
-# Install dependencies
 pip install -r requirements.txt
+```
 
-# Create and seed database
+Set up the database:
+
+```
 python manage.py migrate
 python manage.py create_sample_trails
+```
 
-# Run server
+Run the server:
+
+```
 python manage.py runserver
+```
+
+The API will be available at http://localhost:8000/api/trails/
+
+### Mobile App Setup
+
+Navigate to the mobile app directory:
+
+```
+cd stay-and-trek-mobile
+npm install
+```
+
+Start the Expo development server:
+
+```
+npx expo start --web
+```
+
+This opens the app at http://localhost:19006. You can also use Expo Go on your phone to scan the QR code and run the app on a mobile device.
+
+### Using Docker
+
+If you prefer to run everything with Docker, make sure Docker Desktop is running and use:
+
+```
+docker compose up -d --build
+docker compose exec web python manage.py migrate
+docker compose exec web python manage.py fetch_trails_from_arcgis
+docker compose exec web python manage.py load_towns
+```
+
+Then open http://localhost:8000/dashboard/
+
+### Available API Endpoints
+
+The main trail endpoints are:
+
+- GET /api/trails/ - List all trails with pagination and filtering
+- GET /api/trails/{id}/ - Get details for a specific trail
+- GET /api/trails/geojson/ - Get all trails as GeoJSON
+- POST /api/trails/within-radius/ - Find trails within a distance from coordinates
+- POST /api/trails/bbox/ - Find trails within a bounding box
+- GET /api/trails/stats/ - Get summary statistics about all trails
+- GET /api/trails/info/ - Get API metadata and info
 
 
- (Endpoint)                      (Method)              (Description)                             
+## 5. How It Works
 
- `/api/trails/`                GET / POST          List or create trails                   
- `/api/trails/<id>/`           GET / PUT / DELETE  Retrieve, update or delete a trail      
- `/api/trails/geojson/`        GET                 Get all trails as GeoJSON               
- `/api/trails/within-radius/`  POST                Find trails near a coordinate           
- `/api/trails/bbox/`           POST                Find trails in bounding box             
- `/api/trails/stats/`          GET                 Trail summary statistics                
-`/api/trails/info/`            GET                 API metadata                            
- `/api/trails/map/`            GET                 Map interface                           
- `/api/trails/test/`           GET                 Testing interface – not activated yet 
-`/api/trails/towns/geojson/`   GET                 GeoJSON of towns with filters
+The web interface lets you click on the map to search for trails near any location. Results show on the map with numbered markers and in a side panel. You can see each trail's distance, difficulty level, and elevation gain.
 
-URL                     Description                         
-
-`/dashboard/`            Dashboard home page                  
-`/dashboard/analytics/`  Data analytics and charts for trails 
-`/maps/api/status/`          Health/status check endpoint
+The mobile app fetches data from the same REST API and displays trails in a scrollable list. Each trail card shows the basic information, and you can tap to see full details. The app includes accessibility features so users can adjust text size and enable high contrast mode.
 
 
+## 6. Testing
 
-## 6. Tests & Validation
+The project includes tests for the API endpoints and spatial queries. You can run tests with pytest:
 
-- Implemented but not activated yet
+```
+pytest
+```
 
-- Trails API Test Interface (Django view template)
-
-- Unit tests planned for:
-
-- Radius search (within-radius)
-
-- GeoJSON response structure
-
-- Database model constraints
-
-### Debugging
-
-- The town filters (type and population) were not working because two URL routes were defined for the same endpoint (/api/trails/towns/geojson/).
-
-- The duplicate class-based view (TownGeoJSONView) was removed.
-
-- The function-based view (towns_geojson) was kept, allowing proper filtering and debug logging.
-
-- Confirmed working filters for town_type, min_population, and max_population.
-
-### Proximity Search
-
-- Trails and towns are now searchable by proximity using GeoDjango’s DistanceFunction.
-
-- Clicking on the map triggers a radius search that:
-
-- Returns trails ordered by distance.
-
-- Displays results on the map and in the side panel.
-
-- Each marker now uses a numbered icon for clarity.
-
-### GeoJSON Fix
-
-- Initially, trails did not appear on the map due to mismatched field names (location vs start_point).
-
-- Serializer and Leaflet JS were updated to use the correct coordinate field.
-
-## 7. Future Enhancements
-
-- Add user accounts for trail submissions
-
-- Enable Mapbox layer switching
-
-- Connect frontend search UI for live queries
-
-- Automate tests via Django’s TestCase class
-
-## 8  Testing
-
-All API routes tested using pytest and Django’s test client.
-
-Tests for GeoJSON endpoints, proximity search, and radius queries all pass.
+Tests cover the GeoJSON endpoints, proximity search, radius queries, and bounding box searches.
 
 
+## 7. Data Sources
 
-9. References
+The trail data comes from Sport Ireland's Get Ireland Active Trail Routes dataset via ArcGIS REST API. This provides the names, locations, and details for walking and cycling trails around Ireland.
+
+The towns data is sourced from Irish open data and cleaned for use in the application.
+
+Trail markers on the map use open source icons from the leaflet-color-markers project.
+
+
+## 8. Deployment
+
+The application is set up to run with Docker Compose for local development. For production, the application can be deployed to any cloud platform that supports Docker containers.
+
+
+## 9. References
 
 Mapbox Documentation – https://console.mapbox.com
 
@@ -152,79 +154,6 @@ DRF Spectacular – https://drf-spectacular.readthedocs.io/en/latest/readme.html
 
 LeafletJS – https://leafletjs.com/examples/geojson/
 
-10. ## Docker Setup (Final Deployment)
+React Native – https://reactnative.dev/
 
-Ensure Docker Desktop is running before executing these commands.
-
-docker compose up -d --build
-docker compose exec web python manage.py migrate
-docker compose exec web python manage.py fetch_trails_from_arcgis
-docker compose exec web python manage.py load_towns
-
-# Restore
-docker compose exec web python manage.py loaddata trails_api/data/towns_backup.json
-docker compose exec web python manage.py loaddata trails_api/data/trails_backup.json
-
-### Open Browser
-http://localhost:8000/dashboard/
-
-## 🐋 Docker Usage Guide
-
-### Start the Application
-Run from project root (where `docker-compose.yml` is located):
-
-docker compose up -d
-
-
-## Stop the Application
-
-- Stop and remove running containers:
-
-  docker compose down
-
-- Pause them without removing:
-
-docker compose stop
-
-## Restart the Application
-
-docker compose down
-docker compose up -d
-
-## Check Running Containers
-
-docker ps
-
-## Clean Up Unused Containers & Images
-
-- Removes all stopped containers, images, and volumes:
-
-docker system prune -a
-
-## Intersection Test Page
-
-URL: http://localhost:8000/maps/intersect_test/
-
-# Description: 
-Displays a test interface for validating trail intersection points and spatial operations using Leaflet.
-
-# Data Sources
-
-The trail data used in this project comes from the Sport Ireland “Get Ireland Active Trail Routes” dataset, which is published through ArcGIS. I fetched it directly from their ArcGIS REST API in GeoJSON format using a Django management command. This data includes the names, locations, and details for walking and cycling trails around Ireland.
-
-The towns data is loaded from a local GeoJSON file called sample_towns.geojson in the trails_api/data/ folder. It’s a simplified dataset that includes Irish towns with their coordinates, county names, and a few extra fields. It was originally taken from Irish open data data.gov.ie and cleaned up before being added to the project.
-
-- Markers
-https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png
-https://github.com/pointhi/leaflet-color-markers
-Trigger test Sat Nov  8 19:42:01 GMT 2025
-Trigger test Sat Nov  8 19:45:24 GMT 2025
-Pipeline test Sat Nov  8 20:05:55 GMT 2025
-
-
-## Project folder in google cloud
-cloud-sql-proxy long-octane-477515-k6:europe-west1:stay-trek-db --port=5432
-
-### Database Modes
-- Local: `ACTIVE_DB=local`
-- Cloud: `ACTIVE_DB=new`
+Expo – https://expo.dev/
