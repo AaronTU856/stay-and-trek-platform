@@ -12,16 +12,23 @@ This is a full-stack application for exploring Irish hiking trails. It includes 
 - Spatial queries to find trails within a radius or bounding box
 - Search and filtering by location, difficulty, and distance
 - Trail statistics and metadata endpoints
+- River and boundary analysis - find trails that cross rivers and water features
+- Polygon-based spatial queries for boundaries and protected areas
 
 ### Web Interface
 - Interactive map with Leaflet and Mapbox
-- Proximity search - click on the map to find nearby trails
-- Trail details view with distance and difficulty information
+- Proximity search - click on the map to enable search and find trails within a custom radius (trails only load after search radius is set)
+- River display showing all rivers across Ireland with interactive popups
+- Click any river to see trails that cross it or trails nearby within 10km
+- Boundary and polygon queries for protected areas and geographic regions
+- Filter points of interest including towns, and geographic boundaries
+- Trail details view with distance, difficulty, and elevation information
+- High contrast mode for better visibility
 - Responsive design that works on desktop and tablets
 
 ### Mobile App
 - Cross-platform mobile app built with React Native and Expo
-- Browse all trails in an easy-to-read list
+- Browse all trails in an easy-to-read list format
 - View detailed trail information including distance, difficulty, and elevation
 - Accessibility features for font scaling and high contrast mode
 - Works with the live API to display real trail data
@@ -112,9 +119,26 @@ The main trail endpoints are:
 
 ## 5. How It Works
 
-The web interface lets you click on the map to search for trails near any location. Results show on the map with numbered markers and in a side panel. You can see each trail's distance, difficulty level, and elevation gain.
+### Web Interface Features
 
-The mobile app fetches data from the same REST API and displays trails in a scrollable list. Each trail card shows the basic information, and you can tap to see full details. The app includes accessibility features so users can adjust text size and enable high contrast mode.
+The web interface provides several ways to explore trail data:
+
+**Proximity Search** - Click on the map to search for trails within a custom radius. The search is interactive - trails only load when you specify the search radius and click a location. You can adjust the radius in kilometers and see all trails within that distance ordered by proximity.
+
+**River and Boundary Analysis** - The map displays thousands of rivers across Ireland. Click any river to:
+- See all trails that cross through it (polygon/path intersection queries)
+- View trails nearby within 10km of the river
+Each result is displayed on the map with color-coded markers showing the trail locations and routes.
+
+**Polygon Search** - The system supports complex spatial queries using polygon boundaries, allowing you to search for trails within protected areas, counties, regions, and other geographic features.
+
+**Filter by Geographic Features** - You can filter points of interest including towns and geographic boundaries to see specific categories on the map.
+
+**Accessibility** - High contrast mode is available to improve visibility for users with visual accessibility needs.
+
+### Mobile App
+
+The mobile app fetches data from the same REST API and displays trails in a scrollable list. Each trail card shows the basic information like distance, difficulty, and county. You can tap a trail to see full details. The app includes accessibility features so users can adjust text size and enable high contrast mode for better readability.
 
 
 ## 6. Testing
