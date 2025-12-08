@@ -228,3 +228,4 @@ cloud-sql-proxy long-octane-477515-k6:europe-west1:stay-trek-db --port=5432
 ### Database Modes
 - Local: `ACTIVE_DB=local`
 - Cloud: `ACTIVE_DB=new`
+# Cloud Build test push - Mon Dec  8 19:45:45 GMT 2025
