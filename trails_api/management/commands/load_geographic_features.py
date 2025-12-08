@@ -7,7 +7,7 @@ import requests
 import json
 from django.core.management.base import BaseCommand
 from django.contrib.gis.geos import GEOSGeometry, Polygon, MultiPolygon, LineString, MultiLineString
-from trails_api.models import GeographicBoundary
+from trails_api.models import Rivers
 
 
 class Command(BaseCommand):
@@ -132,8 +132,8 @@ class Command(BaseCommand):
                 geom = LineString(coords, srid=4326)
                 
                 # Check if already exists
-                if not GeographicBoundary.objects.filter(name=str(river['name']), boundary_type='river').exists():
-                    boundary = GeographicBoundary.objects.create(
+                if not Rivers.objects.filter(name=str(river['name']), boundary_type='river').exists():
+                    boundary = Rivers.objects.create(
                         name=str(river['name']),
                         boundary_type='river',
                         geom=geom,
@@ -221,8 +221,8 @@ class Command(BaseCommand):
                 geom = Polygon(coords, srid=4326)
                 
                 # Check if already exists
-                if not GeographicBoundary.objects.filter(name=str(area['name']), boundary_type=area['boundary_type']).exists():
-                    boundary = GeographicBoundary.objects.create(
+                if not Rivers.objects.filter(name=str(area['name']), boundary_type=area['boundary_type']).exists():
+                    boundary = Rivers.objects.create(
                         name=str(area['name']),
                         boundary_type=area['boundary_type'],
                         geom=geom,
@@ -287,8 +287,8 @@ class Command(BaseCommand):
                         continue
                     
                     # Check if already exists
-                    if not GeographicBoundary.objects.filter(name=str(name), boundary_type='marine_protected').exists():
-                        boundary = GeographicBoundary.objects.create(
+                    if not Rivers.objects.filter(name=str(name), boundary_type='marine_protected').exists():
+                        boundary = Rivers.objects.create(
                             name=str(name),
                             boundary_type='marine_protected',
                             geom=geom,
