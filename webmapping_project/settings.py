@@ -60,6 +60,13 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']  # Allow all hosts for demo/checkpoint
 
+CSRF_TRUSTED_ORIGINS = [
+    "https://stay-and-trek.com",
+    "https://www.stay-and-trek.com",
+    "https://stay-and-trek-service-642845720185.europe-west1.run.app",
+]
+
+
 
 # Application definition
 
