@@ -25,8 +25,8 @@ steps:
     id: PushImage
 
   # Step 4: Deploy the new image to Cloud Run
-  # This deployment uses the dedicated service account and sets the MY_API_KEY secret
-  # NOTE: Using Cloud SQL Auth Proxy (--add-cloudsql-instances) for secure database access
+  # This deployment uses the dedicated service account and Cloud SQL socket connection
+  # NOTE: Using Cloud SQL Socket (unix domain socket) for secure database access via --add-cloudsql-instances
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     args:
       - gcloud
@@ -44,8 +44,7 @@ steps:
       - --set-env-vars=ACTIVE_DB=new
       - --set-env-vars=NEW_DB_NAME=trails_db
       - --set-env-vars=NEW_DB_USER=postgres
-      - --set-env-vars=NEW_DB_HOST=127.0.0.1
-      - --set-env-vars=NEW_DB_PORT=5432
+      - --set-env-vars=NEW_DB_HOST=/cloudsql/long-octane-477515-k6:europe-west1:stay-trek-db
       - --set-env-vars=SECRET_KEY=django-insecure-nehw-)k@fa!el1zw5jdj#bn-x&@c)ph7sjd7i%%91$xwrcze)b
       - --set-env-vars=OPENWEATHERMAP_API_KEY=d7f38f79ac1c83a0ed6867548326ece9
       - --set-secrets=NEW_DB_PASSWORD=cloud_sql_password:latest

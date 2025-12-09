@@ -168,15 +168,34 @@ else:
     
     if active_db == "new":
         print("🔹 Using Cloud SQL (PostgreSQL 17)")
-        db_config = {
-            'ENGINE': 'django.contrib.gis.db.backends.postgis',
-            'NAME': os.getenv('NEW_DB_NAME'),
-            'USER': os.getenv('NEW_DB_USER'),
-            'PASSWORD': os.getenv('NEW_DB_PASSWORD'),
-            'HOST': os.getenv('NEW_DB_HOST'),
-            'PORT': os.getenv('NEW_DB_PORT'),
-        }
-        print(f"🔹 DEBUG: Cloud SQL config - NAME={db_config['NAME']}, USER={db_config['USER']}, HOST={db_config['HOST']}, PORT={db_config['PORT']}")
+        db_host = os.getenv('NEW_DB_HOST')
+        db_port = os.getenv('NEW_DB_PORT', '5432')
+        
+        # Check if using Cloud SQL socket connection (unix socket path)
+        if db_host and db_host.startswith('/cloudsql/'):
+            # Socket connection (Cloud Run with Cloud SQL Connector)
+            print(f"🔹 Using Cloud SQL socket: {db_host}")
+            db_config = {
+                'ENGINE': 'django.contrib.gis.db.backends.postgis',
+                'NAME': os.getenv('NEW_DB_NAME'),
+                'USER': os.getenv('NEW_DB_USER'),
+                'PASSWORD': os.getenv('NEW_DB_PASSWORD'),
+                'HOST': db_host,
+                # No PORT when using socket connection
+            }
+        else:
+            # TCP connection (public IP or localhost)
+            print(f"🔹 Using Cloud SQL TCP connection: {db_host}:{db_port}")
+            db_config = {
+                'ENGINE': 'django.contrib.gis.db.backends.postgis',
+                'NAME': os.getenv('NEW_DB_NAME'),
+                'USER': os.getenv('NEW_DB_USER'),
+                'PASSWORD': os.getenv('NEW_DB_PASSWORD'),
+                'HOST': db_host,
+                'PORT': db_port,
+            }
+        
+        print(f"🔹 DEBUG: Cloud SQL config - NAME={db_config['NAME']}, USER={db_config['USER']}, HOST={db_config['HOST']}")
         DATABASES = {'default': db_config}
     else:
         print("🔹 Using local PostGIS (default)")
