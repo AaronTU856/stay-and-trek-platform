@@ -162,18 +162,22 @@ else:
     # Detect which database to use: local PostGIS or Cloud SQL
     # environment variables should already be loaded above if python-dotenv is present
 
-    if os.getenv("ACTIVE_DB") == "new":
+    active_db = os.getenv("ACTIVE_DB")
+    print(f"🔹 DEBUG: ACTIVE_DB={active_db}")
+    print(f"🔹 DEBUG: Available env vars - NEW_DB_NAME={os.getenv('NEW_DB_NAME')}, NEW_DB_HOST={os.getenv('NEW_DB_HOST')}, NEW_DB_PORT={os.getenv('NEW_DB_PORT')}")
+    
+    if active_db == "new":
         print("🔹 Using Cloud SQL (PostgreSQL 17)")
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.contrib.gis.db.backends.postgis',
-                'NAME': os.getenv('NEW_DB_NAME'),
-                'USER': os.getenv('NEW_DB_USER'),
-                'PASSWORD': os.getenv('NEW_DB_PASSWORD'),
-                'HOST': os.getenv('NEW_DB_HOST'),
-                'PORT': os.getenv('NEW_DB_PORT'),
-            }
+        db_config = {
+            'ENGINE': 'django.contrib.gis.db.backends.postgis',
+            'NAME': os.getenv('NEW_DB_NAME'),
+            'USER': os.getenv('NEW_DB_USER'),
+            'PASSWORD': os.getenv('NEW_DB_PASSWORD'),
+            'HOST': os.getenv('NEW_DB_HOST'),
+            'PORT': os.getenv('NEW_DB_PORT'),
         }
+        print(f"🔹 DEBUG: Cloud SQL config - NAME={db_config['NAME']}, USER={db_config['USER']}, HOST={db_config['HOST']}, PORT={db_config['PORT']}")
+        DATABASES = {'default': db_config}
     else:
         print("🔹 Using local PostGIS (default)")
         # Check if running in Docker (env vars set by docker-compose)

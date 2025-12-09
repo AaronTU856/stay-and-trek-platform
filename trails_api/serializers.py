@@ -28,7 +28,11 @@ class TrailDetailSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Trail
-        fields = '__all__'
+        fields = [
+            'id', 'trail_name', 'county', 'region', 'distance_km',
+            'difficulty', 'elevation_gain_m', 'description', 'latitude', 'longitude', 
+            'dogs_allowed', 'parking_available'
+        ]
  
         
 # Serializer for GeoJSON representation of trails

@@ -74,6 +74,7 @@ window.AdvancedMapping = (function() {
             };
 
             // Explicit result marker icon to avoid icon path resolution issues
+            // Using blue colored markers from GitHub CDN to match dashboard style
             try {
                 window.resultMarkerIcon = L.icon({
                     iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',

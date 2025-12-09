@@ -26,6 +26,7 @@ steps:
 
   # Step 4: Deploy the new image to Cloud Run
   # This deployment uses the dedicated service account and sets the MY_API_KEY secret
+  # NOTE: Using Cloud SQL Auth Proxy (--add-cloudsql-instances) for secure database access
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     args:
       - gcloud
@@ -36,14 +37,17 @@ steps:
       - europe-west1-docker.pkg.dev/long-octane-477515-k6/cloud-run-source-deploy/stay-and-trek-service:latest
       - --region
       - europe-west1
+      - --add-cloudsql-instances=long-octane-477515-k6:europe-west1:stay-trek-db
       - --service-account
       - cloud-run-service-account@${PROJECT_ID}.iam.gserviceaccount.com
       - --set-secrets=MY_API_KEY=api_key_secret:latest
       - --set-env-vars=ACTIVE_DB=new
       - --set-env-vars=NEW_DB_NAME=trails_db
       - --set-env-vars=NEW_DB_USER=postgres
-      - --set-env-vars=NEW_DB_HOST=35.195.119.207
+      - --set-env-vars=NEW_DB_HOST=127.0.0.1
       - --set-env-vars=NEW_DB_PORT=5432
+      - --set-env-vars=SECRET_KEY=django-insecure-nehw-)k@fa!el1zw5jdj#bn-x&@c)ph7sjd7i%%91$xwrcze)b
+      - --set-env-vars=OPENWEATHERMAP_API_KEY=d7f38f79ac1c83a0ed6867548326ece9
       - --set-secrets=NEW_DB_PASSWORD=cloud_sql_password:latest
       - --allow-unauthenticated
     id: DeployToCloudRun
