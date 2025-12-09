@@ -39,12 +39,6 @@ steps:
       - --service-account
       - cloud-run-service-account@${PROJECT_ID}.iam.gserviceaccount.com
       - --set-secrets=MY_API_KEY=api_key_secret:latest
-      - --set-env-vars=ACTIVE_DB=new
-      - --set-env-vars=NEW_DB_NAME=trails_db
-      - --set-env-vars=NEW_DB_USER=postgres
-      - --set-env-vars=NEW_DB_HOST=35.195.119.207
-      - --set-env-vars=NEW_DB_PORT=5432
-      - --set-secrets=NEW_DB_PASSWORD=cloud_sql_password:latest
       - --allow-unauthenticated
     id: DeployToCloudRun
     env:
