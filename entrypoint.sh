@@ -3,11 +3,11 @@ set -e
 
 echo "Starting Stay and Trek service..."
 
-# Run migrations
-echo "Running Django migrations..."
-python manage.py migrate --no-input
+# Skip migrations if database already populated
+# Migrations will timeout on Cloud Run startup
+# Database is pre-populated via Cloud SQL import
 
-# Collect static files
+# Collect static files  
 echo "Collecting static files..."
 python manage.py collectstatic --noinput
 
