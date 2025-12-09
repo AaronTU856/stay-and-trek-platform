@@ -38,11 +38,17 @@ steps:
       - europe-west1
       - --service-account
       - cloud-run-service-account@${PROJECT_ID}.iam.gserviceaccount.com
-      - --set-secrets=MY_API_KEY=api_key_secret:latest # Securely injects the API key
-      - --allow-unauthenticated # Consider removing for production private services
+      - --set-secrets=MY_API_KEY=api_key_secret:latest
+      - --set-env-vars=ACTIVE_DB=new
+      - --set-env-vars=NEW_DB_NAME=trails_db
+      - --set-env-vars=NEW_DB_USER=postgres
+      - --set-env-vars=NEW_DB_HOST=35.195.119.207
+      - --set-env-vars=NEW_DB_PORT=5432
+      - --set-secrets=NEW_DB_PASSWORD=cloud_sql_password:latest
+      - --allow-unauthenticated
     id: DeployToCloudRun
     env:
-      - 'CLOUDSDK_CORE_PROJECT=$PROJECT_ID' # Ensure gcloud uses the correct project
+      - 'CLOUDSDK_CORE_PROJECT=$PROJECT_ID'
 
 images:
   - europe-west1-docker.pkg.dev/long-octane-477515-k6/cloud-run-source-deploy/stay-and-trek-service:latest
