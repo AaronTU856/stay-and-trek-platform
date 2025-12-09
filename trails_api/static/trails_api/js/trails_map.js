@@ -6,7 +6,6 @@
 console.log("✅ trails_map.js loaded");
 let map;
 let allTrailsData = [];
-let allSearchableTrails = L.layerGroup(); // Hidden layer for searching all trails
 
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -16,14 +15,6 @@ document.addEventListener("DOMContentLoaded", function () {
   loadTrailPaths();
   setupEventListeners();
   enableProximitySearch();
-  
-  // Load all trails into searchable layer (hidden from map view)
-  loadAllTrailsForSearch();
-  
-  // Initialize empty search control so it's visible from the start
-  setTimeout(() => {
-    addSearchControls();
-  }, 1000);
 });
 
 
@@ -260,159 +251,6 @@ fetch("/api/trails/towns/geojson/")
   });
 
 /**
- * Load all trails from database into a hidden searchable layer
- * These trails won't be displayed but will be searchable
- * When a trail is found via search, it will be displayed on the map
- */
-function loadAllTrailsForSearch() {
-  console.log("📚 Loading all trails for global search...");
-  
-  fetch("/api/trails/")
-    .then((response) => {
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      return response.json();
-    })
-    .then((data) => {
-      let trailsArray = [];
-      
-      // Handle paginated response
-      if (data && data.results && Array.isArray(data.results)) {
-        trailsArray = data.results;
-      } else if (Array.isArray(data)) {
-        trailsArray = data;
-      }
-      
-      console.log(`📚 Found ${trailsArray.length} trails in database`);
-      
-      // Add each trail to the searchable layer but not displayed
-      trailsArray.forEach((trail) => {
-        try {
-          const lat = parseFloat(trail.latitude);
-          const lng = parseFloat(trail.longitude);
-          
-          if (isNaN(lat) || isNaN(lng)) return;
-          
-          const name = trail.name || trail.trail_name || "Unnamed Trail";
-          const county = trail.county || "Unknown";
-          const trailId = trail.id || trail.pk;
-          
-          // Create an invisible marker that can be searched but won't show on the map
-          const marker = L.marker([lat, lng], {
-            title: name,
-            county: county,
-            trailId: trailId,
-            opacity: 0, // Make invisible
-            interactive: false, // Don't respond to clicks
-          }).bindPopup(`<b>${name}</b><br/>📍 ${county}`);
-          
-          allSearchableTrails.addLayer(marker);
-        } catch (err) {
-          console.error("Error adding trail to searchable layer:", err);
-        }
-      });
-      
-      console.log(`✅ ${allSearchableTrails.getLayers().length} trails loaded for search`);
-      
-      // Update the search control to include these trails
-      addSearchControls();
-    })
-    .catch((err) => {
-      console.error("❌ Error loading trails for search:", err);
-    });
-}
-
-/**
- * Display a searched trail on the map
- * Fetches full trail data and adds it to the visible trail markers layer
- * @param {number} trailId - The ID of the trail to display
- * @param {string} trailName - The name of the trail (for logging)
- */
-function displaySearchedTrail(trailId, trailName) {
-  console.log(`🔍 Displaying searched trail: ${trailName} (ID: ${trailId})`);
-  
-  // Ensure trailMarkers layer exists
-  if (!window.trailMarkers || !(window.trailMarkers instanceof L.LayerGroup)) {
-    window.trailMarkers = L.layerGroup().addTo(window.trailsMap);
-  }
-  
-  // Fetch the full trail data
-  fetch(`/api/trails/${trailId}/`)
-    .then((response) => {
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      return response.json();
-    })
-    .then((trail) => {
-      const lat = parseFloat(trail.latitude);
-      const lng = parseFloat(trail.longitude);
-      
-      if (isNaN(lat) || isNaN(lng)) {
-        console.error("Invalid coordinates for trail", trail);
-        return;
-      }
-      
-      const name = trail.name || trail.trail_name || "Unnamed Trail";
-      const county = trail.county || "Unknown";
-      const town = trail.nearest_town || trail.town || "Unknown";
-      const distance = trail.distance_km || "?";
-      const difficulty = trail.difficulty || "Unknown";
-      
-      // Create marker icon
-      const markerIcon = L.icon({
-        iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png",
-        shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
-        iconSize: [25, 41],
-        iconAnchor: [12, 41],
-        popupAnchor: [1, -34],
-        shadowSize: [41, 41],
-      });
-      
-      // Create popup with full details
-      const popupHTML = `
-        <div style="width: 228px; font-family: Arial, sans-serif;">
-          <h5 style="margin: 0 0 8px; color: #2f6b3a;">${name}</h5>
-          <hr style="margin: 8px 0;">
-          <p style="margin: 5px 0;"><strong>County:</strong> ${county}</p>
-          <p style="margin: 5px 0;"><strong>Town:</strong> ${town}</p>
-          <p style="margin: 5px 0;"><strong>Parking:</strong> ${trail.parking_available === "Yes" ? "✅ Yes" : "❌ No"}</p>
-          <p style="margin: 5px 0;"><strong>Dogs Allowed:</strong> ${trail.dogs_allowed === "Yes" ? "✅ Yes" : "❌ No"}</p>
-          <p style="margin: 5px 0;"><strong>Distance:</strong> ${distance} km</p>
-          <p style="margin: 5px 0;"><strong>Difficulty:</strong> ${difficulty}</p>
-        </div>
-      `;
-      
-      // Create and add marker
-      const marker = L.marker([lat, lng], {
-        icon: markerIcon,
-        title: name,
-        county: county,
-      }).bindPopup(popupHTML);
-      
-      window.trailMarkers.addLayer(marker);
-      
-      // Center map on the trail
-      window.trailsMap.setView([lat, lng], 13);
-      
-      // Highlight with orange circle
-      const circle = L.circleMarker([lat, lng], {
-        radius: 20,
-        color: "orange",
-        weight: 3,
-        fillColor: "yellow",
-        fillOpacity: 0.4,
-      }).addTo(window.trailsMap);
-      
-      setTimeout(() => {
-        window.trailsMap.removeLayer(circle);
-      }, 4000);
-      
-      console.log(`✅ Searched trail displayed: ${name}`);
-    })
-    .catch((err) => {
-      console.error("❌ Error fetching searched trail data:", err);
-    });
-}
-
-/**
  * Load trail path geometries from the GeoJSON API endpoint
  * Displays full trail routes as polylines on the map
  * Creates a layer that can be toggled on and off
@@ -600,24 +438,20 @@ function displayTrailsOnMap(trails) {
       // ✅ Use the correct name field from your data
       const name = props.name || props.trail_name || "Unnamed Trail";
       const county = props.county || "Unknown";
-      const town = props.nearest_town || props.town || "Unknown";
       const distance = props.distance_km || "?";
       const difficulty = props.difficulty || "Unknown";
 
       const popupHTML = `
-        <div style="width: 228px; font-family: Ariel, sans-serif;">
-          <h5 style="margin: 0, 0, 8px; color: #2f6b3a;">${name}</h5>
-          <hr style="margin: 8px 0;">
-          <p style="margin: 5px 0;><strong>County:</strong> ${county}</p>
-          <p style="margin: 5px 0;"><strong>Town:</strong> ${town}</p>
-          <p style="margin: 5px 0;"><strong>Parking:</strong> ${
+                <strong>${name}</strong><br>
+                County: ${county}<br>
+                Parking: ${
                   props.parking_available === "Yes" ? "✅ Yes" : "❌ No"
-                }</p>
-          <p style="margin: 5px 0;"><strong>Dogs Allowed:</strong> ${
+                }<br>
+                Dogs Allowed: ${
                   props.dogs_allowed === "Yes" ? "✅ Yes" : "❌ No"
-                }</p>
-          <p style="margin: 5px 0;"><strong>Distance:</strong> ${distance} km</p>
-          <p style="margin: 5px 0;"><strong>Difficulty:</strong> ${difficulty}</p>
+                }<br>
+                Distance: ${distance} km<br>
+                Difficulty: ${difficulty}
             `;
 
       const marker = L.marker([lat, lng], {
@@ -641,39 +475,39 @@ function displayTrailsOnMap(trails) {
     console.warn("⚠️ No valid markers to display or invalid trailMarkers type");
   }
 
-  // ✅ Add search controls
+  // ✅ Add search controls only when markers exist
   setTimeout(() => {
+    if (
+      typeof L.Control.Search === "function" &&
+      window.trailMarkers.getLayers().length > 0
+    ) {
       addSearchControls();
-      console.log("✅ Search controls initialized");
-  }, 500);
+      console.log("✅ Search controls initialized after markers loaded");
+    } else {
+      console.warn("❌ Search plugin or markers not ready yet");
+    }
+  }, 1000);
 }
 
 /**
  * Add search control panel to the map sidebar
  * Creates input field and search button for trail name searches
- * Updates existing search control if new layers are added
  */
 function addSearchControls() {
   if (!window.trailsMap) return;
-
-  console.log("📌 Initializing/updating search controls...");
+  if (window.searchTrail) return;
 
   // ✅ Collect only existing, non-empty layers
   const layers = [];
-  if (window.trailMarkers instanceof L.LayerGroup) {
+  if (window.trailMarkers && window.trailMarkers.getLayers().length > 0)
     layers.push(window.trailMarkers);
-    console.log(`   trailMarkers: ${window.trailMarkers.getLayers().length} items`);
-  }
-  if (window.nearestTrailsLayer instanceof L.LayerGroup) {
+  if (
+    window.nearestTrailsLayer &&
+    window.nearestTrailsLayer.getLayers().length > 0
+  )
     layers.push(window.nearestTrailsLayer);
-    console.log(`   nearestTrailsLayer: ${window.nearestTrailsLayer.getLayers().length} items`);
-  }
-  if (allSearchableTrails instanceof L.LayerGroup) {
-    layers.push(allSearchableTrails);
-    console.log(`   allSearchableTrails: ${allSearchableTrails.getLayers().length} items`);
-  }
 
-  // 🔁 Merge into one searchable group (even if empty)
+  // 🔁 Merge into one searchable group
   const searchableLayer = L.layerGroup(layers);
 
   // Check if there's a sidebar search input
@@ -741,58 +575,33 @@ function addSearchControls() {
     // Use map control search (positioned at topleft next to zoom)
     console.log("✅ Using map control search");
     
-    if (window.searchTrail) {
-      // Update existing search control with new layers
-      console.log("🔄 Updating existing search control with new layers");
-      window.searchTrail._layer = searchableLayer;
-    } else {
-      // Create new search control (even if no layers yet)
-      window.searchTrail = new L.Control.Search({
-        layer: searchableLayer,
-        propertyName: "title",
-        initial: false,
-        casesensitive: false,
-        textPlaceholder: "Search trail…",
-        marker: false,
-        position: "topleft",
-        collapsed: false,
-        moveToLocation: function (latlng, title, map) {
-          console.log(`🎯 Search selected: ${title}`);
-          
-          // Find the trail in allSearchableTrails to get its ID
-          const allTrails = allSearchableTrails.getLayers();
-          let trailId = null;
-          
-          for (let layer of allTrails) {
-            if (layer.options && layer.options.title === title) {
-              // Found the marker - now we need to get the trail ID
-              // Since we don't have it stored, we'll query the API by name
-              trailId = layer.options.trailId;   // Use the stored trails ID instead of querying the API
-              console.log(`Found trail ID: ${trailId}`);
-              break;
-            }
-          }
+    // 🔍 Trail name search
+    window.searchTrail = new L.Control.Search({
+      layer: searchableLayer,
+      propertyName: "title",
+      initial: false,
+      casesensitive: false,
+      textPlaceholder: "Search trail…",
+      marker: false,
+      position: "topleft",
+      collapsed: false,
+      moveToLocation: function (latlng, title, map) {
+        map.setView(latlng, 13);
 
-          
-          if (trailId) {
-            displaySearchedTrail(trailId, title);
-          } else {
-            // Fallback: just zoom to location
-            console.warn("Trail ID not found, zooming to location only");
-            map.setView(latlng, 13);
-            const circle = L.circleMarker(latlng, {
-              radius: 20,
-              color: "orange",
-              weight: 3,
-              fillColor: "yellow",
-              fillOpacity: 0.4,
-            }).addTo(map);
-            setTimeout(() => map.removeLayer(circle), 4000);
-          }
-        },
-      }).addTo(window.trailsMap);
-      console.log("✨ Search control created and added to map");
-    }
+        // Highlights the marker briefly
+        const circle = L.circleMarker(latlng, {
+          radius: 20,
+          color: "orange",
+          weight: 3,
+          fillColor: "yellow",
+          fillOpacity: 0.4,
+        }).addTo(map);
+
+        setTimeout(() => {
+          map.removeLayer(circle);
+        }, 4000);
+      },
+    }).addTo(window.trailsMap);
   }
 }
 
@@ -1219,7 +1028,7 @@ function zoomToTrail(trailId) {
     const [lng, lat] = trail.geometry.coordinates;
 
     if (!isNaN(lat) && !isNaN(lng)) {
-      window.trailsMap.setView([lat, lng], 13); // Zoom level 13
+      map.setView([lat, lng], 12);
     }
   }
 }
@@ -1352,7 +1161,6 @@ function enableProximitySearch() {
     toggleBtn.classList.toggle("btn-success", !searchEnabled);
 
     if (searchEnabled) {
-      
       showAlert("🧭 Click on the map to search trails within radius", "info");
     } else {
       clearProximityResults();
@@ -1369,8 +1177,6 @@ function enableProximitySearch() {
 // Main proximity search
 async function performProximitySearch(lat, lng) {
   clearProximityResults();
-
-  //await loadTrails();
 
   const radiusKm = parseFloat(
     document.getElementById("radius-input").value || 10
@@ -1435,11 +1241,11 @@ async function performProximitySearch(lat, lng) {
       await findNearestTown(lat, lng);
       return;
     }
-    displayTrailsOnMap(data.nearest_trails);
+
     displayNearestTrails(data.nearest_trails);
     updateResultsPanel(data);
     showAlert(`✅ Found ${data.nearest_trails.length} trails`, "success");
-    
+
     // ✅ Always call this after trail results are shown
     await findNearestTown(lat, lng);
   } catch (err) {
@@ -1502,14 +1308,12 @@ function displayNearestTrails(trails) {
     const name = trail.name || trail.trail_name || "Unnamed Trail";
     const town = trail.nearest_town || trail.town || "";
     const county = trail.county || "Unknown";
-    const trailId = trail.id || trail.pk; // Store trail ID
 
     const marker = L.marker([lat, lng], {
       icon: getNumberedIcon(index + 1),
       title: name,
       town: town,
       county: county,
-      trailId: trailId,  // Store trail ID in marker options
     }).bindPopup(`
             <strong>#${index + 1} ${name}</strong><br>
             County: ${trail.county || "Unknown"}<br>

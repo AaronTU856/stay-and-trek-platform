@@ -76,9 +76,8 @@ window.AdvancedMapping = (function() {
             // Explicit result marker icon to avoid icon path resolution issues
             try {
                 window.resultMarkerIcon = L.icon({
-                    iconUrl: '/static/leaflet/images/marker-icon.png',
-                    iconRetinaUrl: '/static/leaflet/images/marker-icon-2x.png',
-                    shadowUrl: '/static/leaflet/images/marker-shadow.png',
+                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
                     iconSize: [25, 41],
                     iconAnchor: [12, 41],
                     popupAnchor: [1, -34],
