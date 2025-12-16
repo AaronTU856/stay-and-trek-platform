@@ -49,5 +49,13 @@ urlpatterns = [
     
     # Spatial analysis
     path('spatial-analysis/summary/', views.spatial_analysis_summary, name='spatial-analysis-summary'),
+    
+    # ACCOMMODATIONS ENDPOINTS
+    path('accommodations/', views.AccommodationsListView.as_view(), name='accommodations-list'),
+    path('accommodations/geojson/', views.accommodations_geojson, name='accommodations-geojson'),
+    path('accommodations/near-trail/', views.accommodations_near_trail, name='accommodations-near-trail'),
+    path('accommodations/near-town/', views.accommodations_near_town, name='accommodations-near-town'),
+    path('accommodations/by-county/', views.accommodations_by_county, name='accommodations-by-county'),
+    path('accommodations/stats/', views.accommodations_statistics, name='accommodations-stats'),
 ]
 

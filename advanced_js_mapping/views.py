@@ -576,6 +576,8 @@ def distance_search(request):
     except Exception as e:
         logger.error(f'Distance search error: {str(e)}')
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
+    
+    
         
         
         
