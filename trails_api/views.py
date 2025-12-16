@@ -685,3 +685,266 @@ def spatial_analysis_summary(request):
         }
     })
 
+
+
+
+
+class AccommodationsListView(generics.ListAPIView):
+    """
+    List all accommodations with optional filtering.
+    
+    Query Parameters:
+    - county: Filter by county name
+    - region: Filter by region
+    - search: Search accommodation name/description
+    """
+    queryset = PointOfInterest.objects.filter(poi_type='accommodation')
+    serializer_class = PointOfInterestSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    search_fields = ['name', 'description', 'county']
+    ordering_fields = ['name', 'county']
+    ordering = ['name']
+    permission_classes = [AllowAny]
+    
+    def get_queryset(self):
+        """Apply optional filters"""
+        queryset = super().get_queryset()
+        
+        county = self.request.GET.get('county')
+        region = self.request.GET.get('region')
+        
+        if county:
+            queryset = queryset.filter(county__iexact=county)
+        if region:
+            queryset = queryset.filter(region__iexact=region)
+            
+        return queryset
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def accommodations_geojson(request):
+    """
+    Get all accommodations as GeoJSON FeatureCollection.
+    
+    Useful for mapping accommodations on Leaflet maps.
+    """
+    accommodations = PointOfInterest.objects.filter(poi_type='accommodation')
+    
+    # Apply filters if provided
+    county = request.GET.get('county')
+    if county:
+        accommodations = accommodations.filter(county__iexact=county)
+    
+    features = []
+    for acc in accommodations:
+        features.append({
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [float(acc.longitude), float(acc.latitude)]
+            },
+            "properties": {
+                "id": acc.id,
+                "name": acc.name,
+                "description": acc.description or "",
+                "county": acc.county,
+                "region": acc.region,
+                "phone": acc.phone,
+                "website": acc.website,
+                "opening_hours": acc.opening_hours,
+            }
+        })
+    
+    return Response({
+        "type": "FeatureCollection",
+        "features": features,
+        "count": len(features)
+    })
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def accommodations_near_trail(request):
+    """
+    Get accommodations near a specific trail.
+    
+    Query Parameters:
+    - trail_id: Required. The trail ID to search around
+    - radius: Optional. Search radius in kilometers (default: 10)
+    
+    Returns accommodations sorted by distance.
+    """
+    trail_id = request.GET.get('trail_id')
+    radius_km = float(request.GET.get('radius', 10))
+    
+    if not trail_id:
+        return Response({'error': 'trail_id parameter required'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        trail = Trail.objects.get(id=trail_id)
+    except Trail.DoesNotExist:
+        return Response({'error': f'Trail {trail_id} not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+    # Find accommodations within radius
+    nearby_accommodations = PointOfInterest.objects.filter(
+        poi_type='accommodation',
+        location__distance_lte=(trail.start_point, D(km=radius_km))
+    ).annotate(
+        distance_km=DistanceFunction('location', trail.start_point)
+    ).order_by('distance_km')
+    
+    features = []
+    for acc in nearby_accommodations:
+        distance_km = acc.distance_km.km if acc.distance_km else 0
+        features.append({
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [float(acc.longitude), float(acc.latitude)]
+            },
+            "properties": {
+                "id": acc.id,
+                "name": acc.name,
+                "description": acc.description or "",
+                "distance_km": round(distance_km, 2),
+                "county": acc.county,
+                "phone": acc.phone,
+                "website": acc.website,
+            }
+        })
+    
+    return Response({
+        "type": "FeatureCollection",
+        "trail_id": trail_id,
+        "trail_name": trail.trail_name,
+        "search_radius_km": radius_km,
+        "features": features,
+        "count": len(features)
+    })
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def accommodations_by_county(request):
+    """
+    Get accommodations grouped by county with statistics.
+    
+    Returns county-level statistics including accommodation count.
+    """
+    accommodations = PointOfInterest.objects.filter(poi_type='accommodation')
+    
+    county_stats = accommodations.values('county').annotate(
+        count=Count('id')
+    ).order_by('-count')
+    
+    return Response({
+        "counties": list(county_stats),
+        "total_counties": county_stats.count(),
+        "total_accommodations": accommodations.count()
+    })
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def accommodations_near_town(request):
+    """
+    Get accommodations near a specific town.
+    
+    Query Parameters:
+    - town_id: Required. The town ID
+    - radius: Optional. Search radius in kilometers (default: 15)
+    """
+    town_id = request.GET.get('town_id')
+    radius_km = float(request.GET.get('radius', 15))
+    
+    if not town_id:
+        return Response({'error': 'town_id parameter required'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        town = Town.objects.get(id=town_id)
+    except Town.DoesNotExist:
+        return Response({'error': f'Town {town_id} not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+    # Find accommodations within radius
+    nearby_accommodations = PointOfInterest.objects.filter(
+        poi_type='accommodation',
+        location__distance_lte=(town.location, D(km=radius_km))
+    ).annotate(
+        distance_km=DistanceFunction('location', town.location)
+    ).order_by('distance_km')
+    
+    features = []
+    for acc in nearby_accommodations:
+        distance_km = acc.distance_km.km if acc.distance_km else 0
+        features.append({
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [float(acc.longitude), float(acc.latitude)]
+            },
+            "properties": {
+                "id": acc.id,
+                "name": acc.name,
+                "description": acc.description or "",
+                "distance_km": round(distance_km, 2),
+                "county": acc.county,
+                "phone": acc.phone,
+                "website": acc.website,
+            }
+        })
+    
+    return Response({
+        "type": "FeatureCollection",
+        "town_id": town_id,
+        "town_name": town.name,
+        "town_population": town.population,
+        "search_radius_km": radius_km,
+        "features": features,
+        "count": len(features)
+    })
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def accommodations_statistics(request):
+    """
+    Get comprehensive accommodation statistics.
+    
+    Includes:
+    - Total accommodations count
+    - Distribution by county
+    - Geographic bounds
+    - Contact information availability
+    """
+    accommodations = PointOfInterest.objects.filter(poi_type='accommodation')
+    
+    total = accommodations.count()
+    with_phone = accommodations.exclude(phone='').exclude(phone__isnull=True).count()
+    with_website = accommodations.exclude(website='').exclude(website__isnull=True).count()
+    
+    # County distribution
+    county_distribution = list(
+        accommodations.values('county').annotate(count=Count('id')).order_by('-count')
+    )
+    
+    # Region distribution
+    region_distribution = list(
+        accommodations.values('region').annotate(count=Count('id')).order_by('-count')
+    )
+    
+    return Response({
+        "total_accommodations": total,
+        "with_contact_info": {
+            "phone": with_phone,
+            "website": with_website,
+        },
+        "by_county": county_distribution,
+        "by_region": region_distribution,
+        "coverage_stats": {
+            "counties_with_accommodation": accommodations.values('county').distinct().count(),
+            "regions_with_accommodation": accommodations.values('region').distinct().count(),
+        }
+    })
+
