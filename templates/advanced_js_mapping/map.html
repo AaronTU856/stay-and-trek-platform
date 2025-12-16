@@ -89,10 +89,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<!-- Leaflet Draw CSS and JS for polygon drawing functionality -->
-<!-- Using latest stable version with bug fixes -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
-<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+<!-- Using local Leaflet Draw already loaded in base.html -->
 
 <style>
     /* Ensure drawing cursor is visible as crosshair while drawing polygons */
@@ -131,15 +128,31 @@
 <script>
     // Initialize the mapping application when page loads
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize map with drawing tools
-        window.AdvancedMapping.initializeMap('map');
+        console.log('Map initialization starting...');
+        console.log('Leaflet available:', typeof L !== 'undefined');
+        console.log('AdvancedMapping available:', typeof window.AdvancedMapping !== 'undefined');
+        
+        try {
+            // Initialize map with drawing tools
+            if (window.AdvancedMapping && window.AdvancedMapping.initializeMap) {
+                window.AdvancedMapping.initializeMap('map');
+                console.log('Map initialized successfully');
+            } else {
+                console.error('AdvancedMapping.initializeMap not found');
+            }
 
-        // Set up spatial analysis handlers
-        window.SpatialAnalysis = window.SpatialAnalysis || {};
-        window.SpatialAnalysis.performSpatialSearch = window.performSpatialSearch || window.SpatialAnalysis.performSpatialSearch;
+            // Set up spatial analysis handlers
+            window.SpatialAnalysis = window.SpatialAnalysis || {};
+            window.SpatialAnalysis.performSpatialSearch = window.performSpatialSearch || window.SpatialAnalysis.performSpatialSearch;
 
-        // Configure UI controls
-        if (typeof initializeUIControls === 'function') initializeUIControls();
+            // Configure UI controls
+            if (typeof initializeUIControls === 'function') {
+                initializeUIControls();
+                console.log('UI controls initialized');
+            }
+        } catch (error) {
+            console.error('Map initialization error:', error);
+        }
     });
 </script>
 {% endblock %}

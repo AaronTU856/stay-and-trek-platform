@@ -1,21 +1,70 @@
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
 import { useAccessibility } from "../context/AccessibilityContext";
 import IconButton from '../components/IconButton';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useState, useEffect } from 'react';
 
-const TRAILS = [
-  { id: 1, name: "Croagh Patrick", distance: "7km", difficulty: "Moderate" },
-  { id: 2, name: "Mweelrea", distance: "12km", difficulty: "Hard" },
-  { id: 3, name: "Nephin", distance: "8km", difficulty: "Moderate" },
-  { id: 4, name: "Glendalough", distance: "9km", difficulty: "Easy" },
-];
+// Use Docker backend for local demo, Cloud Run as fallback
+// For Expo on physical device, use your machine's IP (e.g., 192.168.x.x)
+// For Expo Web/Simulator, use localhost
+const API_BASE_URL = __DEV__ 
+  ? 'http://localhost:8000'  // Local development
+  : 'https://stay-and-trek-service-642845720185.europe-west1.run.app';  // Production fallback
 
 export default function TrailDetails() {
   const { id } = useLocalSearchParams();
   const { largeText } = useAccessibility();
+  const [trails, setTrails] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const titleFontSize = largeText ? 32 : 24;
   const router = useRouter();
   const cardFontSize = largeText ? 18 : 16;
+
+  // Fallback mock data
+  const mockTrails = [
+    { id: 1, trail_name: 'Croagh Patrick', distance_km: 7, difficulty: 'Moderate' },
+    { id: 2, trail_name: 'Mweelrea', distance_km: 12, difficulty: 'Hard' },
+    { id: 3, trail_name: 'Nephin', distance_km: 8, difficulty: 'Moderate' },
+    { id: 4, trail_name: 'Glendalough', distance_km: 9, difficulty: 'Easy' },
+  ];
+
+  useEffect(() => {
+    const fetchTrails = async () => {
+      try {
+        setLoading(true);
+        console.log(`Fetching from: ${API_BASE_URL}/api/trails/?limit=100`);
+        
+        const response = await fetch(`${API_BASE_URL}/api/trails/?limit=100`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        console.log(`Response status: ${response.status}`);
+        
+        if (!response.ok) {
+          console.warn(`API returned ${response.status}, using fallback data`);
+          throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Successfully fetched trails:', data.results?.length || data?.length || 0);
+        setTrails(data.results || data || []);
+        setError(null);
+      } catch (err) {
+        console.warn('Failed to fetch from API, using mock data:', err.message);
+        setError(null); // Don't show error to user, just use fallback
+        setTrails(mockTrails);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTrails();
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -27,39 +76,40 @@ export default function TrailDetails() {
         <IconButton name="sunny-outline" iconSet="ionicon" label="View Weather" bgColor="#FFA000" onPress={() => router.push('/weather')} />
       </View>
 
-       {/* Trails List */}
-      <ScrollView style={styles.list} contentContainerStyle={{ paddingBottom: 60 }}>
-        {TRAILS.map(trail => (
-          <TouchableOpacity
-            key={trail.id}
-            style={styles.card}
-            activeOpacity={0.85}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            onPress={() => router.push({ pathname: '/trail-details', params: { id: trail.id } })}
-            accessibilityRole="button"
-            accessibilityLabel={`Open details for ${trail.name}`}
-          >
-            <View>
-              <Text style={{ fontSize: cardFontSize, fontWeight: '600' }}>
-                {trail.name}
-              </Text>
-              <Text style={{ fontSize: cardFontSize - 2, color: '#666' }}>
-                {trail.distance} • {trail.difficulty}
-              </Text>
-            </View>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-  
+      {/* Trails List */}
+      {loading ? (
+        <ActivityIndicator size="large" color="#2E7D32" style={{ marginTop: 20 }} />
+      ) : (
+        <ScrollView style={styles.list} contentContainerStyle={{ paddingBottom: 60 }}>
+          {trails.map(trail => (
+            <TouchableOpacity
+              key={trail.id}
+              style={styles.card}
+              activeOpacity={0.85}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              onPress={() => router.push({ pathname: '/trail-details', params: { id: trail.id } })}
+              accessibilityRole="button"
+              accessibilityLabel={`Open details for ${trail.trail_name}`}
+            >
+              <View>
+                <Text style={{ fontSize: cardFontSize, fontWeight: '600' }}>
+                  {trail.trail_name}
+                </Text>
+                <Text style={{ fontSize: cardFontSize - 2, color: '#666' }}>
+                  {trail.distance_km}km • {trail.difficulty}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: "flex-start", alignItems: "center" },
-  title: { fontSize: 24 }
-  ,
+  title: { fontSize: 24 },
   iconRow: { flexDirection: 'row', marginTop: 18, justifyContent: 'center', width: '100%', flexWrap: 'wrap' },
   list: {
       width: "100%",

@@ -162,7 +162,7 @@ def trails_within_radius(request):
 
 
 # Trails in Bounding Box
-
+@csrf_exempt
 @extend_schema(tags=["Spatial"], request=BoundingBoxSerializer, responses={200: dict})
 @api_view(['POST'])
 @authentication_classes([])
@@ -189,7 +189,7 @@ def trails_in_bounding_box(request):
 
 
 # Trail Statistics
-
+@csrf_exempt
 @api_view(['GET'])
 def trail_statistics(request):
     """Return overall statistics about trails."""
@@ -207,19 +207,17 @@ def trail_statistics(request):
 
 
 # Protected template views
-
+@csrf_exempt
 @login_required
 def advanced_mapping_map(request):
-    """Render the advanced mapping page - requires login."""
+    """Render the advanced mapping page."""
     return render(request, 'advanced_js_mapping/map.html')
 
-# Protected template views
-@login_required
-def trail_map(request):
-    """Render main trail map - requires login."""
-    return render(request, 'trails/map.html')
-
 # Towns and GeoJSON Endpoints
+
+def trail_map(request):
+    """Render main trail map - serves SEO trails data with sidebar search and rivers."""
+    return render(request, 'trails/map.html')
 
 @api_view(['GET'])
 def towns_geojson(request):
@@ -392,10 +390,6 @@ def api_test_page(request):
     """Simple frontend for testing API."""
     return render(request, 'api_test.html')
 
-# Protected template views
-def trail_map(request):
-    """Render main project map (templates/trails/map.html)."""
-    return render(request, 'trails/map.html')
 # Simple API Test View
 def api_test_view(request):
     return render(request, "api_test.html")

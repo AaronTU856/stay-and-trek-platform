@@ -1,17 +1,23 @@
 // Trail details screen - displays detailed information about a selected hiking trail
 // Shows information like difficulty, distance, description, and weather conditions
 
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
 import { useAccessibility } from "../context/AccessibilityContext";
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useState, useEffect } from 'react';
 
-// Sample trail data with detailed information
+// Use Docker backend for local demo
+const API_BASE_URL = __DEV__ 
+  ? 'http://localhost:8000'
+  : 'https://stay-and-trek-service-642845720185.europe-west1.run.app';
+
+// Fallback hardcoded data
 const TRAILS_DATA = {
   1: {
-    name: "Croagh Patrick",
-    distance: "7km",
+    trail_name: "Croagh Patrick",
+    distance_km: 7,
     difficulty: "Moderate",
-    elevation: "764m",
+    elevation_gain_m: 764,
     duration: "3-4 hours",
     description: "Croagh Patrick is a pilgrimage site and one of Ireland's most famous mountains. The trail offers stunning views of Clew Bay and is suitable for most fitness levels.",
     highlights: [
@@ -19,14 +25,13 @@ const TRAILS_DATA = {
       "Historic pilgrimage site",
       "Well-maintained paths",
       "Stunning sunsets"
-    ],
-    difficulty_details: "Moderate - Some steep sections but well-marked paths throughout"
+    ]
   },
   2: {
-    name: "Mweelrea",
-    distance: "12km",
+    trail_name: "Mweelrea",
+    distance_km: 12,
     difficulty: "Hard",
-    elevation: "819m",
+    elevation_gain_m: 819,
     duration: "5-6 hours",
     description: "Mweelrea is Connacht's highest mountain. This is a challenging hike with exposed ridges and requires good fitness and experience.",
     highlights: [
@@ -34,14 +39,13 @@ const TRAILS_DATA = {
       "Dramatic mountain scenery",
       "Challenging ridge walk",
       "Remote wilderness experience"
-    ],
-    difficulty_details: "Hard - Exposed ridges, boggy terrain, navigation skills required"
+    ]
   },
   3: {
-    name: "Nephin",
-    distance: "8km",
+    trail_name: "Nephin",
+    distance_km: 8,
     difficulty: "Moderate",
-    elevation: "806m",
+    elevation_gain_m: 806,
     duration: "4-5 hours",
     description: "Nephin is a beautiful mountain in County Mayo offering excellent views across the Nephin Beg Range.",
     highlights: [
@@ -49,14 +53,13 @@ const TRAILS_DATA = {
       "Relatively quiet mountain",
       "Good trail conditions",
       "Beautiful flora and fauna"
-    ],
-    difficulty_details: "Moderate - Some boggy sections but generally well-trodden paths"
+    ]
   },
   4: {
-    name: "Glendalough",
-    distance: "9km",
+    trail_name: "Glendalough",
+    distance_km: 9,
     difficulty: "Easy",
-    elevation: "725m",
+    elevation_gain_m: 725,
     duration: "3-4 hours",
     description: "Glendalough Valley is a stunning glacial valley with ancient monastic ruins. Perfect for all fitness levels.",
     highlights: [
@@ -64,8 +67,7 @@ const TRAILS_DATA = {
       "Beautiful valley scenery",
       "Clear marked trails",
       "Accessible for families"
-    ],
-    difficulty_details: "Easy - Well-maintained paths, minimal elevation gain in lower sections"
+    ]
   }
 };
 
@@ -73,13 +75,61 @@ export default function TrailDetails() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const { largeText } = useAccessibility();
-  
-  // Get trail data based on ID
-  const trail = TRAILS_DATA[parseInt(id) || 1];
+  const [trail, setTrail] = useState(null);
+  const [loading, setLoading] = useState(true);
   
   const titleFontSize = largeText ? 28 : 24;
   const headingFontSize = largeText ? 18 : 16;
   const textFontSize = largeText ? 16 : 14;
+
+  useEffect(() => {
+    const fetchTrailDetails = async () => {
+      try {
+        setLoading(true);
+        console.log(`Fetching trail details for ID: ${id}`);
+        
+        const response = await fetch(`${API_BASE_URL}/api/trails/${id}/`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (!response.ok) {
+          console.warn(`API returned ${response.status}, using fallback data`);
+          throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Successfully fetched trail:', data.trail_name);
+        setTrail(data);
+      } catch (err) {
+        console.warn('Failed to fetch trail details, using fallback:', err.message);
+        setTrail(TRAILS_DATA[parseInt(id) || 1] || TRAILS_DATA[1]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTrailDetails();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#2E7D32" />
+      </View>
+    );
+  }
+
+  if (!trail) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text>Trail not found</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 60 }}>
@@ -93,14 +143,14 @@ export default function TrailDetails() {
         >
           <Text style={{ fontSize: headingFontSize, color: '#2E7D32' }}>← Back</Text>
         </TouchableOpacity>
-        <Text style={[styles.title, { fontSize: titleFontSize }]}>{trail.name}</Text>
+        <Text style={[styles.title, { fontSize: titleFontSize }]}>{trail.trail_name}</Text>
       </View>
 
       {/* Quick stats section */}
       <View style={styles.statsContainer}>
         <View style={styles.statBox}>
           <Text style={{ fontSize: textFontSize, fontWeight: '600', color: '#333' }}>Distance</Text>
-          <Text style={{ fontSize: textFontSize - 1, color: '#666' }}>{trail.distance}</Text>
+          <Text style={{ fontSize: textFontSize - 1, color: '#666' }}>{trail.distance_km}km</Text>
         </View>
         <View style={styles.statBox}>
           <Text style={{ fontSize: textFontSize, fontWeight: '600', color: '#333' }}>Difficulty</Text>
@@ -108,37 +158,33 @@ export default function TrailDetails() {
         </View>
         <View style={styles.statBox}>
           <Text style={{ fontSize: textFontSize, fontWeight: '600', color: '#333' }}>Duration</Text>
-          <Text style={{ fontSize: textFontSize - 1, color: '#666' }}>{trail.duration}</Text>
+          <Text style={{ fontSize: textFontSize - 1, color: '#666' }}>{trail.duration || 'N/A'}</Text>
         </View>
         <View style={styles.statBox}>
           <Text style={{ fontSize: textFontSize, fontWeight: '600', color: '#333' }}>Elevation</Text>
-          <Text style={{ fontSize: textFontSize - 1, color: '#666' }}>{trail.elevation}</Text>
+          <Text style={{ fontSize: textFontSize - 1, color: '#666' }}>{trail.elevation_gain_m}m</Text>
         </View>
       </View>
 
       {/* Description section */}
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { fontSize: headingFontSize }]}>About this Trail</Text>
-        <Text style={[styles.description, { fontSize: textFontSize }]}>{trail.description}</Text>
-      </View>
-
-      {/* Difficulty details */}
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { fontSize: headingFontSize }]}>Difficulty Details</Text>
-        <View style={styles.difficultyBox}>
-          <Text style={[styles.description, { fontSize: textFontSize }]}>{trail.difficulty_details}</Text>
-        </View>
+        <Text style={[styles.description, { fontSize: textFontSize }]}>{trail.description || 'No description available'}</Text>
       </View>
 
       {/* Highlights section */}
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { fontSize: headingFontSize }]}>Trail Highlights</Text>
-        {trail.highlights.map((highlight, idx) => (
-          <View key={idx} style={styles.highlightItem}>
-            <Text style={{ fontSize: textFontSize - 1, color: '#2E7D32', fontWeight: '600', marginRight: 8 }}>✓</Text>
-            <Text style={[styles.highlightText, { fontSize: textFontSize }]}>{highlight}</Text>
-          </View>
-        ))}
+        {trail.highlights && trail.highlights.length > 0 ? (
+          trail.highlights.map((highlight, idx) => (
+            <View key={idx} style={styles.highlightItem}>
+              <Text style={{ fontSize: textFontSize - 1, color: '#2E7D32', fontWeight: '600', marginRight: 8 }}>✓</Text>
+              <Text style={[styles.highlightText, { fontSize: textFontSize }]}>{highlight}</Text>
+            </View>
+          ))
+        ) : (
+          <Text style={{ fontSize: textFontSize, color: '#666' }}>No highlights available</Text>
+        )}
       </View>
 
       {/* Action buttons */}

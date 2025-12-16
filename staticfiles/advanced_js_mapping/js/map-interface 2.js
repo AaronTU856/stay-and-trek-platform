@@ -4,6 +4,20 @@
  * Advanced Mapping Interface Module
  * Handles Leaflet.js map initialization and polygon drawing functionality
  */
+
+
+// Detect if running on Cloud Run or locally (Docker)
+let API_BASE = "";
+
+if (window.location.hostname.includes("run.app")) {
+    // Production (Cloud Run) backend URL
+    API_BASE = "https://stay-and-trek-service-642845720185.europe-west1.run.app";
+} else {
+    // Local development (Docker)
+    API_BASE = "";
+}
+
+
 window.AdvancedMapping = (function() {
     let map = null;
     let drawControl = null;
@@ -510,7 +524,8 @@ window.AdvancedMapping = (function() {
      */
     async function loadInitialTowns() {
         try {
-            const res = await fetch('/api/trails/towns/geojson/');
+            const res = await fetch(`${API_BASE}/api/trails/towns/geojson/`);
+
             if (!res.ok) throw new Error('Failed to fetch towns');
             const geojson = await res.json();
 

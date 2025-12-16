@@ -24,13 +24,13 @@ COPY . /app
 # Create staticfiles and media directories
 RUN mkdir -p /app/staticfiles /app/media
 
-# Copy and make entrypoint executable
+# Copy entrypoint script
 COPY entrypoint.sh /app/
 RUN chmod +x /app/entrypoint.sh
 
 # Cloud Run expects port 8080, but can be overridden with PORT env var
 EXPOSE 8080
 
-# Use entrypoint script to run migrations and start gunicorn
-ENTRYPOINT ["/app/entrypoint.sh"]
+# Default command - can be overridden by docker-compose
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 
