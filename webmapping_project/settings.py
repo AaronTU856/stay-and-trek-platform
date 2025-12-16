@@ -56,16 +56,11 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 OPENWEATHERMAP_API_KEY = os.getenv('OPENWEATHERMAP_API_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+# For local development, set DEBUG=1 in docker-compose.yml
+# For production, set DEBUG=0 or unset (defaults to False)
+DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 'yes', 'on')
 
 ALLOWED_HOSTS = ['*']  # Allow all hosts for demo/checkpoint
-
-CSRF_TRUSTED_ORIGINS = [
-    "https://stay-and-trek.com",
-    "https://www.stay-and-trek.com",
-    "https://stay-and-trek-service-642845720185.europe-west1.run.app",
-]
-
 
 
 # Application definition
@@ -112,20 +107,15 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    
-    'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-   
 ]
-
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 ROOT_URLCONF = 'webmapping_project.urls'
 
@@ -162,41 +152,18 @@ else:
     # Detect which database to use: local PostGIS or Cloud SQL
     # environment variables should already be loaded above if python-dotenv is present
 
-    active_db = os.getenv("ACTIVE_DB")
-    print(f"🔹 DEBUG: ACTIVE_DB={active_db}")
-    print(f"🔹 DEBUG: Available env vars - NEW_DB_NAME={os.getenv('NEW_DB_NAME')}, NEW_DB_HOST={os.getenv('NEW_DB_HOST')}, NEW_DB_PORT={os.getenv('NEW_DB_PORT')}")
-    
-    if active_db == "new":
+    if os.getenv("ACTIVE_DB") == "new":
         print("🔹 Using Cloud SQL (PostgreSQL 17)")
-        db_host = os.getenv('NEW_DB_HOST')
-        db_port = os.getenv('NEW_DB_PORT', '5432')
-        
-        # Check if using Cloud SQL socket connection (unix socket path)
-        if db_host and db_host.startswith('/cloudsql/'):
-            # Socket connection (Cloud Run with Cloud SQL Connector)
-            print(f"🔹 Using Cloud SQL socket: {db_host}")
-            db_config = {
+        DATABASES = {
+            'default': {
                 'ENGINE': 'django.contrib.gis.db.backends.postgis',
                 'NAME': os.getenv('NEW_DB_NAME'),
                 'USER': os.getenv('NEW_DB_USER'),
                 'PASSWORD': os.getenv('NEW_DB_PASSWORD'),
-                'HOST': db_host,
-                # No PORT when using socket connection
+                'HOST': os.getenv('NEW_DB_HOST'),
+                'PORT': os.getenv('NEW_DB_PORT'),
             }
-        else:
-            # TCP connection (public IP or localhost)
-            print(f"🔹 Using Cloud SQL TCP connection: {db_host}:{db_port}")
-            db_config = {
-                'ENGINE': 'django.contrib.gis.db.backends.postgis',
-                'NAME': os.getenv('NEW_DB_NAME'),
-                'USER': os.getenv('NEW_DB_USER'),
-                'PASSWORD': os.getenv('NEW_DB_PASSWORD'),
-                'HOST': db_host,
-                'PORT': db_port,
-            }
-        
-        print(f"🔹 DEBUG: Cloud SQL config - NAME={db_config['NAME']}, USER={db_config['USER']}, HOST={db_config['HOST']}")
-        DATABASES = {'default': db_config}
+        }
     else:
         print("🔹 Using local PostGIS (default)")
         # Check if running in Docker (env vars set by docker-compose)

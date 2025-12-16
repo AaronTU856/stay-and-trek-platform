@@ -1,0 +1,76 @@
+# Version control
+.git
+.gitignore
+.github
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+.pytest_cache
+.coverage
+*.egg-info
+dist
+build
+.venv
+venv
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Database dumps and files
+*.sqlite3
+*.db
+db.sqlite3
+full_backup.dump
+local_dump.sql
+clean_dump.sql
+*.dump
+*.sql
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation
+Documentation/
+_REFERENCE_NOTES/
+
+# Mobile app (entire directory - not needed for backend)
+stay-and-trek-mobile/
+
+# Other project directories
+weathermap/
+
+# Generated files that shouldn't be in image
+staticfiles/
+
+# Node
+node_modules
+package-lock.json
+.expo
+
+# Logs
+*.log
+logs/
+
+# Environment
+.env
+.env.local
+
+# Tests
+test_*.py
+conftest.py
+pytest.ini
+
+# Temp files
+*.tmp
+*.bak
+*.zip

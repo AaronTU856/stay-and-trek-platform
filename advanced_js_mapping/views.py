@@ -270,7 +270,6 @@ def polygon_search(request):
             'details': str(e)
         }, status=500)
 
-@login_required
 def index_view(request):
     """Main page with application overview"""
     # Use Town model for counts to reflect existing project data
@@ -285,7 +284,6 @@ def index_view(request):
 
     return render(request, 'advanced_js_mapping/index.html', context)
 
-@login_required
 def map_view(request):
     """Interactive map view"""
     context = {
@@ -293,7 +291,6 @@ def map_view(request):
     }
     return render(request, 'advanced_js_mapping/map.html', context)
 
-@login_required
 def analytics_view(request):
     """Analytics dashboard adapted for Town data."""
     from django.db.models import Count, Avg, Sum

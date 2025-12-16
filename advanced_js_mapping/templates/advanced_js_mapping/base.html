@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    {% load static %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Advanced Mapping Lab{% endblock %}</title>
@@ -10,6 +11,12 @@
     
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Leaflet CSS for mapping -->
+    <link rel="stylesheet" href="{% static 'leaflet/leaflet.css' %}">
+    
+    <!-- Leaflet Draw CSS for polygon drawing tools -->
+    <link rel="stylesheet" href="{% static 'leaflet/draw/leaflet.draw.css' %}">
     
     <!-- Custom CSS -->
     <style>
@@ -184,6 +191,12 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Leaflet JS for mapping functionality -->
+    <script src="{% static 'leaflet/leaflet.js' %}"></script>
+    
+    <!-- Leaflet Draw JS for polygon drawing tools -->
+    <script src="{% static 'leaflet/draw/leaflet.draw.js' %}"></script>
     
     {% block extra_js %}{% endblock %}
 </body>

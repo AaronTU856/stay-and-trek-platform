@@ -4,6 +4,20 @@
  * Advanced Mapping Interface Module
  * Handles Leaflet.js map initialization and polygon drawing functionality
  */
+
+
+// Detect if running on Cloud Run or locally (Docker)
+let API_BASE = "";
+
+if (window.location.hostname.includes("run.app")) {
+    // Production (Cloud Run) backend URL
+    API_BASE = "https://stay-and-trek-service-642845720185.europe-west1.run.app";
+} else {
+    // Local development (Docker)
+    API_BASE = "";
+}
+
+
 window.AdvancedMapping = (function() {
     let map = null;
     let drawControl = null;
@@ -60,11 +74,11 @@ window.AdvancedMapping = (function() {
             };
 
             // Explicit result marker icon to avoid icon path resolution issues
+            // Using blue colored markers from GitHub CDN to match dashboard style
             try {
                 window.resultMarkerIcon = L.icon({
-                    iconUrl: '/static/leaflet/images/marker-icon.png',
-                    iconRetinaUrl: '/static/leaflet/images/marker-icon-2x.png',
-                    shadowUrl: '/static/leaflet/images/marker-shadow.png',
+                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
                     iconSize: [25, 41],
                     iconAnchor: [12, 41],
                     popupAnchor: [1, -34],
@@ -510,7 +524,8 @@ window.AdvancedMapping = (function() {
      */
     async function loadInitialTowns() {
         try {
-            const res = await fetch('/api/trails/towns/geojson/');
+            const res = await fetch(`${API_BASE}/api/trails/towns/geojson/`);
+
             if (!res.ok) throw new Error('Failed to fetch towns');
             const geojson = await res.json();
 

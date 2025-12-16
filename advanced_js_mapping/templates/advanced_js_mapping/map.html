@@ -3,6 +3,39 @@
 
 {% block title %}Interactive Polygon Map{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Ensure drawing cursor is visible as crosshair while drawing polygons */
+    /* high-specificity crosshair rule for when we toggle drawing */
+    .leaflet-container.awmdrawing, .leaflet-container.awmdrawing *,
+    .leaflet-container.leaflet-draw-drawing, .leaflet-container .leaflet-draw-draw-polygon {
+        cursor: crosshair !important;
+    }
+    /* Leaflet draw places an invisible mouse-marker element that can capture cursor/pointer
+       Make sure it doesn't block the crosshair cursor and doesn't intercept pointer events */
+    .leaflet-marker-icon.leaflet-mouse-marker {
+        pointer-events: none !important;
+        cursor: crosshair !important;
+    }
+    
+    /* CRITICAL: Ensure Leaflet.Draw overlay and guides have proper pointer-events
+       so clicks pass through to the drawing handler, not blocked by other elements */
+    .leaflet-draw-guide, .leaflet-draw-guide-dash {
+        pointer-events: none !important;
+    }
+    
+    /* Ensure map container itself can receive clicks during drawing mode */
+    .leaflet-container.leaflet-draw-drawing {
+        pointer-events: auto !important;
+    }
+    
+    /* Ensure the map panes are not blocking pointer events */
+    .leaflet-pane, .leaflet-overlay-pane, .leaflet-shadow-pane {
+        pointer-events: auto !important;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid">
     <div class="row">
@@ -89,41 +122,6 @@
 {% endblock %}
 
 {% block extra_js %}
-<!-- Leaflet Draw CSS and JS for polygon drawing functionality -->
-<!-- Using latest stable version with bug fixes -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
-<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
-
-<style>
-    /* Ensure drawing cursor is visible as crosshair while drawing polygons */
-    /* high-specificity crosshair rule for when we toggle drawing */
-    .leaflet-container.awmdrawing, .leaflet-container.awmdrawing *,
-    .leaflet-container.leaflet-draw-drawing, .leaflet-container .leaflet-draw-draw-polygon {
-        cursor: crosshair !important;
-    }
-    /* Leaflet draw places an invisible mouse-marker element that can capture cursor/pointer
-       Make sure it doesn't block the crosshair cursor and doesn't intercept pointer events */
-    .leaflet-marker-icon.leaflet-mouse-marker {
-        pointer-events: none !important;
-        cursor: crosshair !important;
-    }
-    
-    /* CRITICAL: Ensure Leaflet.Draw overlay and guides have proper pointer-events
-       so clicks pass through to the drawing handler, not blocked by other elements */
-    .leaflet-draw-guide, .leaflet-draw-guide-dash {
-        pointer-events: none !important;
-    }
-    
-    /* Ensure map container itself can receive clicks during drawing mode */
-    .leaflet-container.leaflet-draw-drawing {
-        pointer-events: auto !important;
-    }
-    
-    /* Ensure the map panes are not blocking pointer events */
-    .leaflet-pane, .leaflet-overlay-pane, .leaflet-shadow-pane {
-        pointer-events: auto !important;
-    }
-</style>
 <script src="{% static 'advanced_js_mapping/js/map-interface.js' %}"></script>
 <script src="{% static 'advanced_js_mapping/js/spatial-analysis.js' %}"></script>
 <script src="{% static 'advanced_js_mapping/js/ui-controls.js' %}"></script>
@@ -131,15 +129,31 @@
 <script>
     // Initialize the mapping application when page loads
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize map with drawing tools
-        window.AdvancedMapping.initializeMap('map');
+        console.log('Map initialization starting...');
+        console.log('Leaflet available:', typeof L !== 'undefined');
+        console.log('AdvancedMapping available:', typeof window.AdvancedMapping !== 'undefined');
+        
+        try {
+            // Initialize map with drawing tools
+            if (window.AdvancedMapping && window.AdvancedMapping.initializeMap) {
+                window.AdvancedMapping.initializeMap('map');
+                console.log('Map initialized successfully');
+            } else {
+                console.error('AdvancedMapping.initializeMap not found');
+            }
 
-        // Set up spatial analysis handlers
-        window.SpatialAnalysis = window.SpatialAnalysis || {};
-        window.SpatialAnalysis.performSpatialSearch = window.performSpatialSearch || window.SpatialAnalysis.performSpatialSearch;
+            // Set up spatial analysis handlers
+            window.SpatialAnalysis = window.SpatialAnalysis || {};
+            window.SpatialAnalysis.performSpatialSearch = window.performSpatialSearch || window.SpatialAnalysis.performSpatialSearch;
 
-        // Configure UI controls
-        if (typeof initializeUIControls === 'function') initializeUIControls();
+            // Configure UI controls
+            if (typeof initializeUIControls === 'function') {
+                initializeUIControls();
+                console.log('UI controls initialized');
+            }
+        } catch (error) {
+            console.error('Map initialization error:', error);
+        }
     });
 </script>
 {% endblock %}
