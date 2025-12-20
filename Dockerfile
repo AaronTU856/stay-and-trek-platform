@@ -24,6 +24,9 @@ COPY . /app
 # Create staticfiles and media directories
 RUN mkdir -p /app/staticfiles /app/media
 
+# Collect static files during build
+RUN python manage.py collectstatic --noinput --clear || true
+
 # Copy entrypoint script
 COPY entrypoint.sh /app/
 RUN chmod +x /app/entrypoint.sh
