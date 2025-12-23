@@ -7,7 +7,6 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/nginx.conf
       - staticfiles_volume:/app/staticfiles:ro
     depends_on:
       - web
