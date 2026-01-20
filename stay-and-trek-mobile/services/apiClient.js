@@ -49,3 +49,48 @@ const API_BASE_URL = __DEV__
     }
 
   }
+
+  // Trails
+
+  /**
+ * Fetch all trails with optional filters
+ * @param {object} params - Query parameters (limit, offset, difficulty, county, etc.)
+ */
+export async function getTrails(params = {}) {
+  const queryString = new URLSearchParams(params).toString();
+  const endpoint = `/api/trails/?${queryString}`;
+  return apiCall(endpoint);
+}
+
+/**
+ * Fetch single trail by ID
+ */
+export async function getTrailById(id) {
+  return apiCall(`/api/trails/${id}/`);
+}
+
+/**
+ * Search trails within a radius
+ * @param {number} lat - Latitude
+ * @param {number} lng - Longitude
+ * @param {number} radiusKm - Radius in kilometers
+ */
+export async function getTrailsWithinRadius(lat, lng, radiusKm) {
+  return apiCall('/api/trails/within-radius/', {
+    method: 'POST',
+    body: JSON.stringify({
+      latitude: lat,
+      longitude: lng,
+      radius_km: radiusKm,
+    }),
+  });
+}
+
+/**
+ * Get all trails as GeoJSON (for map)
+ */
+export async function getTrailsGeoJSON() {
+  return apiCall('/api/trails/geojson/');
+}
+
+
