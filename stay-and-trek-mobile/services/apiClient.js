@@ -93,4 +93,47 @@ export async function getTrailsGeoJSON() {
   return apiCall('/api/trails/geojson/');
 }
 
+// Accommodation
+
+/**
+ * Fetch all accommodations
+ */
+
+export async function getAccommodations(params = {}) {
+    const queryString = new URLSearchParams(params).toString();
+    const endpoint = `/api/accommodations/?${queryString}`;
+    return apiCall(endpoint);
+}
+
+/**
+ * Fetch accommodations near a trail
+ */
+export async function getAccommodationsNearTrail(trailId) {
+  return apiCall(`/api/accommodations-near-trail/?trail_id=${trailId}`);
+}
+
+/**
+ * Get accommodations as GeoJSON (for map)
+ */
+export async function getAccommodationsGeoJSON() {
+  return apiCall('/api/accommodations/geojson/');
+}
+
+// Weather
+
+/**
+ * Fetch weather by trail
+ */
+export async function getWeatherByCoordinates(lat, lng) {
+  return apiCall(`/api/weather/?lat=${lat}&lng=${lng}`);
+}
+
+/**
+ * Get weather for a town
+ */
+export async function getTownWeather(townName) {
+  return apiCall(`/api/weather/?location=${encodeURIComponent(townName)}`);
+}
+
+
 
