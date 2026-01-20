@@ -135,5 +135,47 @@ export async function getTownWeather(townName) {
   return apiCall(`/api/weather/?location=${encodeURIComponent(townName)}`);
 }
 
+// Towns
+
+/**
+ * Get all towns
+ */
+export async function getTowns(params = {}) {
+  const queryString = new URLSearchParams(params).toString();
+  const endpoint = `/api/towns/?${queryString}`;
+  return apiCall(endpoint);
+}
+
+/**
+ * Get nearest town to coordinates
+ */
+export async function getNearestTown(lat, lng) {
+  return apiCall('/api/nearest-town/', {
+    method: 'POST',
+    body: JSON.stringify({ latitude: lat, longitude: lng }),
+  });
+}
+
+// POI
+
+/**
+ * Fetch points of interest
+ */
+export async function getPointsOfInterest(params = {}) {
+  const queryString = new URLSearchParams(params).toString();
+  const endpoint = `/api/points-of-interest/?${queryString}`;
+  return apiCall(endpoint);
+}
+
+/**
+ * Get POIs near a trail
+ */
+export async function getPOIsNearTrail(trailId) {
+  return apiCall(`/api/pois-near-trail/?trail_id=${trailId}`);
+}
+
+export { API_BASE_URL };
+
+
 
 
