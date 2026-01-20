@@ -122,17 +122,17 @@ export async function getAccommodationsGeoJSON() {
 // Weather
 
 /**
- * Fetch weather by trail
+ * Get weather for a specific trail by ID
  */
-export async function getWeatherByCoordinates(lat, lng) {
-  return apiCall(`/api/weather/?lat=${lat}&lng=${lng}`);
+export async function getTrailWeather(trailId) {
+  return apiCall(`/api/trails/weather/${trailId}/`);
 }
 
 /**
- * Get weather for a town
+ * Get weather for a town/location
  */
 export async function getTownWeather(townName) {
-  return apiCall(`/api/weather/?location=${encodeURIComponent(townName)}`);
+  return apiCall(`/api/trails/weather-town/?location=${encodeURIComponent(townName)}`);
 }
 
 // Towns
@@ -156,22 +156,64 @@ export async function getNearestTown(lat, lng) {
   });
 }
 
-// POI
+// POI (Points of Interest)
 
 /**
- * Fetch points of interest
+ * Fetch points of interest (cafes, parking, attractions, etc.)
  */
-export async function getPointsOfInterest(params = {}) {
+export async function getPOIs(params = {}) {
   const queryString = new URLSearchParams(params).toString();
-  const endpoint = `/api/points-of-interest/?${queryString}`;
+  const endpoint = `/api/pois/?${queryString}`;
   return apiCall(endpoint);
+}
+
+/**
+ * Get POIs by type (e.g., 'parking', 'cafe', 'attraction')
+ */
+export async function getPOIsByType(poiType) {
+  return apiCall(`/api/pois/type/${poiType}/`);
 }
 
 /**
  * Get POIs near a trail
  */
 export async function getPOIsNearTrail(trailId) {
-  return apiCall(`/api/pois-near-trail/?trail_id=${trailId}`);
+  return apiCall(`/api/pois/near-trail/?trail_id=${trailId}`);
+}
+
+/**
+ * Get POIs within a radius
+ */
+export async function getPOIsInRadius(lat, lng, radiusKm) {
+  return apiCall('/api/pois/radius-search/', {
+    method: 'POST',
+    body: JSON.stringify({ latitude: lat, longitude: lng, radius_km: radiusKm }),
+  });
+}
+
+// Geographic Boundaries (Rivers, etc.)
+
+/**
+ * Get all geographic boundaries
+ */
+export async function getBoundaries(params = {}) {
+  const queryString = new URLSearchParams(params).toString();
+  const endpoint = `/api/boundaries/?${queryString}`;
+  return apiCall(endpoint);
+}
+
+/**
+ * Get trails crossing a specific boundary
+ */
+export async function getTrailsCrossingBoundary(boundaryId) {
+  return apiCall(`/api/boundaries/${boundaryId}/trails-crossing/`);
+}
+
+/**
+ * Get spatial analysis summary
+ */
+export async function getSpatialAnalysisSummary() {
+  return apiCall('/api/spatial-analysis/summary/');
 }
 
 export { API_BASE_URL };
