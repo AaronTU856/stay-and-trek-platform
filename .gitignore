@@ -1,37 +1,44 @@
-# Python
+# --- Python & Django ---
 *.pyc
 __pycache__/
 *.pyo
 *.pyd
 .env
+db.sqlite3
 *.sqlite3
+*.log
+*.pot
+/staticfiles_production/
+/media/
+# Ignore PostGIS/Docker data volumes
+postgres_data/
 
-
-
-# Virtual environment
+# --- Virtual Environments ---
 venv/
 ENV/
 env/
 webmapping_env/
 
-# Django
-*.log
-*.pot
-*.pyc
-db.sqlite3
-/staticfiles_production/
-/media/
-
-# IDE / OS files
+# --- IDE / OS Files ---
 .vscode/
 .idea/
 .DS_Store
+*.swp
+*.bak
 
-# Mobile app (Expo)
+# --- Mobile App (Expo / React Native) ---
 stay-and-trek-mobile/node_modules/
 stay-and-trek-mobile/.expo/
 stay-and-trek-mobile/.expo-shared/
 stay-and-trek-mobile/dist/
 stay-and-trek-mobile/web-build/
-stay-and-trek-mobile/package-lock.json
+stay-and-trek-mobile/ios/
+stay-and-trek-mobile/android/
+
+# Mobile Logs
+stay-and-trek-mobile/npm-debug.log*
+stay-and-trek-mobile/yarn-debug.log*
+stay-and-trek-mobile/yarn-error.log*
+
+# --- Documentation & Reference ---
 _REFERENCE_NOTES/
