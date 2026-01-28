@@ -1,10 +1,10 @@
 // API service for all backend communications
 // Handles configuration, error handling, request and response setup
 
-
+const MAC_IP = '192.168.1.83'; // Replace with Mac's local network IP
 
 const API_BASE_URL = __DEV__ 
-  ? 'http://localhost:8000'  // Local development
+  ? `http://${MAC_IP}:8000`  // Local development
   : 'https://stay-and-trek-service-642845720185.europe-west1.run.app';  // Production fallback
 
   const DEFAULT_TIMEOUT = 10000; // 10 seconds
