@@ -324,6 +324,41 @@ class TrailPOIIntersection(models.Model):
             return 'moderate'
         else:
             return 'far'
+        
+class Accommodation(models.Model):
+    """Model for accommodations near trails: hotels, hostels, B&Bs, campsites, etc."""
+    
+    ACCOMMODATION_SOURCE_CHOICES = [
+        ('airbnb', 'Airbnb'),
+        ('booking', 'Booking.com'),
+        ('trivago', 'Trivago'),
+        ('manual', 'Manual Entry'),
+    ]
+    
+    name = models.CharField(max_length=200, db_index=True)
+    accommodation_source = models.CharField(max_length=50, choices=ACCOMMODATION_SOURCE_CHOICES, db_index=True)
+    external_id = models.CharField(max_length=100, unique=True, help_text="Unique ID from external source")
+    
+    # Core Spatial data
+    location = gis_models.PointField(geography=True, db_index=True)
+    
+    # Pricing and Info
+    price_per_night = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    rating = models.FloatField(null=True, blank=True)
+    url = models.URLField(max_length=500, blank=True)
+    image_url = models.URLField(max_length=500, blank=True)
+    
+    def __str__(self):
+        return f"{self.name} ({self.accommodation_source})"
+    
+    
+    @property
+    def latitude(self):
+        return self.location.y
+    
+    @property
+    def longitude(self):
+        return self.location.x
 
 
 # GEOGRAPHIC BOUNDARY MODEL
