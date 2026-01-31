@@ -301,8 +301,6 @@ SPECTACULAR_SETTINGS = {
 
 }
 
-
-
 LEAFLET_CONFIG = {
     'DEFAULT_CENTER': (53.3498, -6.2603),  # Dublin coordinates
     'DEFAULT_ZOOM': 7,
@@ -310,7 +308,6 @@ LEAFLET_CONFIG = {
     'MAX_ZOOM': 18,
     'SCALE': 'both',
 }
-
 
 # Authentication Configuration
 LOGIN_URL = '/auth/login/'
