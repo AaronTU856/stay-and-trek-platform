@@ -20,12 +20,12 @@ from drf_spectacular.utils import extend_schema, OpenApiExample
 from django_filters.rest_framework import DjangoFilterBackend
 
 import requests
-from .models import Trail, Town, PointOfInterest, TrailPOIIntersection, Rivers
+from .models import Trail, Town, PointOfInterest, TrailPOIIntersection, Rivers, Accommodation
 from .serializers import (
     TrailListSerializer, TrailDetailSerializer, TrailGeoJSONSerializer,
     TrailCreateSerializer, TrailSummarySerializer, DistanceSerializer,
     BoundingBoxSerializer, PointOfInterestSerializer, PointOfInterestGeoJSONSerializer,
-    TrailPOIIntersectionSerializer, TrailWithPOISerializer, GeographicBoundarySerializer
+    TrailPOIIntersectionSerializer, TrailWithPOISerializer, GeographicBoundarySerializer, AccommodationSerializer
 )
 from .serializers import TrailPathGeoSerializer
 from .filters import TrailFilter
@@ -947,4 +947,32 @@ def accommodations_statistics(request):
             "regions_with_accommodation": accommodations.values('region').distinct().count(),
         }
     })
+    
+    
+class NearbyAccommodationView(generics.ListAPIView):
+    serializer_class = AccommodationSerializer
+    permission_classes = [AllowAny] # Public access for mobile app
+    
+    def get_queryset(self):
+        # Extract lat/lng from the URL parameters
+        lat = self.request.query_params.get('lat')
+        lng = self.request.query_params.get('lng')
+        radius_km = float(self.request.query_params.get('radius', 10))  # Default 10km radius
+        
+        if lat and lng:
+            try:
+                # Create a point from user's location
+                user_location = Point(float(lng), float(lat), srid=4326)
+                
+                # Use PostGIS to calculate distance and order by it
+                return Accommodation.objects.annotate(
+                    distance=DistanceFunction('location', user_location)
+                ).order_by('distance')[:10]  # Return top 10 nearest
+            except ValueError:
+                return Accommodation.objects.none()
+            
+        return Accommodation.objects.none()
 
+    
+    
+    

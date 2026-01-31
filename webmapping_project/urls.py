@@ -20,7 +20,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 from trails_api.views import trail_map
-
+from trails_api.views import NearbyAccommodationView
 from webmapping_project import views as project_views 
 
 
@@ -30,6 +30,9 @@ urlpatterns = [
     # Home page (main map view)
     #path('', trail_map, name='home'),
     path('', project_views.home, name='home'),
+    
+    # Accommodations API
+    path('api/accommodations/nearby/', NearbyAccommodationView.as_view(), name='nearby-accommodations'),
 
     # Maps app
     path('maps/', include(('maps.urls', 'maps'), namespace='maps')),
