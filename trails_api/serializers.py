@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
 from django.contrib.gis.geos import Point
-from .models import Trail, Town, PointOfInterest, TrailPOIIntersection, Rivers  
+from .models import Trail, Town, PointOfInterest, TrailPOIIntersection, Rivers, Accommodation  
 
 
 # Serializer for listing basic trail info in lists
@@ -137,8 +137,7 @@ class TrailPathGeoSerializer(GeoFeatureModelSerializer):
         fields = ('id', 'trail_name', 'county', 'distance_km', 'difficulty')
 
 
-# ===== NEW POI SERIALIZERS =====
-
+#  NEW POI SERIALIZERS 
 class PointOfInterestSerializer(serializers.ModelSerializer):
     """Serializer for Points of Interest"""
     latitude = serializers.ReadOnlyField()
@@ -205,4 +204,29 @@ class BoundaryTrailIntersectionSerializer(serializers.Serializer):
     trails_crossing = TrailListSerializer(many=True, read_only=True)
     trails_within = TrailListSerializer(many=True, read_only=True)
     intersection_count = serializers.IntegerField(read_only=True)
+    
+    
+class AccommodationSerializer(serializers.ModelSerializer):
+    distance_km = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Accommodation
+        fields = ['id', 'name', 'accommodation_source', 'price_per_night', 'rating', 'distance_km']
+
+    def get_distance_km(self, obj):
+        # This picks up the 'distance' attribute added by the .annotate() in the view
+        if hasattr(obj, 'distance'):
+            return round(obj.distance.km, 2)
+        return None
+        
+class AccommodationGeoJSONSerializer(GeoFeatureModelSerializer):
+    """
+    load accommodations as a standard GeoJSON layer in a web or mobile map.
+    """
+    class Meta:
+        model = Accommodation
+        geo_field = 'location'
+        fields = ('id', 'name', 'accommodation_source', 'price_per_night', 'rating')
+
+
 
