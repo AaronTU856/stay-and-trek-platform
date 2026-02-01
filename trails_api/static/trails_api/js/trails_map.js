@@ -1014,6 +1014,8 @@ function setupEventListeners() {
   const closeInfoBtn = document.getElementById("close-info");
   const addTrailBtn = document.getElementById("add-trail-btn");
   const saveTrailBtn = document.getElementById("save-trail");
+  const toggleAccommodations = document.getElementById("toggle-accommodations");
+  const fetchStaysBtn = document.getElementById("fetch-stays-btn");
 
   if (searchBtn) {
     searchBtn.addEventListener("click", performSearch);
