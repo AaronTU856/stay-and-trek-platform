@@ -7,60 +7,51 @@ import {
   FlatList,
   TouchableOpacity,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useAccessibility } from '../context/AccessibilityContext';
 
-const API_BASE_URL = 'https://192.168.1.83:8000';
+const API_BASE_URL = 'http://192.168.1.83:8000';
  
-const SAMPLE_STAYS = [
-  { id: 's1', name: 'Seaview Hotel', type: 'Hotel', price: 120, rating: 4.3, distance: '0.8km' },
-  { id: 's2', name: 'Cozy B&B', type: 'B&B', price: 75, rating: 4.8, distance: '1.2km' },
-  { id: 's3', name: 'Backpackers Hostel', type: 'Hostel', price: 25, rating: 4.1, distance: '0.4km' },
-  { id: 's4', name: 'Lakeside Lodge', type: 'Hotel', price: 140, rating: 4.6, distance: '5.0km' },
-  { id: 's5', name: 'Country B&B', type: 'B&B', price: 65, rating: 4.5, distance: '8.2km' },
-];
 
 export default function StayScreen() {
 
   const [stays, setStays] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState(null);
+  const { largeText } = useAccessibility();
+  const [query, setQuery] = React.useState('');
+  const [filter, setFilter] = React.useState('All');
+  const [expandedId, setExpandedId] = React.useState(null);
+
 
   const fetchStays = async () => {
     setLoading(true);
     try {
       const response = await fetch(`${API_BASE_URL}/api/trails/accommodations/nearby/?lat=53.5&lng=-7.7&radius=50`);
       const data = await response.json();
-      setStays(data.results || data); // Store the real records
+      setStays(data.results || data);
     } catch (err) {
-      setError("Connection failed");
-      console.error(err);
+      console.error("Fetch Error:", err);
+      Alert.alert("Connection Error", "Ensure Django is running and your IP is correct.");
     } finally {
       setLoading(false);
     }
   };
-
   // Trigger fetch when screen mounts
   React.useEffect(() => {
     fetchStays();
   }, []);
 
 
-  const { largeText } = useAccessibility();
-  const titleFontSize = largeText ? 28 : 22;
-
-  const [query, setQuery] = React.useState('');
-  const [filter, setFilter] = React.useState('All');
-  const [expandedId, setExpandedId] = React.useState(null);
-
+  
   const filtered = React.useMemo(() => {
-    return SAMPLE_STAYS.filter(s => {
-      if (filter !== 'All' && s.type !== filter) return false;
+    return stays.filter(s => {
+      if (filter !== 'All' && s.accommodation_source !== filter) return false;
       if (!query) return true;
       const q = query.toLowerCase();
-      return s.name.toLowerCase().includes(q) || s.type.toLowerCase().includes(q);
+      return s.name.toLowerCase().includes(q);
     });
-  }, [query, filter]);
+  }, [stays, query, filter]);
 
   function handleBook(item) {
     // lightweight prototype action
@@ -72,30 +63,26 @@ export default function StayScreen() {
     const expanded = expandedId === item.id;
     return (
       <TouchableOpacity
-        key={item.id}
         style={styles.card}
-        activeOpacity={0.85}
         onPress={() => setExpandedId(expanded ? null : item.id)}
-        accessibilityRole="button"
-        accessibilityLabel={`Open ${item.name}`}
       >
         <View style={styles.cardRow}>
           <Text style={[styles.cardTitle, { fontSize: cardFontSize, fontWeight: '600' }]}>{item.name}</Text>
-          <Text style={{ fontSize: cardFontSize - 2, color: '#666' }}>{item.distance}</Text>
+          {/* Mapping to price_per_night from Django */}
+          <Text style={{ fontSize: cardFontSize - 2, color: '#666' }}>€{item.price_per_night}/night</Text>
         </View>
-        <Text style={{ fontSize: cardFontSize - 2, color: '#666' }}>{item.price}€ / night • {item.rating}★ • {item.type}</Text>
+        
+        {/* Mapping to accommodation_source from Django */}
+        <Text style={{ fontSize: cardFontSize - 2, color: '#666' }}>
+          {item.rating || '4.5'}★ • {item.accommodation_source}
+        </Text>
 
         {expanded && (
           <View style={styles.expanded}>
-            <Text style={{ marginBottom: 8 }}>Simple description for {item.name}. Nice location, friendly staff.</Text>
-            <View style={styles.actionsRow}>
-              <TouchableOpacity style={styles.bookButton} onPress={() => handleBook(item)} accessibilityRole="button">
-                <Text style={styles.bookText}>Book</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.infoButton} onPress={() => Alert.alert('Info', `${item.name} details...`)} accessibilityRole="button">
-                <Text style={styles.infoText}>More info</Text>
-              </TouchableOpacity>
-            </View>
+            <Text style={{ marginBottom: 8 }}>{item.description || "No description provided."}</Text>
+            <TouchableOpacity style={styles.bookButton} onPress={() => Alert.alert('Booking', `Booking ${item.name}`)}>
+              <Text style={styles.bookText}>Book Now</Text>
+            </TouchableOpacity>
           </View>
         )}
       </TouchableOpacity>
@@ -104,28 +91,35 @@ export default function StayScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={[styles.title, { fontSize: titleFontSize }]}>Accommodation</Text>
-
+      <Text style={[styles.title, { fontSize: largeText ? 28 : 22 }]}>Accommodation</Text>
+      
+      {/* Search and Filters */}
       <View style={styles.controls}>
         <TextInput
           placeholder="Search stays..."
           value={query}
           onChangeText={setQuery}
           style={styles.searchInput}
-          clearButtonMode="while-editing"
-          accessibilityLabel="Search stays"
         />
-
         <View style={styles.filters}>
           {['All', 'Hotel', 'B&B', 'Hostel'].map(f => (
-            <TouchableOpacity key={f} onPress={() => setFilter(f)} style={[styles.filterChip, filter === f && styles.filterChipActive]} accessibilityRole="button">
+            <TouchableOpacity key={f} onPress={() => setFilter(f)} style={[styles.filterChip, filter === f && styles.filterChipActive]}>
               <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>{f}</Text>
             </TouchableOpacity>
           ))}
         </View>
       </View>
 
-      <FlatList data={filtered} keyExtractor={i => i.id} renderItem={renderItem} contentContainerStyle={{ paddingBottom: 80 }} style={styles.list} />
+      {loading ? (
+        <ActivityIndicator size="large" color="#2E7D32" style={{ marginTop: 20 }} />
+      ) : (
+        <FlatList 
+          data={filtered} 
+          keyExtractor={i => i.id.toString()} 
+          renderItem={renderItem} 
+          contentContainerStyle={{ paddingBottom: 80 }} 
+        />
+      )}
     </View>
   );
 }
