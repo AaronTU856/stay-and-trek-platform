@@ -21,6 +21,12 @@ const SAMPLE_STAYS = [
 ];
 
 export default function StayScreen() {
+
+const [stays, setStays] = React.useState([]);
+const [loading, setLoading] = React.useState(false);
+const [error, setError] = React.useState(null);
+
+
   const { largeText } = useAccessibility();
   const titleFontSize = largeText ? 28 : 22;
 
