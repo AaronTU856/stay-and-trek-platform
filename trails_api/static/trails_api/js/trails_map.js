@@ -284,8 +284,8 @@ function initializeMap() {
   //Add control box to the map
   L.control.layers(null, overlayMaps).addTo(window.trailsMap);
 
-  // Trigger initial fetch if layer is on
-  setTimeout(() => {updateAccommodations();}, 500);
+  // DO NOT auto-load accommodations - wait for user to toggle or search
+  // setTimeout(() => {updateAccommodations();}, 500);
 
   //  Custom green icon
   const defaultGreenIcon = L.icon({
@@ -1017,6 +1017,42 @@ function setupEventListeners() {
   const toggleAccommodations = document.getElementById("toggle-accommodations");
   const fetchStaysBtn = document.getElementById("fetch-stays-btn");
 
+  if (toggleAccommodations) {
+    toggleAccommodations.addEventListener("change", function () {
+      console.log("Accommodation toggle changed:", this.checked);
+
+      if (this.checked) {
+        // Show accommodations
+        if (!window.trailsMap.hasLayer(window.accommodationLayer)) {
+          window.trailsMap.addLayer(window.accommodationLayer);
+        }
+        updateAccommodations();
+      } else {
+        // Hide accommodations
+        if (window.trailsMap.hasLayer(window.accommodationLayer)) {
+          window.trailsMap.removeLayer(window.accommodationLayer);
+        }
+        window.accommodationLayer.clearLayers();
+      }
+    });
+  }
+
+  if (fetchStaysBtn) {
+    fetchStaysBtn.addEventListener("click", function () {
+      console.log("Fetching accommodations for currrent map area...");
+      const center = window.trailsMap.getCenter();
+
+      // Ensure checkbox is checked and layerv visible
+      if (toggleAccommodations && !toggleAccommodations.checked) {
+        toggleAccommodations.checked = true;
+      }
+      if (!window.trailsMap.hasLayer(window.accommodationLayer)) {
+        window.trailsMap.addLayer(window.accommodationLayer);
+      }
+      updateAccommodations();
+    });
+  }
+
   if (searchBtn) {
     searchBtn.addEventListener("click", performSearch);
   }
@@ -1531,6 +1567,12 @@ function updateResultsPanel(data) {
             </div>
         </div>`;
   resultsPanel.style.display = "block";
+  
+  // Hide accommodation card when showing trail results
+  const accommodationCard = document.getElementById("accommodation-card");
+  if (accommodationCard) {
+    accommodationCard.style.display = "none";
+  }
 }
 
 // Clear markers and panel
@@ -1546,6 +1588,12 @@ function clearProximityResults() {
 
   const panel = document.getElementById("proximity-results");
   if (panel) panel.style.display = "none";
+  
+  // Show accommodation card again when clearing results
+  const accommodationCard = document.getElementById("accommodation-card");
+  if (accommodationCard) {
+    accommodationCard.style.display = "block";
+  }
 }
 
 // Weather popup for trail markers
@@ -1571,29 +1619,97 @@ function onTrailClick(e) {
 }
 
 function updateAccommodations(searchLat = null, searchLng = null) {
-  if (!window.trailsMap.hasLayer(window.accommodationLayer)) {
-    console.log("Accommodation layer not active, skipping update");
+  console.log("🏨 updateAccommodations called");
+  
+  if (!window.trailsMap) {
+    console.error("❌ trailsMap not initialized");
     return;
   }
 
-  console.log("🏨 Fetching accommodations...");
   const lat = searchLat || window.trailsMap.getCenter().lat;
   const lng = searchLng || window.trailsMap.getCenter().lng;
+
+  // Clear old markers before fetching new accommodations
+  accommodationLayer.clearLayers();
+  console.log("🏨 Cleared old accommodation markers");
+
+  console.log(`🏨 Fetching accommodations for lat=${lat}, lng=${lng}`);
   
   fetch(`/api/trails/accommodations/nearby/?lat=${lat}&lng=${lng}`)
-    .then(res => res.json())
-    .then(data => {
-      window.accommodationLayer.clearLayers();
-      data.forEach(item => {
-        L.marker([item.latitude, item.longitude], { icon: window.hotelIcon })
-          .bindPopup(`
-            <strong>${item.name}</strong><br>
-            Price: €${item.price_per_night}<br>
-            Source: ${item.accommodation_source}
-          `)
-          .addTo(window.accommodationLayer);
-      });
+    .then(res => {
+      console.log("🏨 Response status:", res.status);
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      return res.json();
     })
-    .catch(err => console.error("❌ Accommodation API Error:", err));
-}
+    .then(data => {
+      console.log("🏨 API Response:", data);
+      
+      if (!window.accommodationLayer) {
+        console.error("❌ Accommodation layer not initialized");
+        return;
+      }
 
+      window.accommodationLayer.clearLayers();
+
+      // Handle both GeoJSON (features) and direct results format
+      const features = data.results || data.features || [];
+      
+      console.log(`🏨 Processing ${features.length} accommodations`);
+      
+      if (Array.isArray(features) && features.length > 0) {
+        features.forEach((item, idx) => {
+          try {
+            let lng, lat, name;
+            
+            // Handle GeoJSON Feature format (geometry.coordinates)
+            if (item.geometry && item.geometry.coordinates) {
+              [lng, lat] = item.geometry.coordinates;
+              name = item.properties.name || 'Accommodation';
+            } 
+            // Handle direct Accommodation object with location property
+            else if (item.location && item.location.coordinates) {
+              [lng, lat] = item.location.coordinates;
+              name = item.name || 'Accommodation';
+            }
+            // Fallback to direct lat/lng properties
+            else {
+              lat = item.latitude;
+              lng = item.longitude;
+              name = item.name || 'Accommodation';
+            }
+
+            if (isNaN(lat) || isNaN(lng)) {
+              console.warn(`⚠️ Invalid coords for ${name}`);
+              return;
+            }
+
+            const marker = L.marker([lat, lng], { 
+              icon: window.hotelIcon 
+            }).bindPopup(`
+              <div style="font-size: 12px;">
+                <strong>${name}</strong><br>
+                ${item.price_per_night ? '💰 €' + item.price_per_night + '/night<br>' : ''}
+                ${item.rating ? '⭐ ' + item.rating : ''}
+              </div>
+            `).addTo(window.accommodationLayer);
+            
+            console.log(`✅ Added: ${name}`);
+          } catch (err) {
+            console.error("❌ Error adding marker:", err);
+          }
+        });
+
+        const countEl = document.getElementById("accommodation-count");
+        if (countEl) {
+          countEl.textContent = `Found ${features.length} accommodations nearby`;
+        }
+      }
+    })
+    .catch(err => {
+      console.error("❌ API Error:", err);
+      const countEl = document.getElementById("accommodation-count");
+      if (countEl) {
+        countEl.textContent = "❌ Error loading accommodations";
+      }
+    });
+}
