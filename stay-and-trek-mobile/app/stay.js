@@ -22,9 +22,28 @@ const SAMPLE_STAYS = [
 
 export default function StayScreen() {
 
-const [stays, setStays] = React.useState([]);
-const [loading, setLoading] = React.useState(false);
-const [error, setError] = React.useState(null);
+  const [stays, setStays] = React.useState([]);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState(null);
+
+  const fetchStays = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/trails/accommodations/nearby/?lat=53.5&lng=-7.7&radius=50`);
+      const data = await response.json();
+      setStays(data.results || data); // Store the real records
+    } catch (err) {
+      setError("Connection failed");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Trigger fetch when screen mounts
+  React.useEffect(() => {
+    fetchStays();
+  }, []);
 
 
   const { largeText } = useAccessibility();
