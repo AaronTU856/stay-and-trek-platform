@@ -7,7 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "stayandtrekmobile",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true
     },
@@ -38,7 +38,7 @@
       ]
     ],
     "experiments": {
-      "typedRoutes": true,
+      "typedRoutes": false,
       "reactCompiler": false,
       "supportsExpoGo": true
     }
