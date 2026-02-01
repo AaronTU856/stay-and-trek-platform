@@ -22,7 +22,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 import requests
 from .models import Trail, Town, PointOfInterest, TrailPOIIntersection, Rivers, Accommodation
 from .serializers import (
-    TrailListSerializer, TrailDetailSerializer, TrailGeoJSONSerializer,
+    AccommodationGeoJSONSerializer, TrailListSerializer, TrailDetailSerializer, TrailGeoJSONSerializer,
     TrailCreateSerializer, TrailSummarySerializer, DistanceSerializer,
     BoundingBoxSerializer, PointOfInterestSerializer, PointOfInterestGeoJSONSerializer,
     TrailPOIIntersectionSerializer, TrailWithPOISerializer, GeographicBoundarySerializer, AccommodationSerializer
@@ -950,7 +950,7 @@ def accommodations_statistics(request):
     
     
 class NearbyAccommodationView(generics.ListAPIView):
-    serializer_class = AccommodationSerializer
+    serializer_class = AccommodationGeoJSONSerializer
     permission_classes = [AllowAny] # Public access for mobile app
     
     def get_queryset(self):
