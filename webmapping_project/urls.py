@@ -32,7 +32,7 @@ urlpatterns = [
     path('', project_views.home, name='home'),
     
     # Accommodations API
-    path('api/accommodations/nearby/', NearbyAccommodationView.as_view(), name='nearby-accommodations'),
+    #path('api/accommodations/nearby/', NearbyAccommodationView.as_view(), name='nearby-accommodations'),
 
     # Maps app
     path('maps/', include(('maps.urls', 'maps'), namespace='maps')),

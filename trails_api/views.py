@@ -957,7 +957,7 @@ class NearbyAccommodationView(generics.ListAPIView):
         # Extract lat/lng from the URL parameters
         lat = self.request.query_params.get('lat')
         lng = self.request.query_params.get('lng')
-        radius_km = float(self.request.query_params.get('radius', 10))  # Default 10km radius
+        radius_km = float(self.request.query_params.get('radius', 20))  # Default 20km radius
         
         if lat and lng:
             try:
@@ -965,10 +965,12 @@ class NearbyAccommodationView(generics.ListAPIView):
                 user_location = Point(float(lng), float(lat), srid=4326)
                 
                 # Use PostGIS to calculate distance and order by it
-                return Accommodation.objects.annotate(
+                return Accommodation.objects.filter(
+                    location__distance_lte=(user_location, D(km=radius_km)) # Distance filter
+                ).annotate(
                     distance=DistanceFunction('location', user_location)
-                ).order_by('distance')[:10]  # Return top 10 nearest
-            except ValueError:
+                ).order_by('distance')[:30] 
+            except (ValueError, TypeError):
                 return Accommodation.objects.none()
             
         return Accommodation.objects.none()

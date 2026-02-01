@@ -207,24 +207,32 @@ class BoundaryTrailIntersectionSerializer(serializers.Serializer):
     
     
 class AccommodationSerializer(serializers.ModelSerializer):
+    """
+    Serializer for accommodations using the PointOfInterest model.
+    """
+    latitude = serializers.ReadOnlyField()
+    longitude = serializers.ReadOnlyField()
     distance_km = serializers.SerializerMethodField()
 
     class Meta:
         model = Accommodation
-        fields = ['id', 'name', 'accommodation_source', 'price_per_night', 'rating', 'distance_km']
+        fields = [
+            'id', 'name', 'accommodation_source', 'price_per_night', 
+            'rating', 'url', 'image_url', 'latitude', 'longitude', 'distance_km'
+        ]
 
     def get_distance_km(self, obj):
-        # This picks up the 'distance' attribute added by the .annotate() in the view
-        if hasattr(obj, 'distance'):
+        # Picks up 'distance' from the .annotate() in the view
+        if hasattr(obj, 'distance') and obj.distance:
             return round(obj.distance.km, 2)
         return None
-        
+
 class AccommodationGeoJSONSerializer(GeoFeatureModelSerializer):
     """
-    load accommodations as a standard GeoJSON layer in a web or mobile map.
+    GeoJSON output for Accommodation table.
     """
     class Meta:
-        model = Accommodation
+        model = Accommodation  
         geo_field = 'location'
         fields = ('id', 'name', 'accommodation_source', 'price_per_night', 'rating')
 

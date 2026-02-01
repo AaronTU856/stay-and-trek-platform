@@ -5,7 +5,7 @@ from . import views
 from .views import trail_map
 from .views import api_test_view
 
-app_name = 'trails'
+
 # URL patterns for trails_api app
 urlpatterns = [
     path('', views.TrailListCreateView.as_view(), name='trail-list-create'),
@@ -57,5 +57,6 @@ urlpatterns = [
     path('accommodations/near-town/', views.accommodations_near_town, name='accommodations-near-town'),
     path('accommodations/by-county/', views.accommodations_by_county, name='accommodations-by-county'),
     path('accommodations/stats/', views.accommodations_statistics, name='accommodations-stats'),
+    path('accommodations/nearby/', views.NearbyAccommodationView.as_view(), name='nearby-accommodations'),
 ]
 
