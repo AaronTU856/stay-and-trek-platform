@@ -10,6 +10,8 @@ import {
 } from 'react-native';
 import { useAccessibility } from '../context/AccessibilityContext';
 
+const API_BASE_URL = 'https://192.168.1.83:8000';
+ 
 const SAMPLE_STAYS = [
   { id: 's1', name: 'Seaview Hotel', type: 'Hotel', price: 120, rating: 4.3, distance: '0.8km' },
   { id: 's2', name: 'Cozy B&B', type: 'B&B', price: 75, rating: 4.8, distance: '1.2km' },
