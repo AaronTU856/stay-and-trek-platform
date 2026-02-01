@@ -19,6 +19,19 @@ document.addEventListener("DOMContentLoaded", function () {
   // Load all trails into searchable layer (hidden from map view)
   // addSearchControls() will be called automatically when trails finish loading
   loadAllTrailsForSearch();
+
+  if (window.trailsMap) {
+        window.trailsMap.on('moveend', () => {
+            console.log("🔄 Map moved, updating accommodations...");
+            updateAccommodations();
+        });
+        setTimeout(() => {
+          console.log("🚀 Initial accommodation check...");
+          updateAccommodations();
+        }, 500);
+    } else {
+        console.error("❌ trailsMap not found during initialization");
+    }
 });
 
 
@@ -262,6 +275,17 @@ function initializeMap() {
     popupAnchor: [1, -34],
     shadowSize: [41, 41],
   });
+
+  // Define layers for the toggle control
+  const overlayMaps = {
+    "Trail Start Points": window.trailMarkers,
+    "Accommodations": window.accommodationLayer,
+  };
+  //Add control box to the map
+  L.control.layers(null, overlayMaps).addTo(window.trailsMap);
+
+  // Trigger initial fetch if layer is on
+  setTimeout(() => {updateAccommodations();}, 500);
 
   //  Custom green icon
   const defaultGreenIcon = L.icon({
@@ -1350,6 +1374,7 @@ async function performProximitySearch(lat, lng) {
     }
 
     displayNearestTrails(data.nearest_trails);
+    updateAccommodations(lat, lng); // Passes the orange search marker location
     updateResultsPanel(data);
     showAlert(`✅ Found ${data.nearest_trails.length} trails`, "success");
 
@@ -1541,5 +1566,32 @@ function onTrailClick(e) {
                 .openOn(map);
         })
         .catch(error => console.error('Weather error:', error));
+}
+
+function updateAccommodations(searchLat = null, searchLng = null) {
+  if (!window.trailsMap.hasLayer(window.accommodationLayer)) {
+    console.log("Accommodation layer not active, skipping update");
+    return;
+  }
+
+  console.log("🏨 Fetching accommodations...");
+  const lat = searchLat || window.trailsMap.getCenter().lat;
+  const lng = searchLng || window.trailsMap.getCenter().lng;
+  
+  fetch(`/api/trails/accommodations/nearby/?lat=${lat}&lng=${lng}`)
+    .then(res => res.json())
+    .then(data => {
+      window.accommodationLayer.clearLayers();
+      data.forEach(item => {
+        L.marker([item.latitude, item.longitude], { icon: window.hotelIcon })
+          .bindPopup(`
+            <strong>${item.name}</strong><br>
+            Price: €${item.price_per_night}<br>
+            Source: ${item.accommodation_source}
+          `)
+          .addTo(window.accommodationLayer);
+      });
+    })
+    .catch(err => console.error("❌ Accommodation API Error:", err));
 }
 
