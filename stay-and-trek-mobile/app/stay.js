@@ -1,4 +1,5 @@
 import React from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import {
   View,
   Text,
@@ -63,31 +64,56 @@ export default function StayScreen() {
     const expanded = expandedId === item.id;
     return (
       <TouchableOpacity
-        style={styles.card}
-        onPress={() => setExpandedId(expanded ? null : item.id)}
-      >
-        <View style={styles.cardRow}>
-          <Text style={[styles.cardTitle, { fontSize: cardFontSize, fontWeight: '600' }]}>{item.name}</Text>
-          {/* Mapping to price_per_night from Django */}
-          <Text style={{ fontSize: cardFontSize - 2, color: '#666' }}>€{item.price_per_night}/night</Text>
+      style={[styles.card, expanded && styles.cardExpanded]}
+      onPress={() => setExpandedId(expanded ? null : item.id)}
+      activeOpacity={0.9}
+    >
+      <View style={styles.cardRow}>
+        <View style={{ flex: 1 }}>
+          <View style={styles.titleRow}>
+            <Text style={[styles.cardTitle, { fontSize: cardFontSize, fontWeight: '700', color: '#1a1a1a' }]}>
+              {item.name}
+            </Text>
+            {/* UI Improvement: Dynamic Badge */}
+            {item.rating >= 4.5 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>TOP RATED</Text>
+              </View>
+            )}
+          </View>
+          
+          <Text style={{ fontSize: cardFontSize - 2, color: '#444', marginTop: 4 }}>
+            <Ionicons name="location-outline" size={14} color="#2E7D32" /> {item.accommodation_source}
+          </Text>
         </View>
         
-        {/* Mapping to accommodation_source from Django */}
-        <Text style={{ fontSize: cardFontSize - 2, color: '#666' }}>
-          {item.rating || '4.5'}★ • {item.accommodation_source}
-        </Text>
+        <View style={{ alignItems: 'flex-end' }}>
+          <Text style={styles.priceText}>€{item.price_per_night}</Text>
+          <Text style={styles.priceSub}>/night</Text>
+        </View>
+      </View>
 
-        {expanded && (
-          <View style={styles.expanded}>
-            <Text style={{ marginBottom: 8 }}>{item.description || "No description provided."}</Text>
-            <TouchableOpacity style={styles.bookButton} onPress={() => Alert.alert('Booking', `Booking ${item.name}`)}>
-              <Text style={styles.bookText}>Book Now</Text>
+       {expanded && (
+        <View style={styles.expanded}>
+          <Text style={styles.descriptionText}>
+            {item.description || "Experience the best of trekking with this premium accommodation located conveniently near the main trails."}
+          </Text>
+          <View style={styles.actionsRow}>
+            <TouchableOpacity 
+              style={styles.bookButton} 
+              onPress={() => Alert.alert('Booking', `Redirecting to secure booking for ${item.name}...`)}
+            >
+              <Text style={styles.bookText}>Book Stay</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.infoButton}>
+              <Text style={styles.infoText}>View Gallery</Text>
             </TouchableOpacity>
           </View>
-        )}
-      </TouchableOpacity>
-    );
-  }
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+}
 
   return (
     <View style={styles.container}>
@@ -135,16 +161,16 @@ const styles = StyleSheet.create({
   filterText: { color: '#333', fontWeight: '600' },
   filterTextActive: { color: '#fff' },
   list: { marginTop: 8 },
-  card: { backgroundColor: '#caddf1ff', padding: 12, borderRadius: 10, marginBottom: 10, borderWidth: 1, borderColor: 'rgba(0,0,0,0.04)',
+  card: { backgroundColor: '#fff', padding: 16, borderRadius: 12, marginBottom: 12, borderWidth: 1, borderColor: '#e0e0e0',
 
   // iOS shadow
   shadowColor: '#000',
-  shadowOpacity: 0.12,
-  shadowRadius: 6,
-  shadowOffset: { width: 0, height: 3 },
+  shadowOpacity: 0.1,
+  shadowRadius: 4,
+  shadowOffset: { width: 0, height: 2 },
 
   // Android shadow
-  elevation: 4,
+  elevation: 3,
 
   // web
   boxShadow: '0px 3px 6px rgba(0,0,0,0.12)',
