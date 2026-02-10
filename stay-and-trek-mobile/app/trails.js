@@ -4,17 +4,17 @@ import IconButton from '../components/IconButton';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 
-import { CONFIG } from '../config/env.js';
-
-fetch(`${CONFIG.API.BASE_URL}/api/trails/?limit=100`);
 
 
 // Use Docker backend for local demo, Cloud Run as fallback
 // For Expo on physical device, use your machine's IP (e.g., 192.168.x.x)
 // For Expo Web/Simulator, use localhost
-const API_BASE_URL = __DEV__ 
-  ? 'http://localhost:8000'  // Local development
-  : 'https://stay-and-trek-service-642845720185.europe-west1.run.app';  // Production fallback
+// const API_BASE_URL = __DEV__ 
+//   ? 'http://localhost:8000'  // Local development
+//   : 'https://stay-and-trek-service-642845720185.europe-west1.run.app';  // Production fallback
+
+const API_BASE_URL = 'http://192.168.1.83:8000';
+
 
 export default function TrailDetails() {
   const { id } = useLocalSearchParams();
@@ -98,10 +98,10 @@ export default function TrailDetails() {
             >
               <View>
                 <Text style={{ fontSize: cardFontSize, fontWeight: '600' }}>
-                  {trail.trail_name}
+                  {trail.trail_name ?? trail.trail_name}
                 </Text>
                 <Text style={{ fontSize: cardFontSize - 2, color: '#666' }}>
-                  {trail.distance_km}km • {trail.difficulty}
+                  {trail.length_km ?? trail.distance_km}km • {trail.difficulty}
                 </Text>
               </View>
             </TouchableOpacity>

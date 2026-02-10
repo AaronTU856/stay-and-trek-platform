@@ -2,9 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, ActivityIndicator, Text } from 'react-native';
 import MapView, { Marker, Callout, PROVIDER_DEFAULT } from 'react-native-maps';
 
-import { CONFIG } from '../config/env.js';
 
-fetch(`${CONFIG.API.BASE_URL}/api/trails/?limit=100`);
 
 
 const API_URL = 'http://192.168.1.83:8000/api/trails/accommodations/nearby/?lat=53.5&lng=-7.7&radius=50';
