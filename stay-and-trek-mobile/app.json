@@ -8,9 +8,16 @@
     "scheme": "stayandtrekmobile",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": false,
+
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        }
+      }
     },
+
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
