@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, TextInput } from "react-native";
 import { useAccessibility } from "../context/AccessibilityContext";
 import IconButton from '../components/IconButton';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 
 
@@ -15,7 +15,6 @@ const API_BASE_URL = 'http://192.168.1.83:8000';
 
 
 export default function TrailDetails() {
-  const { id } = useLocalSearchParams();
   const { largeText } = useAccessibility();
   const [trails, setTrails] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -42,7 +41,7 @@ export default function TrailDetails() {
         });
         
         console.log(`Response status: ${response.status}`);
-        
+
         if (!response.ok) {
           console.warn(`API returned ${response.status}, using fallback data`);
           throw new Error(`HTTP ${response.status}`);
