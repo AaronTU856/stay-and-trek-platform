@@ -25,7 +25,28 @@ export default function TrailDetails() {
   const headingFontSize = largeText ? 18 : 16;
   const textFontSize = largeText ? 16 : 14;
 
+  const [accommodation, setAccommodation] = useState(null);
+
   useEffect(() => {
+      // Fetch nearby accommodations when trail data is loaded
+    if (!trail?.latitude || !trail?.longitude) return;
+
+      fetch(
+        `${API_BASE_URL}/api/trails/accommodations/nearby/?lat=${trail.latitude}&lng=${trail.longitude}&radius=20`
+
+      )
+        .then(res => res.json())
+        .then(data => setAccommodation(data.results || data))
+       .catch((err) => {
+          console.warn('Failed to fetch accommodation:', err.message);
+          setAccommodation([]);
+        });
+    }, [trail]);
+
+  useEffect(() => {
+
+    
+
     const fetchTrailDetails = async () => {
       try {
         setLoading(true);
@@ -56,6 +77,8 @@ export default function TrailDetails() {
       }
     };
 
+    
+
     fetchTrailDetails();
   }, [id]);
 
@@ -75,6 +98,7 @@ export default function TrailDetails() {
     );
   }
 
+ 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 60 }}>
       {/* Header with back button */}
@@ -114,6 +138,19 @@ export default function TrailDetails() {
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { fontSize: headingFontSize }]}>About this Trail</Text>
         <Text style={[styles.description, { fontSize: textFontSize }]}>{trail.description || 'No description available'}</Text>
+
+        <Text style={styles.sectionTitle}>Nearby Accommodation</Text>
+
+      {accommodation && accommodation.length > 0 ? (
+        accommodation.map((place) => (
+          <Text key={place.id}>
+            {place.name} - €{place.price_per_night}
+          </Text>
+        ))
+      ) : (
+        <Text>No nearby accommodation found.</Text>
+      )}
+
       </View>
 
       {/* Highlights section */}
