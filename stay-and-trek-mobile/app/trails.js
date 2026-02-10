@@ -23,6 +23,7 @@ export default function TrailDetails() {
   const router = useRouter();
   const cardFontSize = largeText ? 18 : 16;
   const [searchQuery, setSearchQuery] = useState('');
+  const [difficultyFilter, setDifficultyFilter] = useState('ALL');
   
   
 
@@ -62,11 +63,19 @@ export default function TrailDetails() {
     fetchTrails();
   }, []);
 
-    const filteredTrails = trails.filter(trail =>
-      trail?.trail_name
-        ?.toLowerCase()
-        .includes(searchQuery.toLowerCase())
-    );
+    const filteredTrails = trails.filter(trail => {
+      const matchesSearch =
+        trail?.trail_name
+          ?.toLowerCase()
+          .includes(searchQuery.toLowerCase());
+
+      const matchesDifficulty =
+        difficultyFilter === 'ALL' ||
+        trail?.difficulty === difficultyFilter;
+
+      return matchesSearch && matchesDifficulty;
+    });
+
 
   return (
     <View style={styles.container}>
@@ -91,31 +100,61 @@ export default function TrailDetails() {
       />
 
 
+
+      <View style={styles.filterRow}>
+      {['ALL', 'Easy', 'Moderate', 'Hard'].map(level => (
+        <TouchableOpacity
+          key={level}
+          style={[
+            styles.filterButton,
+            difficultyFilter === level && styles.filterButtonActive
+          ]}
+          onPress={() => setDifficultyFilter(level)}
+        >
+          <Text
+            style={{
+              color: difficultyFilter === level ? '#fff' : '#333',
+              fontWeight: '600'
+            }}
+          >
+            {level}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+
+
       {/* Trails List */}
       {loading ? (
         <ActivityIndicator size="large" color="#2E7D32" style={{ marginTop: 20 }} />
       ) : (
         <ScrollView style={styles.list} contentContainerStyle={{ paddingBottom: 60 }}>
-          {filteredTrails.map(trail => (
-            <TouchableOpacity
-              key={trail.id}
-              style={styles.card}
-              activeOpacity={0.85}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              onPress={() => router.push({ pathname: '/trail-details', params: { id: trail.id } })}
-              accessibilityRole="button"
-              accessibilityLabel={`Open details for ${trail.trail_name}`}
-            >
-              <View>
-                <Text style={{ fontSize: cardFontSize, fontWeight: '600' }}>
-                  {trail.trail_name}
-                </Text>
-                <Text style={{ fontSize: cardFontSize - 2, color: '#666' }}>
-                  {trail.length_km ?? trail.distance_km}km • {trail.difficulty}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ))}
+          {filteredTrails.length === 0 ? (
+            <Text style={{ marginTop: 20, color: '#666', textAlign: 'center' }}>
+              No trails match your search.
+            </Text>
+          ) : (
+            filteredTrails.map(trail => (
+              <TouchableOpacity
+                key={trail.id}
+                style={styles.card}
+                activeOpacity={0.85}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                onPress={() => router.push({ pathname: '/trail-details', params: { id: trail.id } })}
+                accessibilityRole="button"
+                accessibilityLabel={`Open details for ${trail.trail_name}`}
+              >
+                <View>
+                  <Text style={{ fontSize: cardFontSize, fontWeight: '600' }}>
+                    {trail?.trail_name || 'Unknown Trail'}
+                  </Text>
+                  <Text style={{ fontSize: cardFontSize - 2, color: '#666' }}>
+                    {trail?.distance_km || 'N/A'}km • {trail?.difficulty || 'N/A'}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))
+          )}
         </ScrollView>
       )}
     </View>
@@ -153,5 +192,23 @@ const styles = StyleSheet.create({
       borderWidth: 1,
       borderColor: '#ddd',
       fontSize: 14,
-    }
+    },
+
+    filterRow: {
+      flexDirection: 'row',
+      gap: 8,
+      marginBottom: 8,
+    },
+
+    filterButton: {
+      paddingVertical: 6,
+      paddingHorizontal: 12,
+      borderRadius: 20,
+      backgroundColor: '#eee',
+    },
+
+    filterButtonActive: {
+      backgroundColor: '#2E7D32',
+    },
+
   });

@@ -25,7 +25,7 @@ export default function TrailDetails() {
   const headingFontSize = largeText ? 18 : 16;
   const textFontSize = largeText ? 16 : 14;
 
-  const [accommodation, setAccommodation] = useState(null);
+  const [accommodation, setAccommodation] = useState();
 
   useEffect(() => {
       // Fetch nearby accommodations when trail data is loaded
@@ -138,18 +138,40 @@ export default function TrailDetails() {
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { fontSize: headingFontSize }]}>About this Trail</Text>
         <Text style={[styles.description, { fontSize: textFontSize }]}>{trail.description || 'No description available'}</Text>
+      </View>
 
-        <Text style={styles.sectionTitle}>Nearby Accommodation</Text>
+      {/* Accommodation section */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { fontSize: headingFontSize }]}>Nearby Accommodation</Text>
 
-      {accommodation && accommodation.length > 0 ? (
-        accommodation.map((place) => (
-          <Text key={place.id}>
-            {place.name} - €{place.price_per_night}
-          </Text>
-        ))
+      {!accommodation ? (
+        <Text style={{ color: '#666' }}>Loading accommodation…</Text>
+      ) : accommodation.length === 0 ? (
+        <Text style={{ color: '#666' }}>No nearby accommodation found.</Text>
       ) : (
-        <Text>No nearby accommodation found.</Text>
+
+        accommodation.map(place => (
+          <TouchableOpacity
+            key={place.id}
+            style={styles.accommodationCard}
+            onPress={() =>
+              router.push({
+                pathname: '/stay-details',
+                params: { id: place.id }
+              })
+            }
+          >
+            <Text style={{ fontWeight: '600' }}>{place.name}</Text>
+            <Text style={{ color: '#666' }}>
+              €{place.price_per_night} per night
+            </Text>
+            <Text style={{ color: '#1565C0', marginTop: 4 }}>
+              View details →
+            </Text>
+          </TouchableOpacity>
+        ))
       )}
+
 
       </View>
 
@@ -299,4 +321,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 14,
   },
+
+  // Accommodation card styling
+  accommodationCard: {
+    backgroundColor: '#f0f0f0',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 10,
+    
+  },
+
 });
