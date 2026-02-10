@@ -7,9 +7,10 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 
 // Use Docker backend for local demo
-const API_BASE_URL = __DEV__ 
-  ? 'http://localhost:8000'
-  : 'https://stay-and-trek-service-642845720185.europe-west1.run.app';
+// const API_BASE_URL = __DEV__ 
+//   ? 'http://localhost:8000'
+//   : 'https://stay-and-trek-service-642845720185.europe-west1.run.app';
+const API_BASE_URL = 'http://192.168.1.83:8000';
 
 // Fallback hardcoded data
 const TRAILS_DATA = {
