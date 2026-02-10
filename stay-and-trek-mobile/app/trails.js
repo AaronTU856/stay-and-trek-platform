@@ -69,9 +69,12 @@ export default function TrailDetails() {
           ?.toLowerCase()
           .includes(searchQuery.toLowerCase());
 
+      const trailDifficulty = trail?.difficulty?.trim().toLowerCase();
+      const selectedDifficulty = difficultyFilter.toLowerCase();
+
       const matchesDifficulty =
         difficultyFilter === 'ALL' ||
-        trail?.difficulty === difficultyFilter;
+        trailDifficulty === selectedDifficulty;
 
       return matchesSearch && matchesDifficulty;
     });
