@@ -1,8 +1,10 @@
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, TextInput } from "react-native";
 import { useAccessibility } from "../context/AccessibilityContext";
 import IconButton from '../components/IconButton';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
+
+
 
 
 // const API_BASE_URL = __DEV__ 
@@ -20,6 +22,7 @@ export default function TrailDetails() {
   const titleFontSize = largeText ? 32 : 24;
   const router = useRouter();
   const cardFontSize = largeText ? 18 : 16;
+  const [searchQuery, setSearchQuery] = useState('');
 
   
 
@@ -59,6 +62,12 @@ export default function TrailDetails() {
     fetchTrails();
   }, []);
 
+      const filteredTrails = trails.filter(trail =>
+      trail.trail_name
+      ?.toLowerCase()
+      .includes(searchQuery.toLowerCase())
+    );
+
   return (
     <View style={styles.container}>
       <Text style={[styles.title, { fontSize: titleFontSize }]}>Hiking Trails</Text>
@@ -69,12 +78,24 @@ export default function TrailDetails() {
         <IconButton name="sunny-outline" iconSet="ionicon" label="View Weather" bgColor="#FFA000" onPress={() => router.push('/weather')} />
       </View>
 
+      <TextInput
+        style={styles.searchInput}
+        placeholder="Search trails..."
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+        autoCapitalize="none"
+        autoCorrect={false}
+        clearButtonMode="while-editing"
+        accessibilityLabel="Search trails"    
+      />
+
+
       {/* Trails List */}
       {loading ? (
         <ActivityIndicator size="large" color="#2E7D32" style={{ marginTop: 20 }} />
       ) : (
         <ScrollView style={styles.list} contentContainerStyle={{ paddingBottom: 60 }}>
-          {trails.map(trail => (
+          {filteredTrails.map(trail => (
             <TouchableOpacity
               key={trail.id}
               style={styles.card}
@@ -118,6 +139,18 @@ const styles = StyleSheet.create({
       shadowRadius: 4,
       elevation: 2,
       // Web (React Native Web) prefers boxShadow instead of shadow* props
-      boxShadow: '0px 3px 6px rgba(0,0,0,0.12)'
+      boxShadow: '0px 3px 6px rgba(0,0,0,0.12)',
+
+    },
+
+    searchInput: {
+      width: '90%',
+      backgroundColor: '#fff',
+      borderRadius: 8,
+      padding: 10,
+      marginVertical: 12,
+      borderWidth: 1,
+      borderColor: '#ddd',
+      fontSize: 14,
     }
   });
