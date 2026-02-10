@@ -23,7 +23,7 @@ export default function TrailDetails() {
   const router = useRouter();
   const cardFontSize = largeText ? 18 : 16;
   const [searchQuery, setSearchQuery] = useState('');
-
+  
   
 
   useEffect(() => {
@@ -62,10 +62,10 @@ export default function TrailDetails() {
     fetchTrails();
   }, []);
 
-      const filteredTrails = trails.filter(trail =>
-      trail.trail_name
-      ?.toLowerCase()
-      .includes(searchQuery.toLowerCase())
+    const filteredTrails = trails.filter(trail =>
+      trail?.trail_name
+        ?.toLowerCase()
+        .includes(searchQuery.toLowerCase())
     );
 
   return (
@@ -77,6 +77,7 @@ export default function TrailDetails() {
         <IconButton name="bed" iconSet="material" label="Find Accommodation" bgColor="#1565C0" onPress={() => router.push('/stay')} />
         <IconButton name="sunny-outline" iconSet="ionicon" label="View Weather" bgColor="#FFA000" onPress={() => router.push('/weather')} />
       </View>
+
 
       <TextInput
         style={styles.searchInput}
