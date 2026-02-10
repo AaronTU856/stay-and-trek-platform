@@ -25,7 +25,7 @@ export default function TrailDetails() {
   const headingFontSize = largeText ? 18 : 16;
   const textFontSize = largeText ? 16 : 14;
 
-  const [accommodation, setAccommodation] = useState();
+  const [accommodation, setAccommodation] = useState([]);
 
   useEffect(() => {
       // Fetch nearby accommodations when trail data is loaded
@@ -36,7 +36,11 @@ export default function TrailDetails() {
 
       )
         .then(res => res.json())
-        .then(data => setAccommodation(data.results || data))
+        .then(data => {
+          const places = data.results || data || [];
+          places.sort((a, b) => a.price_per_night - b.price_per_night);
+          setAccommodation(places);
+        })
        .catch((err) => {
           console.warn('Failed to fetch accommodation:', err.message);
           setAccommodation([]);
@@ -144,8 +148,14 @@ export default function TrailDetails() {
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { fontSize: headingFontSize }]}>Nearby Accommodation</Text>
 
+        <Text style={{ color: '#666', marginBottom: 8 }}>
+          {accommodation.length ?? 0} places nearby
+        </Text>
+
+
       {!accommodation ? (
         <Text style={{ color: '#666' }}>Loading accommodation…</Text>
+        
       ) : accommodation.length === 0 ? (
         <Text style={{ color: '#666' }}>No nearby accommodation found.</Text>
       ) : (
@@ -161,10 +171,8 @@ export default function TrailDetails() {
               })
             }
           >
-            <Text style={{ fontWeight: '600' }}>{place.name}</Text>
-            <Text style={{ color: '#666' }}>
-              €{place.price_per_night} per night
-            </Text>
+            <Text style={{ fontWeight: '700', fontSize: 15 }}>{place.name}</Text>
+            <Text style={{ color: '#666' }}>€{place.price_per_night} per night</Text>
             <Text style={{ color: '#1565C0', marginTop: 4 }}>
               View details →
             </Text>
