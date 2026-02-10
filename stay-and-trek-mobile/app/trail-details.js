@@ -12,65 +12,7 @@ import { useState, useEffect } from 'react';
 //   : 'https://stay-and-trek-service-642845720185.europe-west1.run.app';
 const API_BASE_URL = 'http://192.168.1.83:8000';
 
-// Fallback hardcoded data
-const TRAILS_DATA = {
-  1: {
-    trail_name: "Croagh Patrick",
-    distance_km: 7,
-    difficulty: "Moderate",
-    elevation_gain_m: 764,
-    duration: "3-4 hours",
-    description: "Croagh Patrick is a pilgrimage site and one of Ireland's most famous mountains. The trail offers stunning views of Clew Bay and is suitable for most fitness levels.",
-    highlights: [
-      "Panoramic views of Clew Bay",
-      "Historic pilgrimage site",
-      "Well-maintained paths",
-      "Stunning sunsets"
-    ]
-  },
-  2: {
-    trail_name: "Mweelrea",
-    distance_km: 12,
-    difficulty: "Hard",
-    elevation_gain_m: 819,
-    duration: "5-6 hours",
-    description: "Mweelrea is Connacht's highest mountain. This is a challenging hike with exposed ridges and requires good fitness and experience.",
-    highlights: [
-      "Highest peak in Connacht",
-      "Dramatic mountain scenery",
-      "Challenging ridge walk",
-      "Remote wilderness experience"
-    ]
-  },
-  3: {
-    trail_name: "Nephin",
-    distance_km: 8,
-    difficulty: "Moderate",
-    elevation_gain_m: 806,
-    duration: "4-5 hours",
-    description: "Nephin is a beautiful mountain in County Mayo offering excellent views across the Nephin Beg Range.",
-    highlights: [
-      "360-degree mountain views",
-      "Relatively quiet mountain",
-      "Good trail conditions",
-      "Beautiful flora and fauna"
-    ]
-  },
-  4: {
-    trail_name: "Glendalough",
-    distance_km: 9,
-    difficulty: "Easy",
-    elevation_gain_m: 725,
-    duration: "3-4 hours",
-    description: "Glendalough Valley is a stunning glacial valley with ancient monastic ruins. Perfect for all fitness levels.",
-    highlights: [
-      "Historic monastic site",
-      "Beautiful valley scenery",
-      "Clear marked trails",
-      "Accessible for families"
-    ]
-  }
-};
+
 
 export default function TrailDetails() {
   const { id } = useLocalSearchParams();
@@ -105,9 +47,10 @@ export default function TrailDetails() {
         const data = await response.json();
         console.log('Successfully fetched trail:', data.trail_name);
         setTrail(data);
+
       } catch (err) {
-        console.warn('Failed to fetch trail details, using fallback:', err.message);
-        setTrail(TRAILS_DATA[parseInt(id) || 1] || TRAILS_DATA[1]);
+        console.warn('Failed to fetch trail details:', err.message);
+       
       } finally {
         setLoading(false);
       }
