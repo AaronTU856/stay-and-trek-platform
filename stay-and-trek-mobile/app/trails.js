@@ -83,6 +83,7 @@ export default function TrailDetails() {
     <View style={styles.container}>
       <Text style={[styles.title, { fontSize: titleFontSize }]}>Hiking Trails</Text>
 
+      {/* Navigation buttons at top */}
       <View style={styles.iconRow}>
         <IconButton name="hiking" iconSet="fontawesome" label="Find Trails" bgColor="#2E7D32" onPress={() => router.push('/trails')} />
         <IconButton name="bed" iconSet="material" label="Find Accommodation" bgColor="#1565C0" onPress={() => router.push('/stay')} />
@@ -167,6 +168,12 @@ const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: "flex-start", alignItems: "center" },
   title: { fontSize: 24 },
   iconRow: { flexDirection: 'row', marginTop: 18, justifyContent: 'center', width: '100%', flexWrap: 'wrap' },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+  },
   list: {
       width: "100%",
       paddingHorizontal: 20
