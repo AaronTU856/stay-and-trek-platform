@@ -4,6 +4,11 @@ import IconButton from '../components/IconButton';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 
+import { CONFIG } from '../config/env.js';
+
+fetch(`${CONFIG.API.BASE_URL}/api/trails/?limit=100`);
+
+
 // Use Docker backend for local demo, Cloud Run as fallback
 // For Expo on physical device, use your machine's IP (e.g., 192.168.x.x)
 // For Expo Web/Simulator, use localhost

@@ -12,6 +12,11 @@ import {
 } from 'react-native';
 import { useAccessibility } from '../context/AccessibilityContext';
 
+import { CONFIG } from '../config/env.js';
+
+fetch(`${CONFIG.API.BASE_URL}/api/trails/?limit=100`);
+
+
 const API_BASE_URL = 'http://192.168.1.83:8000';
  
 
