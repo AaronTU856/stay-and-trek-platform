@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, ActivityIndicator, Text } from 'react-native';
 import MapView, { Marker, Callout, PROVIDER_DEFAULT } from 'react-native-maps';
+import { useNavigation } from '@react-navigation/native';
 
 
 
-
-const API_URL = 'http://192.168.1.83:8000/api/trails/accommodations/nearby/?lat=53.5&lng=-7.7&radius=50';
+const BASE_URL = 'http://192.168.1.83:8000';
+const FETCH_TIMEOUT = 10000; //10 seconds
 
 export default function MapScreen() {
+  const navigation = useNavigation();
+
+  const [trails, setTrails] = useState([]);
   const [stays, setStays] = useState([]);
   const [loading, setLoading] = useState(true);
   
@@ -19,15 +23,23 @@ export default function MapScreen() {
     longitudeDelta: 0.5,
   });
 
+  
+
   useEffect(() => {
-    fetchStays();
+    loadData();
   }, []);
 
-  const fetchStays = async () => {
+  const loadData = async () => {
     try {
-      const response = await fetch(API_URL);
-      const data = await response.json();
-      setStays(data.results || data);
+      const trailsRes = await fetch(`${BASE_URL}/api/trails/`);
+      const trailsData = await trailsRes.json();
+      setTrails(trailsData.results || trailsData);
+
+      const staysRes = await fetch(
+        `${BASE_URL}/api/trails/accommodations/nearby/?lat=53.5&lng=-7.7&radius=50`
+    );
+      const staysData = await staysRes.json();
+      setStays(staysData.results || staysData);
     } catch (err) {
       console.error("Map Load Error:", err);
     } finally {
@@ -50,33 +62,60 @@ export default function MapScreen() {
         initialRegion={region}
         provider={PROVIDER_DEFAULT} // Explicitly use default provider
       >
-        {stays.map((item) => {
-          // CRITICAL FIX: Parse and Validate
-          const lat = parseFloat(item.latitude);
-          const lng = parseFloat(item.longitude);
+
+      {/* Trails Markers - Green */}
+        {trails.map((trail) => {
+        
+          // Parse and Validate
+          const lat = parseFloat(trail.latitude);
+          const lng = parseFloat(trail.longitude);
 
           // If coordinates are missing or invalid, skip this marker
-          if (isNaN(lat) || isNaN(lng)) {
-            console.warn(`Skipping marker ${item.id} due to invalid coordinates`);
-            return null;
-          }
+          if (isNaN(lat) || isNaN(lng)) return null;
 
+            
           return (
             <Marker
-              key={item.id.toString()} // Ensure key is a string
+              key={`trail-${trail.id}`}
               coordinate={{ latitude: lat, longitude: lng }}
-              pinColor="blue"
+              pinColor="green"
+              onPress={() => navigation.navigate('trail-details', { id: trail.id })
+            }
             >
+
               <Callout>
-                <View style={{ padding: 5, minWidth: 100 }}>
-                  <Text style={{ fontWeight: 'bold' }}>{item.name}</Text>
-                  <Text>€{item.price_per_night}/night</Text>
-                  <Text style={{ fontSize: 10, color: '#666' }}>{item.accommodation_source}</Text>
+                <View style={{ padding: 5, minWidth: 120 }}>
+                  <Text style={{ fontWeight: 'bold' }}>{trail.trail_name}</Text>
+                  <Text>{trail.difficulty}</Text>
                 </View>
               </Callout>
             </Marker>
           );
         })}
+
+      {/* Accommodation Marker - Blue */}
+        {stays.map((item) => {
+          const lat = parseFloat(item.latitude);
+          const lng = parseFloat(item.longitude);
+
+          if (isNaN(lat) || isNaN(lng)) return null;
+
+          return (
+            <Marker
+              key={`stay-${item.id}`}
+              coordinate={{ latitude: lat, longitude: lng }}
+              pinColor="blue"
+              >
+              <Callout>
+                <View style={{ padding: 5, minWidth: 120 }}>
+                  <Text style={{ fontWeight: 'bold' }}>{item.name}</Text>
+                  <Text>€{item.price_per_night}/night</Text>
+                </View>
+              </Callout>
+              </Marker>
+          );
+        })}
+
       </MapView>
     </View>
   );
@@ -87,3 +126,4 @@ const styles = StyleSheet.create({
   map: { width: '100%', height: '100%' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' }
 });
+
