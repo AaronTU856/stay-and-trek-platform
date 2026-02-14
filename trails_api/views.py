@@ -205,6 +205,31 @@ def trail_statistics(request):
     serializer = TrailSummarySerializer(stats)
     return Response(serializer.data)
 
+# Endpoint for mobile users to suggest trail descriptions
+@api_view(['PATCH'])
+def suggest_description(request, pk):
+    """
+    Endpoint to allow mobile users to submit a trail description.
+    Sets status to 'pending' for admin review.
+    """
+    try:
+        trail = Trail.objects.get(pk=pk)
+        description = request.data.get('description')
+
+        if not description or len(description) < 10:
+            return Response(
+                {"error": "Description too short or missing."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        trail.description = description
+        trail.status = 'pending'
+        trail.save()
+
+        return Response({"message": "Submission received. Awaiting approval."}, status=status.HTTP_200_OK)
+    except Trail.DoesNotExist:
+        return Response({"error": "Trail not found."}, status=status.HTTP_404_NOT_FOUND)
+
 
 # Protected template views
 @csrf_exempt
