@@ -205,7 +205,7 @@ def trail_statistics(request):
     serializer = TrailSummarySerializer(stats)
     return Response(serializer.data)
 
-# Endpoint for mobile users to suggest trail descriptions
+ # Endpoint for mobile users to suggest trail descriptions
 @api_view(['PATCH'])
 def suggest_description(request, pk):
     """

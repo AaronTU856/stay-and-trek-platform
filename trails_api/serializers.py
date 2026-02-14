@@ -184,7 +184,7 @@ class TrailWithPOISerializer(serializers.ModelSerializer):
         model = Trail
         fields = [
             'id', 'trail_name', 'county', 'region', 'distance_km',
-            'difficulty', 'elevation_gain_m', 'latitude', 'longitude',
+            'difficulty', 'elevation_gain_m','latitude', 'longitude',
             'dogs_allowed', 'parking_available', 'nearby_pois'
         ]
 
