@@ -31,10 +31,18 @@ export default function StayScreen() {
     setLoading(true);
     try {
       const response = await fetch(`${API_BASE_URL}/api/trails/accommodations/nearby/?lat=53.5&lng=-7.7&radius=50`);
-      const data = await response.json();
-      setStays(data.results || data);
+      if (response.ok) {
+        const data = await response.json();
+        const staysArray = Array.isArray(data) ? data : (data.results || []);
+        setStays(staysArray);
+      } else {
+        console.error(`API error: ${response.status}`);
+        setStays([]);
+        Alert.alert("API Error", `Server returned ${response.status}`);
+      }
     } catch (err) {
       console.error("Fetch Error:", err);
+      setStays([]);
       Alert.alert("Connection Error", "Ensure Django is running and your IP is correct.");
     } finally {
       setLoading(false);
@@ -48,6 +56,7 @@ export default function StayScreen() {
 
   
   const filtered = React.useMemo(() => {
+    if (!Array.isArray(stays)) return [];
     return stays.filter(s => {
       if (filter !== 'All' && s.accommodation_source !== filter) return false;
       if (!query) return true;

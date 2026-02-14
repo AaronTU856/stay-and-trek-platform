@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 
 
 
+// Use Mac's local network IP (works for simulator and physical devices)
 const BASE_URL = 'http://192.168.1.83:8000';
 const FETCH_TIMEOUT = 10000; //10 seconds
 
@@ -32,16 +33,28 @@ export default function MapScreen() {
   const loadData = async () => {
     try {
       const trailsRes = await fetch(`${BASE_URL}/api/trails/`);
-      const trailsData = await trailsRes.json();
-      setTrails(trailsData.results || trailsData);
+      if (trailsRes.ok) {
+        const trailsData = await trailsRes.json();
+        setTrails(Array.isArray(trailsData) ? trailsData : (trailsData.results || []));
+      } else {
+        console.error(`Trails API error: ${trailsRes.status}`);
+        setTrails([]);
+      }
 
       const staysRes = await fetch(
         `${BASE_URL}/api/trails/accommodations/nearby/?lat=53.5&lng=-7.7&radius=50`
-    );
-      const staysData = await staysRes.json();
-      setStays(staysData.results || staysData);
+      );
+      if (staysRes.ok) {
+        const staysData = await staysRes.json();
+        setStays(Array.isArray(staysData) ? staysData : (staysData.results || []));
+      } else {
+        console.error(`Accommodations API error: ${staysRes.status}`);
+        setStays([]);
+      }
     } catch (err) {
       console.error("Map Load Error:", err);
+      setTrails([]);
+      setStays([]);
     } finally {
       setLoading(false);
     }
@@ -64,7 +77,7 @@ export default function MapScreen() {
       >
 
       {/* Trails Markers - Green */}
-        {trails.map((trail) => {
+        {Array.isArray(trails) && trails.map((trail) => {
         
           // Parse and Validate
           const lat = parseFloat(trail.latitude);
@@ -94,7 +107,7 @@ export default function MapScreen() {
         })}
 
       {/* Accommodation Marker - Blue */}
-        {stays.map((item) => {
+        {Array.isArray(stays) && stays.map((item) => {
           const lat = parseFloat(item.latitude);
           const lng = parseFloat(item.longitude);
 

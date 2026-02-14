@@ -1,15 +1,12 @@
 // Trail details screen - displays detailed information about a selected hiking trail
 // Shows information like difficulty, distance, description, and weather conditions
 
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, TextInput } from "react-native";
 import { useAccessibility } from "../context/AccessibilityContext";
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 
-// Use Docker backend for local demo
-// const API_BASE_URL = __DEV__ 
-//   ? 'http://localhost:8000'
-//   : 'https://stay-and-trek-service-642845720185.europe-west1.run.app';
+// Use Mac's local network IP (works for simulator and physical devices)
 const API_BASE_URL = 'http://192.168.1.83:8000';
 
 
@@ -18,14 +15,34 @@ export default function TrailDetails() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const { largeText } = useAccessibility();
+
   const [trail, setTrail] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [accommodation, setAccommodation] = useState([]);
   
   const titleFontSize = largeText ? 28 : 24;
   const headingFontSize = largeText ? 18 : 16;
   const textFontSize = largeText ? 16 : 14;
 
-  const [accommodation, setAccommodation] = useState([]);
+  
+
+  const [newDesc, setNewDesc] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleContribution = async () => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/trails/${id}/suggest_description/`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ description: newDesc }),
+        });
+        if (response.ok) {
+            setSubmitted(true);
+        }
+    } catch (error) {
+        console.error("Submission failed", error);
+    }
+  };
 
   useEffect(() => {
       // Fetch nearby accommodations when trail data is loaded
@@ -33,15 +50,25 @@ export default function TrailDetails() {
 
       fetch(
         `${API_BASE_URL}/api/trails/accommodations/nearby/?lat=${trail.latitude}&lng=${trail.longitude}&radius=20`
-
       )
-        .then(res => res.json())
-        .then(data => {
-          const places = data.results || data || [];
-          places.sort((a, b) => a.price_per_night - b.price_per_night);
-          setAccommodation(places);
+        .then(res => {
+          if (!res.ok) throw new Error(`API returned ${res.status}`);
+          return res.json();
         })
-       .catch((err) => {
+        .then(data => {
+          if (!data) {
+            setAccommodation([]);
+            return;
+          }
+          const places = Array.isArray(data) ? data : (data.results || []);
+          if (Array.isArray(places)) {
+            places.sort((a, b) => a.price_per_night - b.price_per_night);
+            setAccommodation(places);
+          } else {
+            setAccommodation([]);
+          }
+        })
+        .catch((err) => {
           console.warn('Failed to fetch accommodation:', err.message);
           setAccommodation([]);
         });
@@ -141,8 +168,29 @@ export default function TrailDetails() {
       {/* Description section */}
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { fontSize: headingFontSize }]}>About this Trail</Text>
-        <Text style={[styles.description, { fontSize: textFontSize }]}>{trail.description || 'No description available'}</Text>
-      </View>
+        
+        {trail.description && trail.status !== 'missing' ? (
+            <Text style={[styles.description, { fontSize: textFontSize }]}>{trail.description}</Text>
+        ) : submitted ? (
+            <Text style={{ color: '#2E7D32', fontStyle: 'italic' }}>
+                Thank you! Your description has been sent for moderator approval.
+            </Text>
+        ) : (
+            <View>
+                <Text style={{ marginBottom: 8, color: '#666' }}>We do not have a description yet. Can you help?</Text>
+                <TextInput
+                    style={styles.textInput}
+                    placeholder="Enter trail details here..."
+                    value={newDesc}
+                    onChangeText={setNewDesc}
+                    multiline
+                />
+                <TouchableOpacity style={styles.saveButton} onPress={handleContribution}>
+                    <Text style={styles.buttonText}>Submit Info</Text>
+                </TouchableOpacity>
+            </View>
+        )}
+    </View>
 
       {/* Accommodation section */}
       <View style={styles.section}>
@@ -337,6 +385,20 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 10,
     
+  },
+
+  // Text input for user contributions
+  textInput: {
+    backgroundColor: '#f9f9f9',
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    minHeight: 100,
+    textAlignVertical: 'top',
+    marginBottom: 10,
+    marginTop: 10,
+    color: '#333'
   },
 
 });

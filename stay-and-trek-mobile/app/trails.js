@@ -7,10 +7,7 @@ import { useState, useEffect } from 'react';
 
 
 
-// const API_BASE_URL = __DEV__ 
-//   ? 'http://localhost:8000'  // Local development
-//   : 'https://stay-and-trek-service-642845720185.europe-west1.run.app';  // Production fallback
-
+// Use Mac's local network IP (works for simulator and physical devices)
 const API_BASE_URL = 'http://192.168.1.83:8000';
 
 
@@ -49,11 +46,12 @@ export default function TrailDetails() {
         
         const data = await response.json();
         console.log('Successfully fetched trails:', data.results?.length || data?.length || 0);
-        setTrails(data.results || data || []);
+        const trailsArray = Array.isArray(data) ? data : (data.results || []);
+        setTrails(trailsArray);
        
       } catch (err) {
-        console.warn('Failed to fetch from API, using mock data:', err.message);
-       
+        console.warn('Failed to fetch from API:', err.message);
+        setTrails([]);
       } finally {
         setLoading(false);
       }
@@ -62,7 +60,7 @@ export default function TrailDetails() {
     fetchTrails();
   }, []);
 
-    const filteredTrails = trails.filter(trail => {
+    const filteredTrails = (trails || []).filter(trail => {
       const matchesSearch =
         trail?.trail_name
           ?.toLowerCase()
