@@ -30,7 +30,7 @@ class TrailDetailSerializer(serializers.ModelSerializer):
         model = Trail
         fields = [
             'id', 'trail_name', 'county', 'region', 'distance_km',
-            'difficulty', 'elevation_gain_m', 'description', 'latitude', 'longitude', 
+            'difficulty', 'elevation_gain_m', 'description', 'status','latitude', 'longitude', 
             'dogs_allowed', 'parking_available'
         ]
  
@@ -47,7 +47,7 @@ class TrailGeoJSONSerializer(GeoFeatureModelSerializer):
         geo_field = 'start_point'
         fields = (
             'id', 'trail_name', 'county',
-            'distance_km', 'difficulty',
+            'distance_km', 'difficulty', 'status',
             'latitude', 'longitude','dogs_allowed',
             'parking_available'
         )
