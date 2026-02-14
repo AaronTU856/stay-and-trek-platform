@@ -13,6 +13,7 @@ urlpatterns = [
     path('search/', views.trail_search, name='trail_search'),
     path('map/', trail_map, name='map'),
     path('geojson/', views.trails_geojson, name='trails_geojson'),
+    path('<int:pk>/suggest_description/', views.suggest_description, name='suggest-description'),
 
     # Town endpoints
     path('towns/geojson/', views.towns_geojson, name='towns_geojson'),
