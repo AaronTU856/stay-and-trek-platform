@@ -1,0 +1,174 @@
+/Users/aaronbaggot/Desktop/awm_assignment
+├── Dockerfile
+├── Documentation
+│   ├── Report_PDF
+│   └── screenshots_tests
+├── README.md
+├── _REFERENCE_NOTES
+│   ├── DATABASE.md
+│   ├── POI_MAP_GUIDE.md
+│   ├── SPATIAL_FEATURES.md
+│   ├── SPATIAL_IMPLEMENTATION_SUMMARY.md
+│   └── TEST_COMMANDS.md
+├── __pycache__
+│   ├── conftest.cpython-311-pytest-8.4.2.pyc
+│   ├── test_api.cpython-311-pytest-8.4.2.pyc
+│   ├── test_endpoint.cpython-311-pytest-8.4.2.pyc
+│   └── test_spatial.cpython-311-pytest-8.4.2.pyc
+├── advanced_js_mapping
+│   ├── __init__.py
+│   ├── __pycache__
+│   ├── accommodations
+│   ├── admin.py
+│   ├── apps.py
+│   ├── migrations
+│   ├── models.py
+│   ├── templates
+│   ├── urls.py
+│   └── views.py
+├── authentication
+│   ├── __init__.py
+│   ├── __pycache__
+│   ├── admin.py
+│   ├── apps.py
+│   ├── forms.py
+│   ├── migrations
+│   ├── models.py
+│   ├── templates
+│   ├── tests.py
+│   ├── urls.py
+│   └── views.py
+├── check_rivers.py
+├── clean_dump.sql
+├── cleanup.sh
+├── cloudbuild.yaml
+├── conftest.py
+├── dashboard
+│   ├── __init__.py
+│   ├── __pycache__
+│   ├── admin.py
+│   ├── apps.py
+│   ├── migrations
+│   ├── models.py
+│   ├── static
+│   ├── templates
+│   ├── tests.py
+│   ├── urls.py
+│   └── views.py
+├── docker
+│   └── nginx
+├── docker-compose.yml
+├── entrypoint.sh
+├── folder_structure.txt
+├── full_backup.dump
+├── local_dump.sql
+├── manage.py
+├── maps
+│   ├── __init__.py
+│   ├── __pycache__
+│   ├── apps.py
+│   ├── management
+│   ├── models.py
+│   ├── templates
+│   ├── urls.py
+│   └── views.py
+├── node_modules
+│   ├── @eslint
+│   └── globals
+├── package-lock.json
+├── package.json
+├── pytest.ini
+├── requirements.txt
+├── run_tests.sh
+├── schema.yml
+├── scripts
+│   ├── __init__.py
+│   └── populate_accommodations.py
+├── server.log
+├── static
+│   ├── advanced_js_mapping
+│   ├── css
+│   ├── images
+│   └── js
+├── staticfiles
+│   ├── admin
+│   ├── advanced_js_mapping
+│   ├── api_test.html
+│   ├── css
+│   ├── dashboard
+│   ├── django_extensions
+│   ├── drf_spectacular_sidecar
+│   ├── gis
+│   ├── images
+│   ├── js
+│   ├── leaflet
+│   ├── rest_framework
+│   └── trails_api
+├── stay-and-trek-mobile
+│   ├── README.md
+│   ├── app
+│   ├── app.json
+│   ├── assets
+│   ├── components
+│   ├── config
+│   ├── constants
+│   ├── context
+│   ├── eslint.config.js
+│   ├── expo.log
+│   ├── hooks
+│   ├── node_modules
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── scripts
+│   ├── services
+│   └── tsconfig.json
+├── templates
+│   ├── _navigation.html
+│   ├── admin
+│   ├── advanced_js_mapping
+│   └── webmapping_project
+├── test_api.py
+├── test_endpoint.py
+├── test_spatial.py
+├── test_trails_towns.sh
+├── test_web_app.sh
+├── trails_api
+│   ├── __init__.py
+│   ├── __pycache__
+│   ├── admin.py
+│   ├── apps.py
+│   ├── data
+│   ├── filters.py
+│   ├── management
+│   ├── migrations
+│   ├── models.py
+│   ├── serializers.py
+│   ├── spatial_data
+│   ├── static
+│   ├── templates
+│   ├── tests
+│   ├── tests.py
+│   ├── urls.py
+│   └── views.py
+├── weathermap
+│   ├── README.md
+│   ├── db.sqlite3
+│   ├── documents
+│   ├── manage.py
+│   ├── static
+│   ├── templates
+│   ├── weather_map_project
+│   └── weathermap
+└── webmapping_project
+    ├── __init__.py
+    ├── __pycache__
+    ├── asgi.py
+    ├── context_processors.py
+    ├── settings.py
+    ├── settings_production.py
+    ├── templates
+    ├── urls.py
+    ├── views.py
+    └── wsgi.py
+
+81 directories, 91 files

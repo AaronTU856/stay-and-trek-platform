@@ -41,7 +41,26 @@ class Trail(models.Model):
         ('moderate', 'Moderate'),
         ('hard', 'Hard'),
     ]
+    
+    # Trail Description - Added Complexity and Status Fields
+    description = models.TextField(blank=True, null=True)
+    
+    # New Status Field
+    STATUS_CHOICES = [
+        ('verified', 'Verified'),      # Pre-populated or Admin Approved
+        ('scraped', 'Auto-Scraped'),   # From Wiki/SportsIreland
+        ('pending', 'Pending'),        # Awaiting Admin Approval
+        ('missing', 'Missing'),        # No description available
+    ]
+    status = models.CharField(
+        max_length=20, 
+        choices=STATUS_CHOICES, 
+        default='missing',
+        db_index=True
+    )
 
+    
+    
     # Core Information
     trail_name = models.CharField(max_length=200, db_index=True)
     description = models.TextField(blank=True, null=True)
@@ -83,6 +102,8 @@ class Trail(models.Model):
     public_transport = models.TextField(blank=True) # Public transport options (Not Implemented)
     facilities = models.TextField(blank=True) # Available facilities
     trail_type = models.CharField(max_length=100, blank=True) # Type of trail ( loop, Greenway, out-and-back)
+    
+    
     
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)

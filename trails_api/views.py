@@ -431,6 +431,9 @@ def town_weather(request):
         return Response({"error": "Missing coordinates"}, status=400)
 
     api_key = settings.OPENWEATHERMAP_API_KEY
+    print(f"DEBUG: API Key = {api_key}")
+    print(f"DEBUG: lat={lat}, lng={lng}")
+    
     url = (
         f"https://api.openweathermap.org/data/2.5/weather?"
         f"lat={lat}&lon={lng}&appid={api_key}&units=metric"
@@ -730,7 +733,7 @@ def accommodations_geojson(request):
     
     Useful for mapping accommodations on Leaflet maps.
     """
-    accommodations = PointOfInterest.objects.filter(poi_type='accommodation')
+    accommodations = Accommodation.objects.all()
     
     # Apply filters if provided
     county = request.GET.get('county')
@@ -739,23 +742,22 @@ def accommodations_geojson(request):
     
     features = []
     for acc in accommodations:
-        features.append({
-            "type": "Feature",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [float(acc.longitude), float(acc.latitude)]
-            },
-            "properties": {
-                "id": acc.id,
-                "name": acc.name,
-                "description": acc.description or "",
-                "county": acc.county,
-                "region": acc.region,
-                "phone": acc.phone,
-                "website": acc.website,
-                "opening_hours": acc.opening_hours,
-            }
-        })
+        if acc.location:
+            features.append({
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [acc.location.x, acc.location.y]
+                },
+                "properties": {
+                    "id": acc.id,
+                    "name": acc.name,
+                    "county": acc.county or "",
+                    "source": acc.accommodation_source,
+                    "price_per_night": acc.price_per_night,
+                    "rating": acc.rating,
+                }
+            })
     
     return Response({
         "type": "FeatureCollection",
