@@ -14,7 +14,7 @@ import { useAccessibility } from '../context/AccessibilityContext';
 
 
 
-const API_BASE_URL = 'http://192.168.1.83:8000';
+const API_BASE_URL = 'http://10.156.10.27:8000';
  
 
 export default function StayScreen() {
@@ -33,7 +33,25 @@ export default function StayScreen() {
       const response = await fetch(`${API_BASE_URL}/api/trails/accommodations/nearby/?lat=53.5&lng=-7.7&radius=50`);
       if (response.ok) {
         const data = await response.json();
-        const staysArray = Array.isArray(data) ? data : (data.results || []);
+        
+        // Handle GeoJSON FeatureCollection format
+        let staysArray = [];
+        if (data.results && data.results.features) {
+          // Transform GeoJSON features to flat objects for easier access
+          staysArray = data.results.features.map(feature => ({
+            id: feature.id,
+            ...feature.properties, // Flatten properties (name, accommodation_source, price_per_night, rating)
+            coordinates: feature.geometry?.coordinates || [0, 0], // [longitude, latitude]
+          }));
+        } else if (Array.isArray(data.results)) {
+          // Handle direct array format
+          staysArray = data.results;
+        } else if (Array.isArray(data)) {
+          // Handle direct data array
+          staysArray = data;
+        }
+        
+        console.log(`Loaded ${staysArray.length} accommodations`);
         setStays(staysArray);
       } else {
         console.error(`API error: ${response.status}`);

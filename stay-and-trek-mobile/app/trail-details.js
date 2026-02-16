@@ -7,7 +7,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 
 // Use Mac's local network IP (works for simulator and physical devices)
-const API_BASE_URL = 'http://192.168.1.83:8000';
+const API_BASE_URL = 'http://10.156.10.27:8000';
 
 
 

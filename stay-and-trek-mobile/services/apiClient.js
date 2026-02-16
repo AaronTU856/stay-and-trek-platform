@@ -2,7 +2,7 @@
 // Handles configuration, error handling, request and response setup
 
 // API Base URL - use local network IP for both simulator and physical devices
-const MAC_IP = '192.168.1.83'; // Mac's local network IP
+const MAC_IP = '10.156.10.27'; // Mac's local network IP
 
 const API_BASE_URL = __DEV__ 
   ? `http://${MAC_IP}:8000`  // Local network IP (works for simulator and physical devices)

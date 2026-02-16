@@ -1,6 +1,7 @@
 import { Tabs } from "expo-router";
 import { AccessibilityProvider } from '../context/AccessibilityContext';
-import { SafeAreaView, StyleSheet, StatusBar } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StyleSheet, StatusBar } from 'react-native';
 
 export default function Layout() {
   return (
