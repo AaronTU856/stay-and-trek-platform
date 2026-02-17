@@ -24,8 +24,8 @@ export default function MapScreen() {
   const [region] = useState({
     latitude: 53.5,
     longitude: -7.7,
-    latitudeDelta: 0.5,
-    longitudeDelta: 0.5,
+    latitudeDelta: 2.0,
+    longitudeDelta: 2.0,
   });
 
   
@@ -39,9 +39,11 @@ export default function MapScreen() {
     if (!showGlobalLayer && globalStays.length === 0) {
       const res = await fetch(`${BASE_URL}/api/accommodations/geojson/`);
       const data = await res.json();
-      setGlobalStays(data.features);
+      setGlobalStays(data.features || []);
+    } catch (err) {
+      console.error("Error fetching global stays:", err);
     }
-    setShowGlobalLayer(!showGlobalLayer);
+    setShowStays(!showStays);
   };
 
   // Logic for the Trail Click
@@ -57,7 +59,8 @@ export default function MapScreen() {
         if (res.ok) {
             const data = await res.json();
             // We update the 'stays' state with the new results
-            setStays(data.features); 
+            setStays(data.features);
+            setShowStays(true); // Show the stays layer on the map 
         }
     } catch (err) {
         console.error("Error fetching nearby stays:", err);
@@ -109,6 +112,18 @@ export default function MapScreen() {
         initialRegion={region}
         provider={PROVIDER_DEFAULT} // Explicitly use default provider
       >
+      {/* Floating Toggle Button */}
+      <View style={styles.toggleContainer}>
+        <View style={styles.buttonWrapper}>
+          <Text style={styles.toggleText}>Accommodations</Text>
+          <Text 
+            style={[styles.toggleButton, showStays ? styles.btnOn : styles.btnOff]}
+            onPress={toggleGlobalStays}
+          >
+            {showStays ? "ON" : "OFF"}
+          </Text>
+        </View>
+      </View>
 
       {/* Trails Markers - Green */}
         {Array.isArray(trails) && trails.map((trail) => {
@@ -141,17 +156,20 @@ export default function MapScreen() {
         })}
           
       {/* 2. Global Stays Layer (Blue) - Only shows if Toggle is ON */}
-      {showGlobalLayer && globalStays.map((item) => (
-        <Marker
-          key={`global-stay-${item.properties.id}`}
-          coordinate={{
-            latitude: item.geometry.coordinates[1],
-            longitude: item.geometry.coordinates[0]
-          }}
-          pinColor="navy"
-          title={item.properties.name}
-        />
-      ))}
+      {showStays && globalStays.map((item) => {
+        const [lng, lat] = item.geometry.coordinates;
+        return (
+          <Marker
+            key={`global-stay-${item.properties.id}`}
+            coordinate={{
+              latitude: item.geometry.coordinates[1],
+              longitude: item.geometry.coordinates[0]
+            }}
+            pinColor="navy"
+            title={item.properties.name}
+          />
+        );
+      })}
 
            
                
@@ -159,22 +177,22 @@ export default function MapScreen() {
 
       {/* Accommodation Marker - Blue */}
         {showStays && Array.isArray(stays) && stays.map((item) => {
-          const lat = parseFloat(item.latitude);
-          const lng = parseFloat(item.longitude);
+          const lng = item.geometry ? item.geometry.coordinates[0] : parseFloat(item.longitude);
+          const lat = item.geometry ? item.geometry.coordinates[1] : parseFloat(item.latitude);
           const props = item.properties || item; // Fallback to item if not GeoJSON
 
           if (isNaN(lat) || isNaN(lng)) return null;
 
           return (
             <Marker
-              key={`stay-${item.id}`}
+              key={`stay-${props.id || Math.random()}`} // Use props.id for GeoJSON
               coordinate={{ latitude: lat, longitude: lng }}
               pinColor="blue"
               >
               <Callout>
                 <View style={{ padding: 5, minWidth: 120 }}>
-                  <Text style={{ fontWeight: 'bold' }}>{item.name}</Text>
-                  <Text>{props.distance_km}km away</Text>
+                  <Text style={{ fontWeight: "bold" }}>{props.name || "Accommodation"}</Text>
+                  <Text>{props.distance_km ? `${props.distance_km}km away` : "Nearby"}</Text>
                 </View>
               </Callout>
               </Marker>
@@ -189,6 +207,38 @@ export default function MapScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   map: { width: '100%', height: '100%' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' }
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  toggleContainer: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    backgroundColor: 'rgba(66, 248, 242, 0.9)',
+    borderRadius: 10,
+    padding: 10,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+  },
+  buttonWrapper: {
+    alignItems: 'center',
+  },
+  toggleText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    marginBottom: 5,
+    color: '#333',
+  },
+  toggleButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 5,
+    color: '#eae9ef',
+    fontWeight: 'bold',
+    textAlign: 'center',
+    overflow: 'hidden',
+  },
+  btnOn: { backgroundColor: '#2E7D32' }, // Green
+  btnOff: { backgroundColor: '#ee1414' }, // Grey
 });
 
