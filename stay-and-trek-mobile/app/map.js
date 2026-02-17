@@ -30,6 +30,20 @@ export default function MapScreen() {
     loadData();
   }, []);
 
+  const fetchStaysForTrail = async (trailId) => {
+    try {
+        // Simple fetch using the new trail-specific endpoint we built
+        const res = await fetch(`${BASE_URL}/api/accommodations/near-trail/?trail_id=${trailId}`);
+        if (res.ok) {
+            const data = await res.json();
+            // We update the 'stays' state with the new results
+            setStays(data.features); 
+        }
+    } catch (err) {
+        console.error("Error fetching nearby stays:", err);
+    }
+};
+
   const loadData = async () => {
     try {
       const trailsRes = await fetch(`${BASE_URL}/api/trails/`);
@@ -92,8 +106,11 @@ export default function MapScreen() {
               key={`trail-${trail.id}`}
               coordinate={{ latitude: lat, longitude: lng }}
               pinColor="green"
-              onPress={() => navigation.navigate('trail-details', { id: trail.id })
-            }
+              onPress={() => {
+                fetchStaysForTrail(trail.id);
+
+                navigation.navigate('trail-details', { id: trail.id }) // Comment this out if you want to stay on the map and just update stays below
+            }}
             >
 
               <Callout>
