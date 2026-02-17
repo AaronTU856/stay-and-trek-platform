@@ -3,12 +3,7 @@ import { useAccessibility } from "../context/AccessibilityContext";
 import IconButton from '../components/IconButton';
 import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
-
-
-
-
-// Use Mac's local network IP (works for simulator and physical devices)
-const API_BASE_URL = 'http://10.156.10.27:8000';
+import { getTrails } from '../services/apiClient';
 
 
 export default function TrailDetails() {
@@ -27,30 +22,16 @@ export default function TrailDetails() {
     const fetchTrails = async () => {
       try {
         setLoading(true);
-        console.log(`Fetching from: ${API_BASE_URL}/api/trails/?limit=100`);
+        console.log('Fetching trails from API with limit=100');
         
-        const response = await fetch(`${API_BASE_URL}/api/trails/?limit=100`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        console.log(`Response status: ${response.status}`);
-
-        if (!response.ok) {
-          console.warn(`API returned ${response.status}, using fallback data`);
-          throw new Error(`HTTP ${response.status}`);
-        }
-        
-        const data = await response.json();
+        const data = await getTrails({ limit: 100 });
         console.log('Successfully fetched trails:', data.results?.length || data?.length || 0);
         const trailsArray = Array.isArray(data) ? data : (data.results || []);
         setTrails(trailsArray);
        
       } catch (err) {
-        console.warn('Failed to fetch from API:', err.message);
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        console.warn('Failed to fetch trails:', errorMsg);
         setTrails([]);
       } finally {
         setLoading(false);

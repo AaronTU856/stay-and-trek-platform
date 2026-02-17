@@ -2,54 +2,55 @@
 // Handles configuration, error handling, request and response setup
 
 // API Base URL - use local network IP for both simulator and physical devices
-const MAC_IP = '10.156.10.27'; // Mac's local network IP
+const MAC_IP = '192.168.1.83'; // Mac's actual local network IP (run `ifconfig` to verify)
+const API_BASE_URL = `http://${MAC_IP}:8000`; // Always use local IP for development
 
-const API_BASE_URL = __DEV__ 
-  ? `http://${MAC_IP}:8000`  // Local network IP (works for simulator and physical devices)
-  : 'https://stay-and-trek-service-642845720185.europe-west1.run.app';  // Production fallback
+const DEFAULT_TIMEOUT = 60000; // 60 seconds for slow backend responses
 
-  const DEFAULT_TIMEOUT = 10000; // 10 seconds
+console.log('API Client initialized with base URL:', API_BASE_URL);
 
-  /** 
-   * Generic fetch wrapper with error handling
-   * @param {string} endpoint - API endpoint (path after base URL - '/api/trails/')
-   * @param {object} options - Fetch options (method, headers, body)
-   * @param {Promise} timeout response data or error 
-  
-  */
+/** 
+ * Generic fetch wrapper with error handling
+ * @param {string} endpoint - API endpoint (path after base URL - '/api/trails/')
+ * @param {object} options - Fetch options (method, headers, body)
+ * @param {Promise} timeout response data or error 
+*/
 
-  async function apiCall(endpoint, options = {}){
-    const url = `${API_BASE_URL}${endpoint}`;
-    const defaultHeaders = {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-    };
+async function apiCall(endpoint, options = {}){
+  const url = `${API_BASE_URL}${endpoint}`;
+  const defaultHeaders = {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+  };
 
-    try {
-        const response = await Promise.race([
-            fetch(url, {
-                ...options,
-                headers: {
-                    ...defaultHeaders,
-                    ...options.headers,
-                },
-            }),
-            new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('Request timed out')), DEFAULT_TIMEOUT)
-            ),
-        ]);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
+  console.log(`Making API call to: ${url}`);
 
-        return await response.json();
-    } catch (error) {
-        console.error('API call error:', error);
-        throw error;    
-    }
+  try {
+      const response = await Promise.race([
+          fetch(url, {
+              ...options,
+              headers: {
+                  ...defaultHeaders,
+                  ...options.headers,
+              },
+          }),
+          new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Request timed out after 60 seconds')), DEFAULT_TIMEOUT)
+          ),
+      ]);
+      
+      console.log(`API response status: ${response.status}`);
+      
+      if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
 
+      return await response.json();
+  } catch (error) {
+      console.error('API call error:', error);
+      throw error;    
   }
+}
 
   // Trails
 

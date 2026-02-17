@@ -3,7 +3,7 @@
 export const CONFIG = {
    // API Settings
    API: {
-    TIMEOUT: 10000, // in milliseconds
+    TIMEOUT: 60000, // in milliseconds (60 seconds for slow backend responses)
     RETRY_COUNT: 3,
    },
 

@@ -6,7 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 
 
 // Use Mac's local network IP (works for simulator and physical devices)
-const BASE_URL = 'http://10.156.10.27:8000';
+const BASE_URL = 'http://192.168.1.83:8000';
 const FETCH_TIMEOUT = 10000; //10 seconds
 
 export default function MapScreen() {

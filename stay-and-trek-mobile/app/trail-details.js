@@ -5,9 +5,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator
 import { useAccessibility } from "../context/AccessibilityContext";
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
-
-// Use Mac's local network IP (works for simulator and physical devices)
-const API_BASE_URL = 'http://10.156.10.27:8000';
+import { getTrailById } from '../services/apiClient';
 
 
 
@@ -31,7 +29,7 @@ export default function TrailDetails() {
 
   const handleContribution = async () => {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/trails/${id}/suggest_description/`, {
+        const response = await fetch(`http://192.168.1.83:8000/api/trails/${id}/suggest_description/`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ description: newDesc }),
@@ -48,10 +46,15 @@ export default function TrailDetails() {
       // Fetch nearby accommodations when trail data is loaded
     if (!trail?.latitude || !trail?.longitude) return;
 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
       fetch(
-        `${API_BASE_URL}/api/trails/accommodations/nearby/?lat=${trail.latitude}&lng=${trail.longitude}&radius=20`
+        `http://192.168.1.83:8000/api/trails/accommodations/nearby/?lat=${trail.latitude}&lng=${trail.longitude}&radius=20`,
+        { signal: controller.signal }
       )
         .then(res => {
+          clearTimeout(timeoutId);
           if (!res.ok) throw new Error(`API returned ${res.status}`);
           return res.json();
         })
@@ -69,46 +72,30 @@ export default function TrailDetails() {
           }
         })
         .catch((err) => {
+          clearTimeout(timeoutId);
           console.warn('Failed to fetch accommodation:', err.message);
           setAccommodation([]);
         });
     }, [trail]);
 
   useEffect(() => {
-
-    
-
     const fetchTrailDetails = async () => {
       try {
         setLoading(true);
         console.log(`Fetching trail details for ID: ${id}`);
         
-        const response = await fetch(`${API_BASE_URL}/api/trails/${id}/`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        if (!response.ok) {
-          console.warn(`API returned ${response.status}, using fallback data`);
-          throw new Error(`HTTP ${response.status}`);
-        }
-        
-        const data = await response.json();
+        const data = await getTrailById(id);
         console.log('Successfully fetched trail:', data.trail_name);
         setTrail(data);
 
       } catch (err) {
-        console.warn('Failed to fetch trail details:', err.message);
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        console.warn('Failed to fetch trail details:', errorMsg);
        
       } finally {
         setLoading(false);
       }
     };
-
-    
 
     fetchTrailDetails();
   }, [id]);
