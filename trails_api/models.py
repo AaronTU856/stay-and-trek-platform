@@ -35,6 +35,9 @@ class TrailManager(models.Manager):
 # TRAIL MODEL 
 class Trail(models.Model):
     """Main Trail model containing spatial and descriptive data."""
+    
+    # Trail Description - Added Complexity and Status Fields
+    description = models.TextField(blank=True, null=True)
 
     DIFFICULTY_CHOICES = [
         ('easy', 'Easy'),
@@ -42,8 +45,6 @@ class Trail(models.Model):
         ('hard', 'Hard'),
     ]
     
-    # Trail Description - Added Complexity and Status Fields
-    description = models.TextField(blank=True, null=True)
     
     # New Status Field
     STATUS_CHOICES = [
@@ -63,7 +64,7 @@ class Trail(models.Model):
     
     # Core Information
     trail_name = models.CharField(max_length=200, db_index=True)
-    description = models.TextField(blank=True, null=True)
+    #description = models.TextField(blank=True, null=True)
     activity = models.CharField(max_length=100, blank=True)
     
     # Location

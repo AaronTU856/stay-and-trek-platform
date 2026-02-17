@@ -7,6 +7,7 @@ from .models import Trail, Town
 class TrailAdmin(LeafletGeoAdmin):
     list_display = (
         'trail_name',
+        'status',
         'county',
         'difficulty',
         'distance_km',
@@ -14,11 +15,11 @@ class TrailAdmin(LeafletGeoAdmin):
     )
     
     search_fields = ('trail_name', 'county', 'nearest_town')
-    list_filter = ('county', 'difficulty', 'dogs_allowed', 'activity')
+    list_filter = ('status','county', 'difficulty', 'dogs_allowed', 'activity')
     
     fieldsets = (
         ('Basic Information', {
-            'fields': ('trail_name', 'description', 'activity', 'county', 'region', 'nearest_town')
+            'fields': ('trail_name', 'status','description', 'activity', 'county', 'region', 'nearest_town')
         }),
         ('Trail Characteristics', {
             'fields': ('distance_km', 'difficulty', 'elevation_gain_m', 'trail_type')
