@@ -127,6 +127,7 @@ export default function MapScreen() {
         {Array.isArray(stays) && stays.map((item) => {
           const lat = parseFloat(item.latitude);
           const lng = parseFloat(item.longitude);
+          const props = item.properties || item; // Fallback to item if not GeoJSON
 
           if (isNaN(lat) || isNaN(lng)) return null;
 
@@ -139,7 +140,7 @@ export default function MapScreen() {
               <Callout>
                 <View style={{ padding: 5, minWidth: 120 }}>
                   <Text style={{ fontWeight: 'bold' }}>{item.name}</Text>
-                  <Text>€{item.price_per_night}/night</Text>
+                  <Text>{props.distance_km}km away</Text>
                 </View>
               </Callout>
               </Marker>
