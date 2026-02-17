@@ -15,6 +15,7 @@ export default function MapScreen() {
   const [trails, setTrails] = useState([]);
   const [stays, setStays] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showStays, setShowStays] = useState(false);
   
   // Using a state for region so it can be updated if needed
   const [region] = useState({
@@ -123,8 +124,9 @@ export default function MapScreen() {
           );
         })}
 
+
       {/* Accommodation Marker - Blue */}
-        {Array.isArray(stays) && stays.map((item) => {
+        {showStays && Array.isArray(stays) && stays.map((item) => {
           const lat = parseFloat(item.latitude);
           const lng = parseFloat(item.longitude);
           const props = item.properties || item; // Fallback to item if not GeoJSON
