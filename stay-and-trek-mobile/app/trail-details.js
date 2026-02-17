@@ -159,15 +159,21 @@ export default function TrailDetails() {
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { fontSize: headingFontSize }]}>About this Trail</Text>
         
-        {trail.description && trail.status !== 'missing' ? (
+        {trail.description && (trail.status === 'verified' || trail.status === 'scraped') ? (
             <Text style={[styles.description, { fontSize: textFontSize }]}>{trail.description}</Text>
-        ) : submitted ? (
+        ) : (trail.status === 'pending' || submitted) ? (
+          
             <Text style={{ color: '#2E7D32', fontStyle: 'italic' }}>
                 Thank you! Your description has been sent for moderator approval.
             </Text>
         ) : (
             <View>
-                <Text style={{ marginBottom: 8, color: '#666' }}>We do not have a description yet. Help the community by adding one!</Text>
+                <Text style={{ marginBottom: 8, color: '#666' }}>
+                    {trail.status === 'rejected' 
+                        ? "The previous description was not approved. Please try a more detailed version!" 
+                        : "We do not have a description yet. Help the community by adding one!"}
+                </Text>
+                
                 <TextInput
                     style={styles.textInput}
                     placeholder="Describe the terrain, views, or difficulty..."
