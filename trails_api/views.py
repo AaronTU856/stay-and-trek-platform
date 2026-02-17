@@ -756,44 +756,38 @@ class AccommodationsListView(generics.ListAPIView):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def accommodations_geojson(request):
-    """
-    Get all accommodations as GeoJSON FeatureCollection.
+    print("!!! THE VIEW IS RUNNING !!!")
+    try:
+        accommodations = Accommodation.objects.all()
+        
+        features = []
+        for acc in accommodations:
+            if acc.location:
+                features.append({
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [acc.longitude, acc.latitude]
+                    },
+                    "properties": {
+                        "id": acc.id,
+                        "name": acc.name,
+                        "source": acc.accommodation_source,
+                        "price": str(acc.price_per_night) if acc.price_per_night else "N/A",
+                        "rating": acc.rating or 0,
+                        "url": acc.url,
+                    }
+                })
+        
+        return Response({
+            "type": "FeatureCollection",
+            "features": features,
+            "count": len(features)
+        })
+    except Exception as e:
+        print(f"CRASH: {e}")
+        return Response({"error": str(e)}, status=500)
     
-    Useful for mapping accommodations on Leaflet maps.
-    """
-    accommodations = Accommodation.objects.all()
-    
-    # Apply filters if provided
-    county = request.GET.get('county')
-    if county:
-        accommodations = accommodations.filter(county__iexact=county)
-    
-    features = []
-    for acc in accommodations:
-        if acc.location:
-            features.append({
-                "type": "Feature",
-                "geometry": {
-                    "type": "Point",
-                    "coordinates": [acc.location.x, acc.location.y]
-                },
-                "properties": {
-                    "id": acc.id,
-                    "name": acc.name,
-                    "county": acc.county or "",
-                    "source": acc.accommodation_source,
-                    "price_per_night": acc.price_per_night,
-                    "rating": acc.rating,
-                }
-            })
-    
-    return Response({
-        "type": "FeatureCollection",
-        "features": features,
-        "count": len(features)
-    })
-
-
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def accommodations_near_trail(request):
@@ -809,11 +803,14 @@ def accommodations_near_trail(request):
     
     # 1. Get parameters from the Mobile App request
     trail_id = request.GET.get('trail_id')
-   
+    
+    if not trail_id:
+        return Response({"error": "trail_id is required"}, status=400)
     
     
     
-    try:  
+    try: 
+         trail = Trail.objects.get(id=trail_id)
          radius_km = float(request.GET.get('radius', 10))
     except (ValueError, TypeError):
         radius_km = 10.0  # Default radius if invalid input
@@ -842,7 +839,7 @@ def accommodations_near_trail(request):
                 "type": "Feature",
                 "geometry": {
                     "type": "Point",
-                    "coordinates": [acc.longitude, acc.latitude]
+                    "coordinates": [acc.location.x, acc.location.y]
                 },
                 "properties": {
                     "id": acc.id,
@@ -922,21 +919,19 @@ def accommodations_near_town(request):
     
     features = []
     for acc in nearby_accommodations:
-        distance_km = acc.distance_km.km if acc.distance_km else 0
         features.append({
             "type": "Feature",
             "geometry": {
                 "type": "Point",
-                "coordinates": [float(acc.longitude), float(acc.latitude)]
+                "coordinates": [acc.longitude, acc.latitude]
             },
             "properties": {
                 "id": acc.id,
                 "name": acc.name,
-                "description": acc.description or "",
-                "distance_km": round(distance_km, 2),
-                "county": acc.county,
-                "phone": acc.phone,
-                "website": acc.website,
+                "source": acc.accommodation_source,
+                "price": str(acc.price_per_night) if acc.price_per_night else "N/A",
+                "rating": acc.rating or 0,
+                "url": acc.url,
             }
         })
     

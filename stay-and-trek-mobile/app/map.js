@@ -36,26 +36,38 @@ export default function MapScreen() {
 
   // Logic for the Toggle
   const toggleGlobalStays = async () => {
-    if (!showGlobalLayer && globalStays.length === 0) {
-      const res = await fetch(`${BASE_URL}/api/accommodations/geojson/`);
-      const data = await res.json();
-      setGlobalStays(data.features || []);
-    } catch (err) {
-      console.error("Error fetching global stays:", err);
-    }
-    setShowStays(!showStays);
-  };
+      // 1. Calculate the target state first
+      const nextState = !showGlobalLayer;
+      
+      // 2. Update the UI immediately so the toggle moves
+      setShowGlobalLayer(nextState);
 
-  // Logic for the Trail Click
-  const onTrailPress = (trailId) => {
-    fetchStaysForTrail(trailId); // Our proximity API
-    navigation.navigate('trail-details', { id: trailId });
-  };
+      // 3. If turning ON and we have no data, fetch it
+      if (nextState && globalStays.length === 0) {
+        const targetUrl = `${BASE_URL}/api/trails/accommodations/geojson/`;
+        console.log("Fetching from:", targetUrl);
+
+        try {
+          const res = await fetch(targetUrl);
+          if (res.ok) {
+            const data = await res.json();
+            setGlobalStays(data.features || []);
+          } else {
+            console.error("Server error:", res.status);
+            // Optional: If server fails, flip toggle back off
+            setShowGlobalLayer(false);
+          }
+        } catch (err) {
+          console.error("Network Error:", err);
+          setShowGlobalLayer(false);
+        }
+      }
+    };
 
   const fetchStaysForTrail = async (trailId) => {
     try {
         // Simple fetch using the new trail-specific endpoint we built
-        const res = await fetch(`${BASE_URL}/api/accommodations/near-trail/?trail_id=${trailId}`);
+        const res = await fetch(`${BASE_URL}/api/trails/accommodations/near-trail/?trail_id=${trailId}`);
         if (res.ok) {
             const data = await res.json();
             // We update the 'stays' state with the new results
@@ -66,6 +78,11 @@ export default function MapScreen() {
         console.error("Error fetching nearby stays:", err);
     }
 };
+
+  const onTrailPress = (trailId) => {
+    fetchStaysForTrail(trailId);
+    navigation.navigate('trail-details', { id: trailId });
+  };
 
   const loadData = async () => {
     try {
@@ -83,15 +100,16 @@ export default function MapScreen() {
       );
       if (staysRes.ok) {
         const staysData = await staysRes.json();
-        setStays(Array.isArray(staysData) ? staysData : (staysData.results || []));
+        const features = staysData.features || (Array.isArray(staysData) ? staysData : []);
+        setStays(features);
+
       } else {
         console.error(`Accommodations API error: ${staysRes.status}`);
         setStays([]);
       }
     } catch (err) {
       console.error("Map Load Error:", err);
-      setTrails([]);
-      setStays([]);
+      
     } finally {
       setLoading(false);
     }
@@ -117,10 +135,10 @@ export default function MapScreen() {
         <View style={styles.buttonWrapper}>
           <Text style={styles.toggleText}>Accommodations</Text>
           <Text 
-            style={[styles.toggleButton, showStays ? styles.btnOn : styles.btnOff]}
+            style={[styles.toggleButton, showGlobalLayer ? styles.btnOn : styles.btnOff]}
             onPress={toggleGlobalStays}
           >
-            {showStays ? "ON" : "OFF"}
+            {showGlobalLayer ? "ON" : "OFF"}
           </Text>
         </View>
       </View>
@@ -156,14 +174,19 @@ export default function MapScreen() {
         })}
           
       {/* 2. Global Stays Layer (Blue) - Only shows if Toggle is ON */}
-      {showStays && globalStays.map((item) => {
+      {showGlobalLayer && globalStays.map((item) => {
+        if (!item.geometry || !item.geometry.coordinates) return null;
+
         const [lng, lat] = item.geometry.coordinates;
+
+        if (isNaN(lat) || isNaN(lng)) return null;
+
         return (
           <Marker
             key={`global-stay-${item.properties.id}`}
             coordinate={{
-              latitude: item.geometry.coordinates[1],
-              longitude: item.geometry.coordinates[0]
+              latitude: lat,
+              longitude: lng
             }}
             pinColor="navy"
             title={item.properties.name}
