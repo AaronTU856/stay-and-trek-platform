@@ -52,6 +52,7 @@ class Trail(models.Model):
         ('scraped', 'Auto-Scraped'),   # From Wiki/SportsIreland
         ('pending', 'Pending'),        # Awaiting Admin Approval
         ('missing', 'Missing'),        # No description available
+        ('rejected', 'Rejected'),      # Admin rejected description
     ]
     status = models.CharField(
         max_length=20, 
