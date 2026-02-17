@@ -1,20 +1,23 @@
-app_name = 'trails_api'
+
 
 from django.urls import path
 from . import views
 from .views import trail_map
 from .views import api_test_view
 
+app_name = 'trails'
+
 
 # URL patterns for trails_api app
 urlpatterns = [
+    
+    path('<int:pk>/suggest_description/', views.suggest_description, name='suggest-description'),
     path('', views.TrailListCreateView.as_view(), name='trail-list-create'),
     path('<int:pk>/', views.TrailDetailView.as_view(), name='trail-detail'),
     path('search/', views.trail_search, name='trail_search'),
     path('map/', trail_map, name='map'),
     path('geojson/', views.trails_geojson, name='trails_geojson'),
-    path('<int:pk>/suggest_description/', views.suggest_description, name='suggest-description'),
-
+   
     # Town endpoints
     path('towns/geojson/', views.towns_geojson, name='towns_geojson'),
     path('nearest-town/', views.nearest_town, name='nearest-town'),

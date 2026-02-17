@@ -7,6 +7,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { getTrailById } from '../services/apiClient';
 
+const API_BASE_URL = 'http://192.168.1.83:8000';
 
 
 export default function TrailDetails() {
@@ -26,16 +27,18 @@ export default function TrailDetails() {
 
   const [newDesc, setNewDesc] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleContribution = async () => {
     try {
-        const response = await fetch(`http://192.168.1.83:8000/api/trails/${id}/suggest_description/`, {
+        const response = await fetch(`${API_BASE_URL}/api/trails/${id}/suggest_description/`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ description: newDesc }),
         });
         if (response.ok) {
             setSubmitted(true);
+            setNewDesc(''); // Clear input after successful submission
         }
     } catch (error) {
         console.error("Submission failed", error);
@@ -164,16 +167,22 @@ export default function TrailDetails() {
             </Text>
         ) : (
             <View>
-                <Text style={{ marginBottom: 8, color: '#666' }}>We do not have a description yet. Can you help?</Text>
+                <Text style={{ marginBottom: 8, color: '#666' }}>We do not have a description yet. Help the community by adding one!</Text>
                 <TextInput
                     style={styles.textInput}
-                    placeholder="Enter trail details here..."
+                    placeholder="Describe the terrain, views, or difficulty..."
                     value={newDesc}
                     onChangeText={setNewDesc}
                     multiline
                 />
-                <TouchableOpacity style={styles.saveButton} onPress={handleContribution}>
-                    <Text style={styles.buttonText}>Submit Info</Text>
+                <TouchableOpacity 
+                    style={[styles.saveButton, { backgroundColor: isSubmitting ? '#999' : '#2E7D32' }]} 
+                    onPress={handleContribution}
+                    disabled={isSubmitting}
+                >
+                    <Text style={styles.buttonText}>
+                        {isSubmitting ? "Sending..." : "Submit to Trail Moderator"}
+                    </Text>
                 </TouchableOpacity>
             </View>
         )}
