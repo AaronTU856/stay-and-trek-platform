@@ -806,54 +806,69 @@ def accommodations_near_trail(request):
     
     Returns accommodations sorted by distance.
     """
-    trail_id = request.GET.get('trail_id')
-    radius_km = float(request.GET.get('radius', 10))
     
+    # 1. Get parameters from the Mobile App request
+    trail_id = request.GET.get('trail_id')
+   
+    
+    
+    
+    try:  
+         radius_km = float(request.GET.get('radius', 10))
+    except (ValueError, TypeError):
+        radius_km = 10.0  # Default radius if invalid input
+        
+        
     if not trail_id:
         return Response({'error': 'trail_id parameter required'}, status=status.HTTP_400_BAD_REQUEST)
-    
+        
+        
     try:
+        # 2. Find the trail's starting location
         trail = Trail.objects.get(id=trail_id)
-    except Trail.DoesNotExist:
-        return Response({'error': f'Trail {trail_id} not found'}, status=status.HTTP_404_NOT_FOUND)
-    
-    # Find accommodations within radius
-    nearby_accommodations = PointOfInterest.objects.filter(
-        poi_type='accommodation',
-        location__distance_lte=(trail.start_point, D(km=radius_km))
-    ).annotate(
-        distance_km=DistanceFunction('location', trail.start_point)
-    ).order_by('distance_km')
-    
-    features = []
-    for acc in nearby_accommodations:
-        distance_km = acc.distance_km.km if acc.distance_km else 0
-        features.append({
-            "type": "Feature",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [float(acc.longitude), float(acc.latitude)]
-            },
-            "properties": {
-                "id": acc.id,
-                "name": acc.name,
-                "description": acc.description or "",
-                "distance_km": round(distance_km, 2),
-                "county": acc.county,
-                "phone": acc.phone,
-                "website": acc.website,
-            }
+        start_point = trail.start_point 
+        
+        # Find accommodations within radius
+        nearby_accommodations = Accommodation.objects.filter(
+            location__distance_lte=(start_point, D(km=radius_km))
+        ).annotate(
+            distance=DistanceFunction('location', start_point)
+        ).order_by('distance')
+        
+        features = []
+        for acc in nearby_accommodations:
+        
+            features.append({
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [acc.longitude, acc.latitude]
+                },
+                "properties": {
+                    "id": acc.id,
+                    "name": acc.name,
+                    "source": acc.get_accommodation_source_display(),
+                    #"description": acc.description or "",
+                    "distance_km": round(acc.distance.km, 2),
+                    "price_per_night": float(acc.price_per_night) if acc.price_per_night else None,
+                    # "phone": acc.phone,
+                    # "website": acc.website,
+                    "rating": acc.rating,
+                    "url": acc.url
+                }
+            })
+        
+        return Response({
+            "type": "FeatureCollection",
+            # "trail_id": trail_id,
+            "trail_name": trail.trail_name,
+            # "search_radius_km": radius_km,
+            "features": features,
+            #"count": len(features)
         })
     
-    return Response({
-        "type": "FeatureCollection",
-        "trail_id": trail_id,
-        "trail_name": trail.trail_name,
-        "search_radius_km": radius_km,
-        "features": features,
-        "count": len(features)
-    })
-
+    except Trail.DoesNotExist:
+            return Response({'error': 'Trail not found'}, status=status.HTTP_404_NOT_FOUND)
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
