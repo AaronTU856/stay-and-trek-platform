@@ -16,7 +16,10 @@ export default function MapScreen() {
   const [stays, setStays] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showStays, setShowStays] = useState(false);
-  
+  const [nearbyStays, setNearbyStays] = useState([]); // Results from Trail click
+  const [globalStays, setGlobalStays] = useState([]); // Results from Global Toggle
+  const [showGlobalLayer, setShowGlobalLayer] = useState(false);
+
   // Using a state for region so it can be updated if needed
   const [region] = useState({
     latitude: 53.5,
