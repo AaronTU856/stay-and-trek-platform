@@ -46,7 +46,7 @@ export default function MapScreen() {
 
   // Logic for the Trail Click
   const onTrailPress = (trailId) => {
-    fetchNearbyAccommodation(trailId); // Our proximity API
+    fetchStaysForTrail(trailId); // Our proximity API
     navigation.navigate('trail-details', { id: trailId });
   };
 
@@ -126,7 +126,7 @@ export default function MapScreen() {
               key={`trail-${trail.id}`}
               coordinate={{ latitude: lat, longitude: lng }}
               pinColor="green"
-              onPress={() => fetchStaysForTrail(trail.id)}
+              onPress={() => onTrailPress(trail.id)} // Calls the helper function above
             >
 
               <Callout onPress={() =>  navigation.navigate('trail-details', { id: trail.id })}>
