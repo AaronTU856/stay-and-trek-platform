@@ -38,6 +38,8 @@ class Trail(models.Model):
     
     # Trail Description - Added Complexity and Status Fields
     description = models.TextField(blank=True, null=True)
+    # Field to explain why a description was rejected (for admin use only)
+    admin_notes = models.TextField(blank=True, null=True, help_text="Internal notes for rejection reason")
 
     DIFFICULTY_CHOICES = [
         ('easy', 'Easy'),
@@ -51,8 +53,9 @@ class Trail(models.Model):
         ('verified', 'Verified'),      # Pre-populated or Admin Approved
         ('scraped', 'Auto-Scraped'),   # From Wiki/SportsIreland
         ('pending', 'Pending'),        # Awaiting Admin Approval
-        ('missing', 'Missing'),        # No description available
         ('rejected', 'Rejected'),      # Admin rejected description
+        ('missing', 'Missing'),        # No description available
+       
     ]
     status = models.CharField(
         max_length=20, 
@@ -60,7 +63,18 @@ class Trail(models.Model):
         default='missing',
         db_index=True
     )
+    
 
+    def save(self, *args, **kwargs):
+        # If status is 'rejected', we clear the description 
+        # so it doesn't accidentally leak to the frontend in the future.
+        if self.status == 'rejected' and self.description:
+            # Move description to notes before clearing so you don't lose the record
+            self.admin_notes = f"Rejected content: {self.description}"
+            self.description = ""
+            
+        super().save(*args, **kwargs)
+    
     
     
     # Core Information

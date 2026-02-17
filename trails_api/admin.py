@@ -19,7 +19,7 @@ class TrailAdmin(LeafletGeoAdmin):
     
     fieldsets = (
         ('Basic Information', {
-            'fields': ('trail_name', 'status','description', 'activity', 'county', 'region', 'nearest_town')
+            'fields': ('trail_name', 'status','description', 'activity', 'county', 'region', 'nearest_town', 'admin_notes')
         }),
         ('Trail Characteristics', {
             'fields': ('distance_km', 'difficulty', 'elevation_gain_m', 'trail_type')
