@@ -34,6 +34,22 @@ export default function MapScreen() {
     loadData();
   }, []);
 
+  // Logic for the Toggle
+  const toggleGlobalStays = async () => {
+    if (!showGlobalLayer && globalStays.length === 0) {
+      const res = await fetch(`${BASE_URL}/api/accommodations/geojson/`);
+      const data = await res.json();
+      setGlobalStays(data.features);
+    }
+    setShowGlobalLayer(!showGlobalLayer);
+  };
+
+  // Logic for the Trail Click
+  const onTrailPress = (trailId) => {
+    fetchNearbyAccommodation(trailId); // Our proximity API
+    navigation.navigate('trail-details', { id: trailId });
+  };
+
   const fetchStaysForTrail = async (trailId) => {
     try {
         // Simple fetch using the new trail-specific endpoint we built
@@ -110,15 +126,12 @@ export default function MapScreen() {
               key={`trail-${trail.id}`}
               coordinate={{ latitude: lat, longitude: lng }}
               pinColor="green"
-              onPress={() => {
-                fetchStaysForTrail(trail.id);
-
-                navigation.navigate('trail-details', { id: trail.id }) // Comment this out if you want to stay on the map and just update stays below
-            }}
+              onPress={() => fetchStaysForTrail(trail.id)}
             >
 
-              <Callout>
-                <View style={{ padding: 5, minWidth: 120 }}>
+              <Callout onPress={() =>  navigation.navigate('trail-details', { id: trail.id })}>
+
+             <View style={{ padding: 5, minWidth: 120 }}>
                   <Text style={{ fontWeight: 'bold' }}>{trail.trail_name}</Text>
                   <Text>{trail.difficulty}</Text>
                 </View>
@@ -126,6 +139,22 @@ export default function MapScreen() {
             </Marker>
           );
         })}
+          
+      {/* 2. Global Stays Layer (Blue) - Only shows if Toggle is ON */}
+      {showGlobalLayer && globalStays.map((item) => (
+        <Marker
+          key={`global-stay-${item.properties.id}`}
+          coordinate={{
+            latitude: item.geometry.coordinates[1],
+            longitude: item.geometry.coordinates[0]
+          }}
+          pinColor="navy"
+          title={item.properties.name}
+        />
+      ))}
+
+           
+               
 
 
       {/* Accommodation Marker - Blue */}
