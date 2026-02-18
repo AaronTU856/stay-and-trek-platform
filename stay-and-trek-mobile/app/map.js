@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, ActivityIndicator, Text } from 'react-native';
-import MapView, { Marker, Callout, PROVIDER_DEFAULT } from 'react-native-maps';
+import MapView, { Marker, Callout } from 'react-native-maps';
 import { useNavigation } from '@react-navigation/native';
 
 
@@ -11,13 +11,29 @@ const BASE_URL = 'http://10.156.10.119:8000'; // Update this to your local IP ad
 
 const FETCH_TIMEOUT = 10000; //10 seconds
 
+const fetchWithTimeout = (url, timeout = FETCH_TIMEOUT) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  
+  return fetch(url, { signal: controller.signal })
+    .then(res => {
+      clearTimeout(timeoutId);
+      return res;
+    })
+    .catch(err => {
+      clearTimeout(timeoutId);
+      throw err;
+    });
+};
+
+
 export default function MapScreen() {
   const navigation = useNavigation();
 
   const [trails, setTrails] = useState([]);
   const [stays, setStays] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showStays, setShowStays] = useState(false);
+  const [showStays, setShowStays] = useState(true);
   const [nearbyStays, setNearbyStays] = useState([]); // Results from Trail click
   const [globalStays, setGlobalStays] = useState([]); // Results from Global Toggle
   const [showGlobalLayer, setShowGlobalLayer] = useState(false);
@@ -50,7 +66,7 @@ export default function MapScreen() {
         console.log("Fetching from:", targetUrl);
 
         try {
-          const res = await fetch(targetUrl);
+          const res = await fetchWithTimeout(targetUrl);
           if (res.ok) {
             const data = await res.json();
             setGlobalStays(data.features || []);
@@ -69,7 +85,7 @@ export default function MapScreen() {
   const fetchStaysForTrail = async (trailId) => {
     try {
         // Simple fetch using the new trail-specific endpoint we built
-        const res = await fetch(`${BASE_URL}/api/trails/accommodations/near-trail/?trail_id=${trailId}`);
+        const res = await fetchWithTimeout(`${BASE_URL}/api/trails/accommodations/near-trail/?trail_id=${trailId}`);
         if (res.ok) {
             const data = await res.json();
             // We update the 'stays' state with the new results
@@ -88,7 +104,7 @@ export default function MapScreen() {
 
   const loadData = async () => {
     try {
-      const trailsRes = await fetch(`${BASE_URL}/api/trails/`);
+      const trailsRes = await fetchWithTimeout(`${BASE_URL}/api/trails/`);
       if (trailsRes.ok) {
         const trailsData = await trailsRes.json();
         setTrails(Array.isArray(trailsData) ? trailsData : (trailsData.results || []));
@@ -97,7 +113,7 @@ export default function MapScreen() {
         setTrails([]);
       }
 
-      const staysRes = await fetch(
+      const staysRes = await fetchWithTimeout(
         `${BASE_URL}/api/trails/accommodations/nearby/?lat=53.5&lng=-7.7&radius=50`
       );
       if (staysRes.ok) {
@@ -127,36 +143,24 @@ export default function MapScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Single MapView with Clustering */}
       <MapView 
         style={styles.map} 
         initialRegion={region}
-        provider={PROVIDER_DEFAULT} // Explicitly use default provider
       >
-      {/* Floating Toggle Button */}
-      <View style={styles.toggleContainer}>
-        <View style={styles.buttonWrapper}>
-          <Text style={styles.toggleText}>Accommodations</Text>
-          <Text 
-            style={[styles.toggleButton, showGlobalLayer ? styles.btnOn : styles.btnOff]}
-            onPress={toggleGlobalStays}
-          >
-            {showGlobalLayer ? "ON" : "OFF"}
-          </Text>
-        </View>
-      </View>
+
 
       {/* Trails Markers - Green */}
-        {Array.isArray(trails) && trails.map((trail) => {
-        
-          // Parse and Validate
-          const lat = parseFloat(trail.latitude);
-          const lng = parseFloat(trail.longitude);
-
-          // If coordinates are missing or invalid, skip this marker
-          if (isNaN(lat) || isNaN(lng)) return null;
-
-            
-          return (
+        {Array.isArray(trails) && trails
+          .filter((trail) => {
+            const lat = parseFloat(trail.latitude);
+            const lng = parseFloat(trail.longitude);
+            return !isNaN(lat) && !isNaN(lng);
+          })
+          .map((trail) => {
+            const lat = parseFloat(trail.latitude);
+            const lng = parseFloat(trail.longitude);
+            return (
             <Marker
               key={`trail-${trail.id}`}
               coordinate={{ latitude: lat, longitude: lng }}
@@ -166,21 +170,19 @@ export default function MapScreen() {
 
               <Callout onPress={() =>  navigation.navigate('trail-details', { id: trail.id })}>
 
-             <View style={{ padding: 5, minWidth: 120 }}>
-                  <Text style={{ fontWeight: 'bold' }}>{trail.trail_name}</Text>
-                  <Text>{trail.difficulty}</Text>
-                </View>
-              </Callout>
-            </Marker>
-          );
-        })}
+              <View style={{ padding: 5, minWidth: 120 }}>
+                    <Text style={{ fontWeight: 'bold' }}>{trail.trail_name}</Text>
+                    <Text>{String(trail.difficulty)}</Text>
+                  </View>
+                </Callout>
+              </Marker>
+            );
+          })}
           
       {/* 2. Global Stays Layer (Blue) - Only shows if Toggle is ON */}
       {showGlobalLayer && globalStays.map((item) => {
         if (!item.geometry || !item.geometry.coordinates) return null;
-
         const [lng, lat] = item.geometry.coordinates;
-
         if (isNaN(lat) || isNaN(lng)) return null;
 
         return (
@@ -190,16 +192,17 @@ export default function MapScreen() {
               latitude: lat,
               longitude: lng
             }}
+            pinColor="red"
             >
 {/* Custom Price Callout (The "Bubble") */}
       <Callout tooltip onPress={() => console.log("Navigate to booking")}>
         <View style={styles.calloutBubble}>
-          <Text style={styles.calloutName}>{item.properties.name}</Text>
+          <Text style={styles.calloutName}>{String(item.properties.name)}</Text>
           <View style={styles.priceRow}>
-            <Text style={styles.calloutPrice}>€{item.properties.price}</Text>
+            <Text style={styles.calloutPrice}>€{String(item.properties.price)}</Text>
             <Text style={styles.perNight}> /night</Text>
           </View>
-          <Text style={styles.ratingText}>⭐ {item.properties.rating}</Text>
+          <Text style={styles.ratingText}>⭐ {String(item.properties.rating)}</Text>
           <Text style={styles.moreInfo}>Tap for details</Text>
         </View>
       </Callout>
@@ -217,21 +220,33 @@ export default function MapScreen() {
           if (isNaN(lat) || isNaN(lng)) return null;
 
           return (
-            <Marker
-              key={`stay-${props.id || Math.random()}`} // Use props.id for GeoJSON
-              coordinate={{ latitude: lat, longitude: lng }}
-              pinColor="blue"
+              <Marker
+                key={`stay-${props.id || Math.random()}`}
+                coordinate={{ latitude: lat, longitude: lng }}
+                pinColor="blue"
               >
-              <Callout>
-                <View style={{ padding: 5, minWidth: 120 }}>
-                  <Text style={{ fontWeight: "bold" }}>{props.name || "Accommodation"}</Text>
-                  <Text>{props.distance_km ? `${props.distance_km}km away` : "Nearby"}</Text>
-                </View>
-              </Callout>
+                <Callout>
+                  <View style={{ padding: 5, minWidth: 120 }}>
+                    <Text style={{ fontWeight: "bold" }}>{String(props.name) || "Accommodation"}</Text>
+                    <Text>{props.distance_km ? `${String(props.distance_km)}km away` : "Nearby"}</Text>
+                  </View>
+                </Callout>
               </Marker>
-          );
-        })}
+            );
+          })}
 
+ {/* Floating Toggle Button - Inside MapView */}
+        <View style={styles.toggleContainer}>
+          <View style={styles.buttonWrapper}>
+            <Text style={styles.toggleText}>Accommodations</Text>
+            <Text 
+              style={[styles.toggleButton, showGlobalLayer ? styles.btnOn : styles.btnOff]}
+              onPress={toggleGlobalStays}
+            >
+              {showGlobalLayer ? "ON" : "OFF"}
+            </Text>
+          </View>
+        </View>
       </MapView>
     </View>
   );
