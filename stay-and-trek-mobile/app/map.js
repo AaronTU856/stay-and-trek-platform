@@ -57,6 +57,19 @@ export default function MapScreen() {
   }
 };
 
+const getMarkerContent = (source) => {
+  switch (source?.toLowerCase()) {
+    case 'airbnb':
+      return { color: '#FF5A5F', icon: '🏠' }; // Airbnb brand red
+    case 'booking':
+      return { color: '#003580', icon: '🏢' }; // Booking brand blue
+    case 'tivago':
+      return { color: '#007FAD', icon: '🔍' }; // Trivago teal
+    default:
+      return { color: '#2E7D32', icon: '🛏️' }; // Local/Manual green
+  }
+};
+
   
 
   useEffect(() => {
@@ -194,9 +207,11 @@ export default function MapScreen() {
       {showGlobalLayer && globalStays.map((item) => {
         if (!item.geometry || !item.geometry.coordinates) return null;
         const [lng, lat] = item.geometry.coordinates;
-        const { name, price, rating, url } = item.properties;
+        const { name, price, rating, url, source } = item.properties;
+        const design = getMarkerContent(source);
         if (isNaN(lat) || isNaN(lng)) return null;
-
+        
+       
         return (
           <Marker
             key={`global-stay-${item.properties.id}`}
@@ -204,25 +219,24 @@ export default function MapScreen() {
               latitude: lat,
               longitude: lng
             }}
-            pinColor="navy"
+            
             >
-{/* Custom Price Callout (The "Bubble") */}
+            {/* Custom Marker View */}
+      <View style={[styles.customPin, { backgroundColor: design.color }]}>
+        <Text style={{ fontSize: 14 }}>{design.icon}</Text>
+      </View>
+
       <Callout tooltip onPress={() => handleOpenURL(url)}>
-        <View style={styles.calloutBubble}>
-          <Text style={styles.calloutName}>{String(name)}</Text>
-          <View style={styles.priceRow}>
-            <Text style={styles.calloutPrice}>€{String(price || 'N/A')}</Text>
-            <Text style={styles.perNight}> /night</Text>
-          </View>
-          <Text style={styles.ratingText}>⭐ {String(rating || 'No rating')}</Text>
-          <View style={styles.linkContainer}>
-            <Text style={styles.moreInfo}>VIew on Website</Text>
-          </View>
+        <View style={styles.calloutCard}>
+          <Text style={styles.calloutTitle}>{name}</Text>
+          <Text style={styles.calloutPrice}>€{price} via {source}</Text>
+          <Text style={styles.bookButton}>View Listing ➔</Text>
         </View>
       </Callout>
     </Marker>
   );
 })}
+
         
 
       {/* Accommodation Marker - Blue */}
@@ -350,6 +364,39 @@ const styles = StyleSheet.create({
     borderTopWidth: 0.5,
     borderTopColor: '#ddd',
     paddingTop: 5,
+  },
+  customPin: {
+    padding: 5,
+    borderRadius: 20, // Makes it a circle
+    borderWidth: 2,
+    borderColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 3, // Shadow for Android
+    shadowColor: '#000', // Shadow for iOS
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    width: 35,
+    height: 35,
+  },
+  calloutCard: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 10,
+    width: 180,
+    borderWidth: 1,
+    borderColor: '#ccc',
+  },
+  calloutTitle: {
+    fontWeight: 'bold',
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  bookButton: {
+    marginTop: 8,
+    color: '#007AFF',
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
  
   btnOn: { backgroundColor: '#2E7D32' }, // Green
