@@ -6,64 +6,59 @@
 {% block extrastyle %}
   {{ block.super }}
   <style>
+    /* Professionalizing the Admin Quick-Nav */
     .quick-nav {
       display: flex;
-      gap: 12px;
+      gap: 10px;
       flex-wrap: wrap;
-      margin: 12px;
-      padding: 0 12px;
-      background: #f8f9fa;
-      border-bottom: 1px solid #dee2e6;
+      padding: 15px 20px;
+      background: #34495e; /* Sleek slate color */
+      border-bottom: 2px solid #2c3e50;
     }
     .quick-nav a {
-      padding: 12px 18px;
-      background: var(--brand-primary, #2E8B57);
-      color: #fff;
-      border-radius: 8px;
+      padding: 8px 15px;
+      background: #2E8B57; /* Consistent Sea Green */
+      color: #fff !important;
+      border-radius: 4px;
       text-decoration: none;
-      font-weight: 500;
-      transition: opacity 0.2s;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
     }
     .quick-nav a:hover {
-      opacity: 0.9;
-      text-decoration: none;
-      color: #fff;
+      background: #246d45;
+      transform: translateY(-1px);
     }
-    .quick-nav a.analytics {
-      background: #FFB86B;
-      color: #111;
-    }
-    footer {
-      margin-top: auto;
-      position: relative;
-      bottom: 0;
-      width: 100%;
+    .quick-nav a.analytics { background: #f39c12; }
+    .quick-nav a.dashboard { background: #8e44ad; }
+    .quick-nav a.map { background: #2980b9; }
+
+    /* Mobile adjustments for Admin */
+    @media (max-width: 768px) {
+      .quick-nav { justify-content: center; }
+      .quick-nav a { flex: 1 1 40%; text-align: center; justify-content: center; }
     }
   </style>
 {% endblock %}
 
 {% block header %}
-  <div id="header">
-    <div id="branding">
-      <h1 id="site-name">Stay and Trek Admin</h1>
-    </div>
-    {% block usertools %}{{ block.super }}{% endblock %}
-    {% block nav-global %}{{ block.super }}{% endblock %}
-  </div>
+  {{ block.super }} {# Keeps the original Admin 'Logged in' links #}
+  
   <div class="quick-nav">
     <a href="/" class="home">🏠 Home</a>
-    <a href="/api/trails/map/" class="trails">🥾 Trails in Ireland</a>
+    <a href="{% url 'trails:map' %}" class="trails">🥾 Trails</a>
     <a href="/dashboard/" class="dashboard">📊 Dashboard</a>
-    <a href="/advanced-js-mapping/map/" class="map">🗺️ Interactive Map</a>
-    <a href="/advanced-js-mapping/" class="search">🏨 Accommodations</a>
-    <a href="/advanced-js-mapping/analytics/" class="analytics">📈 Analytics</a>
+    <a href="{% url 'advanced_js_mapping:map' %}" class="map">🗺️ Map</a>
+    <a href="{% url 'advanced_js_mapping:index' %}" class="search">🏨 Accommodations</a>
+    <a href="{% url 'advanced_js_mapping:analytics' %}" class="analytics">📈 Analytics</a>
   </div>
-
 {% endblock %}
 
 {% block footer %}
-  <footer class="bg-light text-center py-4">
-    <img src="{% static 'images/logo.png' %}" alt="Stay and Trek Logo" style="height: 100px; margin-bottom: 18px;">
-    <p class="mb-0">&copy; Stay and Trek Hiking 2025</p>
-  </footer>
+  <div class="text-center py-4" style="background: #f8f9fa; border-top: 1px solid #ddd; margin-top: 20px;">
+    <img src="{% static 'images/logo.png' %}" alt="Logo" style="height: 60px; opacity: 0.8;">
+    <p style="color: #666; font-size: 0.8rem; margin-top: 10px;">&copy; Stay and Trek Hiking 2025 | Admin Panel</p>
+  </div>
 {% endblock %}

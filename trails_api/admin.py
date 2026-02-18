@@ -1,6 +1,6 @@
 from django.contrib import admin
 from leaflet.admin import LeafletGeoAdmin
-from .models import Trail, Town
+from .models import Trail, Town, Accommodation
 
 # Admin configuration for Trail model
 @admin.register(Trail)
@@ -60,5 +60,16 @@ class TownAdmin(admin.ModelAdmin):
             'classes': ('collapse',),
         }),
     )
+    
+    ordering = ('name',)
+    
+    
+@admin.register(Accommodation)
+class AccommodationAdmin(LeafletGeoAdmin):
+    list_display = ('name', 'source', 'price_per_night', 'rating')
+    list_filter = ('source',)
+    
+    # simplified fieldsets to avoid tuple errors
+    fields = ('name', 'source', 'external_id', 'location', 'price_per_night', 'rating', 'url')
     
     ordering = ('name',)

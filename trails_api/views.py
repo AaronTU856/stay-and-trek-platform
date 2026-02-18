@@ -30,6 +30,12 @@ from .serializers import (
 from .serializers import TrailPathGeoSerializer
 from .filters import TrailFilter
 import json
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def trail_map(request):
+    # logic to load the trails ...
+    return render(request, 'index.html')
 
 # Pagination for API results
 class StandardResultsSetPagination(PageNumberPagination):
@@ -772,7 +778,7 @@ def accommodations_geojson(request):
                     "properties": {
                         "id": acc.id,
                         "name": acc.name,
-                        "source": acc.accommodation_source,
+                        "source": acc.source,
                         "price": str(acc.price_per_night) if acc.price_per_night else "N/A",
                         "rating": acc.rating or 0,
                         "url": acc.url,
@@ -844,7 +850,7 @@ def accommodations_near_trail(request):
                 "properties": {
                     "id": acc.id,
                     "name": acc.name,
-                    "source": acc.get_accommodation_source_display(),
+                    "source": acc.get_source_display(),
                     #"description": acc.description or "",
                     "distance_km": round(acc.distance.km, 2),
                     "price_per_night": float(acc.price_per_night) if acc.price_per_night else None,

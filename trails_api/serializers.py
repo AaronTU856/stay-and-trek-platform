@@ -217,7 +217,7 @@ class AccommodationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Accommodation
         fields = [
-            'id', 'name', 'accommodation_source', 'price_per_night', 
+            'id', 'name', 'source', 'price_per_night', 
             'rating', 'url', 'image_url', 'latitude', 'longitude', 'distance_km'
         ]
 
@@ -234,7 +234,7 @@ class AccommodationGeoJSONSerializer(GeoFeatureModelSerializer):
     class Meta:
         model = Accommodation  
         geo_field = 'location'
-        fields = ('id', 'name', 'accommodation_source', 'price_per_night', 'rating')
+        fields = ('id', 'name', 'source', 'price_per_night', 'rating', 'url')
 
 
 

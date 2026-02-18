@@ -3,6 +3,7 @@ from django.contrib.gis.db import models as gis_models
 from django.contrib.gis.geos import Point, Polygon
 from django.contrib.gis.measure import Distance
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.conf import settings
 
 
 # CUSTOM MANAGER FOR TRAIL 
@@ -64,6 +65,11 @@ class Trail(models.Model):
         db_index=True
     )
     
+    favorited_by = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, 
+        related_name='favorite_trails', 
+        blank=True
+    )
 
     def save(self, *args, **kwargs):
         # If status is 'rejected', we clear the description 
@@ -373,7 +379,7 @@ class Accommodation(models.Model):
     ]
     
     name = models.CharField(max_length=200, db_index=True)
-    accommodation_source = models.CharField(max_length=50, choices=ACCOMMODATION_SOURCE_CHOICES, db_index=True)
+    source = models.CharField(max_length=50, choices=ACCOMMODATION_SOURCE_CHOICES, db_index=True)
     external_id = models.CharField(max_length=100, unique=True, help_text="Unique ID from external source")
     
     # Core Spatial data
@@ -386,7 +392,7 @@ class Accommodation(models.Model):
     image_url = models.URLField(max_length=500, blank=True)
     
     def __str__(self):
-        return f"{self.name} ({self.accommodation_source})"
+        return f"{self.name} ({self.source})"
     
     
     @property

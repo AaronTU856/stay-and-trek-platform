@@ -310,9 +310,9 @@ LEAFLET_CONFIG = {
 }
 
 # Authentication Configuration
-LOGIN_URL = '/auth/login/'
-LOGIN_REDIRECT_URL = '/advanced-js-mapping/'
-LOGOUT_REDIRECT_URL = '/advanced-js-mapping/'
+LOGIN_URL = 'authentication:login'
+LOGIN_REDIRECT_URL = 'advanced_js_mapping:index' 
+LOGOUT_REDIRECT_URL = 'authentication:home'
 
 
 

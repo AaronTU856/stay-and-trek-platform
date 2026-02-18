@@ -30,32 +30,62 @@
 </head>
 <body>
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-brand">
-        <div class="container">
-            <a class="navbar-brand" href="{% url 'advanced_js_mapping:index' %}">
-                🗺️ Stay and Trek 2025
-            </a>
-            <nav class="top-nav">
-                <a class="top-back" href="/" onclick="if (history.length>1){ history.back(); return false; }">
-                ← Back
-                </a>
-            </nav>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="{% url 'advanced_js_mapping:index' %}">Home</a>
-                <a class="nav-link" href="{% url 'advanced_js_mapping:map' %}">Interactive Map</a>
-                <a class="nav-link" href="{% url 'advanced_js_mapping:analytics' %}">Analytics</a>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand d-flex align-items-center" href="/">
+            <span class="me-2">🗺️</span> <strong>Stay and Trek 2025</strong>
+        </a>
+        
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="mainNavigation">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">🏠 Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'trails:map' %}">🥾 Trails in Ireland</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'advanced_js_mapping:map' %}">📍 Interactive Map</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'advanced_js_mapping:analytics' %}">📊 Analytics</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/dashboard/">📈 Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'advanced_js_mapping:index' %}">🏨 Accommodations</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin/">⚙️ Admin</a>
+                </li>
+            </ul>
+
+            <div class="d-flex align-items-center gap-2 border-start ps-3 ms-3">
+                {% if user.is_authenticated %}
+                    <div class="text-light me-2 d-none d-xl-inline">
+                        <small>Logged in as:</small> <strong>{{ user.username }}</strong>
+                    </div>
+                    <a href="{% url 'authentication:profile' %}" class="btn btn-sm btn-outline-info">👤 Profile</a>
+                    <a href="{% url 'authentication:logout' %}" class="btn btn-sm btn-danger">Logout</a>
+                {% else %}
+                    <a href="{% url 'authentication:login' %}" class="btn btn-sm btn-primary">Login</a>
+                    <a href="{% url 'authentication:signup' %}" class="btn btn-sm btn-light">Sign Up</a>
+                {% endif %}
             </div>
         </div>
-    </nav>
-
-    <!-- Quick Navigation to Other Pages -->
-    <div style="display:flex;gap:12px;flex-wrap:wrap;margin:12px;padding:0 12px;">
-      <a href="/" style="padding:12px 18px;background:var(--brand-primary,#2E8B57);color:#fff;border-radius:8px;text-decoration:none;">🏠 Home</a>
-      <a href="{% url 'trails:map' %}" style="padding:12px 18px;background:var(--brand-primary,#2E8B57);color:#fff;border-radius:8px;text-decoration:none;">🥾 Trails in Ireland</a>
-      <a href="/dashboard/" style="padding:12px 18px;background:#8B4513;color:#fff;border-radius:8px;text-decoration:none;">📊 Dashboard</a>
-      <a href="{% url 'advanced_js_mapping:index' %}" style="padding:12px 18px;background:#F5273F;color:#fff;border-radius:8px;text-decoration:none;">🏨 Accommodations</a>
-      <a href="/admin/" style="padding:12px 18px;background:#34495E;color:#fff;border-radius:8px;text-decoration:none;">⚙️ Admin</a>
     </div>
+</nav>
+
+<div class="container-fluid px-4 py-2 bg-light border-bottom">
+    <a href="javascript:history.back()" class="text-decoration-none text-muted small">
+        ← Back to previous page
+    </a>
+</div>
 
     <!-- Main Content -->
     <main>

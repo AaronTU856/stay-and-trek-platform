@@ -56,7 +56,7 @@ def custom_logout_view(request):
     username = request.user.username if request.user.is_authenticated else 'User'
     logout(request)
     messages.success(request, f'Goodbye, {username}! You have been logged out.')
-    return redirect('advanced_js_mapping:index')
+    return redirect('authentication:login')
 
 # User profile view
 @login_required
