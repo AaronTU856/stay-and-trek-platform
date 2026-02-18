@@ -6,7 +6,9 @@ import { useNavigation } from '@react-navigation/native';
 
 
 // Use Mac's local network IP (works for simulator and physical devices)
-const BASE_URL = 'http://192.168.1.83:8000';
+// const BASE_URL = 'http://192.168.1.83:8000';
+const BASE_URL = 'http://10.156.10.119:8000'; // Update this to your local IP address and port
+
 const FETCH_TIMEOUT = 10000; //10 seconds
 
 export default function MapScreen() {
@@ -188,15 +190,23 @@ export default function MapScreen() {
               latitude: lat,
               longitude: lng
             }}
-            pinColor="navy"
-            title={item.properties.name}
-          />
-        );
-      })}
-
-           
-               
-
+            >
+{/* Custom Price Callout (The "Bubble") */}
+      <Callout tooltip onPress={() => console.log("Navigate to booking")}>
+        <View style={styles.calloutBubble}>
+          <Text style={styles.calloutName}>{item.properties.name}</Text>
+          <View style={styles.priceRow}>
+            <Text style={styles.calloutPrice}>€{item.properties.price}</Text>
+            <Text style={styles.perNight}> /night</Text>
+          </View>
+          <Text style={styles.ratingText}>⭐ {item.properties.rating}</Text>
+          <Text style={styles.moreInfo}>Tap for details</Text>
+        </View>
+      </Callout>
+    </Marker>
+  );
+})}
+        
 
       {/* Accommodation Marker - Blue */}
         {showStays && Array.isArray(stays) && stays.map((item) => {
@@ -242,6 +252,50 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
+  },
+  calloutBubble: {
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 10,
+    width: 160,
+    borderColor: '#2E7D32',
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  calloutName: {
+    fontWeight: 'bold',
+    fontSize: 13,
+    marginBottom: 4,
+    color: '#333',
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: 4,
+  },
+  calloutPrice: {
+    color: '#2E7D32',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  perNight: {
+    fontSize: 10,
+    color: '#666',
+  },
+  ratingText: {
+    fontSize: 11,
+    color: '#444',
+  },
+  moreInfo: {
+    fontSize: 10,
+    color: '#007AFF',
+    marginTop: 5,
+    textAlign: 'right',
+    fontStyle: 'italic',
   },
   buttonWrapper: {
     alignItems: 'center',
