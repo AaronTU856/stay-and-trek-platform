@@ -7,8 +7,8 @@ import { useNavigation } from '@react-navigation/native';
 
 
 // Use Mac's local network IP (works for simulator and physical devices)
-// const BASE_URL = 'http://192.168.1.83:8000';
-const BASE_URL = 'http://10.156.10.119:8000'; // Update this to your local IP address and port
+const BASE_URL = 'http://192.168.1.83:8000';
+// const BASE_URL = 'http://:8000'; // Update this to your local IP address and port
 
 const FETCH_TIMEOUT = 10000; //10 seconds
 
@@ -146,7 +146,7 @@ const getMarkerContent = (source) => {
         setStays(features);
 
       } else {
-        console.error(`Accommodations API error: ${staysRes.status}`);
+        console.error("Accommodations API error: " + staysRes.status);
         setStays([]);
       }
     } catch (err) {
@@ -230,6 +230,7 @@ const getMarkerContent = (source) => {
         <View style={styles.calloutCard}>
           <Text style={styles.calloutTitle}>{name}</Text>
           <Text style={styles.calloutPrice}>€{price} via {source}</Text>
+          <Text style={styles.ratingText}>⭐ {String(rating || 'No rating')}</Text>
           <Text style={styles.bookButton}>View Listing ➔</Text>
         </View>
       </Callout>
