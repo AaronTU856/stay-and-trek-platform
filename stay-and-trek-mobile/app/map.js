@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, ActivityIndicator, Text } from 'react-native';
+import { StyleSheet, View, Linking,ActivityIndicator, Text } from 'react-native';
 import MapView, { Marker, Callout } from 'react-native-maps';
 import { useNavigation } from '@react-navigation/native';
+
 
 
 
@@ -27,6 +28,8 @@ const fetchWithTimeout = (url, timeout = FETCH_TIMEOUT) => {
 };
 
 
+
+
 export default function MapScreen() {
   const navigation = useNavigation();
 
@@ -45,6 +48,14 @@ export default function MapScreen() {
     latitudeDelta: 2.0,
     longitudeDelta: 2.0,
   });
+
+  const handleOpenURL = (url) => {
+  if (url) {
+    Linking.openURL(url).catch((err) => console.error("Couldn't load page", err));
+  } else {
+    alert("No website available for this stay.");
+  }
+};
 
   
 
@@ -183,6 +194,7 @@ export default function MapScreen() {
       {showGlobalLayer && globalStays.map((item) => {
         if (!item.geometry || !item.geometry.coordinates) return null;
         const [lng, lat] = item.geometry.coordinates;
+        const { name, price, rating, url } = item.properties;
         if (isNaN(lat) || isNaN(lng)) return null;
 
         return (
@@ -192,18 +204,20 @@ export default function MapScreen() {
               latitude: lat,
               longitude: lng
             }}
-            pinColor="red"
+            pinColor="navy"
             >
 {/* Custom Price Callout (The "Bubble") */}
-      <Callout tooltip onPress={() => console.log("Navigate to booking")}>
+      <Callout tooltip onPress={() => handleOpenURL(url)}>
         <View style={styles.calloutBubble}>
-          <Text style={styles.calloutName}>{String(item.properties.name)}</Text>
+          <Text style={styles.calloutName}>{String(name)}</Text>
           <View style={styles.priceRow}>
-            <Text style={styles.calloutPrice}>€{String(item.properties.price)}</Text>
+            <Text style={styles.calloutPrice}>€{String(price || 'N/A')}</Text>
             <Text style={styles.perNight}> /night</Text>
           </View>
-          <Text style={styles.ratingText}>⭐ {String(item.properties.rating)}</Text>
-          <Text style={styles.moreInfo}>Tap for details</Text>
+          <Text style={styles.ratingText}>⭐ {String(rating || 'No rating')}</Text>
+          <View style={styles.linkContainer}>
+            <Text style={styles.moreInfo}>VIew on Website</Text>
+          </View>
         </View>
       </Callout>
     </Marker>
@@ -306,11 +320,12 @@ const styles = StyleSheet.create({
     color: '#444',
   },
   moreInfo: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#007AFF',
     marginTop: 5,
-    textAlign: 'right',
+    textAlign: 'center',
     fontStyle: 'italic',
+    fontWeight: 'Bold',
   },
   buttonWrapper: {
     alignItems: 'center',
@@ -330,6 +345,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     overflow: 'hidden',
   },
+  linkContainer: {
+    marginTop: 8,
+    borderTopWidth: 0.5,
+    borderTopColor: '#ddd',
+    paddingTop: 5,
+  },
+ 
   btnOn: { backgroundColor: '#2E7D32' }, // Green
   btnOff: { backgroundColor: '#ee1414' }, // Grey
 });
