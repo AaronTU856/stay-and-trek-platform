@@ -46,12 +46,10 @@ async function apiCall(endpoint, options = {}){
   // 1. Get the token from storage
   const token = await SecureStore.getItemAsync('userToken');
 
-  
-
   const defaultHeaders = {
       'Accept': 'application/json',
       'Content-Type': 'application/json',
-      
+
   // Add Authorization header if token exists
       ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
   };

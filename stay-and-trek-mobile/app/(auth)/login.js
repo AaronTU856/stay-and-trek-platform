@@ -2,29 +2,32 @@ import React, { useState } from 'react';
 import { View, TextInput, TouchableOpacity, Text, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import axios from 'axios';
+import { login } from '../../services/apiClient';
 
 export default function LoginScreen() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
+  const [userToken, setUserToken] = useState(null); // Track login state
 
   const handleLogin = async () => {
     try {
-      // Point this to your Django Docker IP
-      const response = await axios.post('http://10.46.73.34:8000/api/token/', {
-        username,
-        password,
-      });
+      // Call login through apiClient
+      const data = await login(username, password);
 
-      // Save the JWT
-      await SecureStore.setItemAsync('userToken', response.data.access);
-      
+      // Save the JWT tokens
+      await SecureStore.setItemAsync('userToken', data.access);
+      await SecureStore.setItemAsync('refreshToken', data.refresh);
+
+      // Update state to reflect login
+      setUserToken(data.access);
+
       Alert.alert("Success", "Welcome back!");
       
-      // Redirect to the main map/app
-      router.replace('/index.js'); 
+      // Redirect to the main app
+      router.replace('/index'); 
     } catch (error) {
+      console.error('Login error:', error);
       Alert.alert("Error", "Invalid username or password");
     }
   };
