@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import axios from 'axios'; // Or use your apiClient
 import { API_BASE_URL } from '../../services/apiClient'; 
 import { register } from '../../services/apiClient'; // Import the register function
+import { KeyboardAvoidingView, Platform } from 'react-native';
 
 const Register = () => {
   const router = useRouter();
@@ -51,6 +52,13 @@ const Register = () => {
 
     
   return (
+
+    <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+    >
+
+    <ScrollView contentContainerStyle={styles.container}></ScrollView>
     <ScrollView contentContainerStyle={styles.container}>
        
       <Text style={styles.title}>🥾 Stay & Trek ⛰️</Text>
@@ -104,6 +112,7 @@ const Register = () => {
         <Text style={styles.loginButtonText}>Back to Login</Text>
       </TouchableOpacity>
     </ScrollView>
+  </KeyboardAvoidingView>
   );
 };
 
@@ -160,6 +169,8 @@ loginButtonText: {
     fontSize: 16, 
     textAlign: 'center' 
 },
+
+
 
   
 });
