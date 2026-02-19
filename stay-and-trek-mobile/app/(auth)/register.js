@@ -15,6 +15,18 @@ const Register = () => {
   });
 
   const handleRegister = async () => {
+
+    // 1. Validation (Keep your logic, just use Alerts)
+    if (!formData.username || !formData.email || !formData.password) {
+      Alert.alert("Error", "Please fill in all fields");
+      return;
+    }
+
+    if (formData.password !== formData.cpassword) {
+      Alert.alert("Error", "Passwords do not match");
+      return;
+    }
+
     try {
         const data = await register(formData.username, formData.email, formData.password);
 
@@ -22,34 +34,18 @@ const Register = () => {
         router.replace('/(auth)/login');
     } catch (error) {
         console.error('Registration error:', error);
-        Alert.alert("Registration Failed", error.response?.data?.username?.[0] || "Could not create account. Username might be taken.");
+
+        // Handle Django's specific error responses
+      const serverMessage = error.response?.data?.username?.[0] || 
+                            error.response?.data?.email?.[0] || 
+                            "Could not create account.";
+
+        Alert.alert("Registration Failed", serverMessage);
     }
 
-    // 1. Validation (Keep your logic, just use Alerts)
-    if (formData.password !== formData.cpassword) {
-      Alert.alert("Error", "Passwords do not match");
-      return;
-    }
+};
 
-    try {
-      // 2. Connect to Django
-      // Note: Django default User model usually requires username, email, password
-      const response = await axios.post(`${API_BASE_URL}/api/register/`, {
-        username: formData.username,
-        email: formData.email,
-        password: formData.password,
-      });
-
-      if (response.status === 201 || response.status === 200) {
-        Alert.alert("Success", "Account created! Please login.");
-        router.replace('/(auth)/login');
-      }
-    } catch (error) {
-      console.error(error.response?.data);
-      Alert.alert("Registration Failed", error.response?.data?.username?.[0] || "Something went wrong");
-    }
-  };
-
+    
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Create Account</Text>
