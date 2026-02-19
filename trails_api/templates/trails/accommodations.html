@@ -1,23 +1,12 @@
+{% extends 'base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Accommodations Map - Find Places to Stay</title>
 
-  <!-- Bootstrap CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  
-  <!-- Leaflet CSS -->
+{% block title %}Accommodations Map - Find Places to Stay{% endblock %}
+
+{% block extra_css %}
   <link rel="stylesheet" href="{% static 'leaflet/leaflet.css' %}">
-  
-  <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  
-  <!-- Global styles -->
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
-  <link rel="stylesheet" href="{% static 'css/global-theme.css' %}">
 
   <style>
     body {
@@ -227,34 +216,9 @@
       margin-bottom: 12px;
     }
   </style>
-</head>
-<body>
-  <!-- Navigation -->
-  <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(135deg, #8B5A3C 0%, #6b4429 100%);">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="/">
-        <i class="fas fa-bed"></i> Accommodations Map
-      </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarNav">
-        <div class="navbar-nav ms-auto">
-          <a class="nav-link" href="/">🏠 Home</a>
-          <a class="nav-link" href="/api/trails/map/">🥾 Trails</a>
-          <a class="nav-link active" href="/api/accommodations/">🏨 Accommodations</a>
-          <a class="nav-link" href="/admin/">⚙️ Admin</a>
-        </div>
-      </div>
-    </div>
-  </nav>
+{% endblock %}
 
-  <!-- Quick Navigation -->
-  <div style="display:flex;gap:12px;flex-wrap:wrap;margin:12px;padding:0 12px;">
-    <a href="/" style="padding:8px 12px;background:#8B5A3C;color:#fff;border-radius:6px;text-decoration:none;font-size:12px;">← Back</a>
-    <a href="/api/accommodations/" style="padding:8px 12px;background:#8B5A3C;color:#fff;border-radius:6px;text-decoration:none;font-size:12px;">📋 List View</a>
-    <a href="#" onclick="zoomToAll()" style="padding:8px 12px;background:#28a745;color:#fff;border-radius:6px;text-decoration:none;font-size:12px;">🎯 Zoom All</a>
-  </div>
+{% block content %}
 
   <!-- Main Container -->
   <div class="main-container">
@@ -509,5 +473,4 @@
     // Load accommodations on page load
     window.addEventListener('load', loadAccommodations);
   </script>
-</body>
-</html>
+{% endblock %}

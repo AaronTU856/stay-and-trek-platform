@@ -333,16 +333,14 @@ def load_towns(request):
 @api_view(['GET'])
 def trails_geojson(request):
     """Return trails as GeoJSON with optional filters."""
-    trails = Trail.objects.filter(
-        Q(status='verified') | Q(status='scraped') | Q(status='pending')     
-    )
+    trails = Trail.objects.all()
 
     min_length = request.GET.get('min_length')
     max_length = request.GET.get('max_length')
     difficulty = request.GET.get('difficulty')
     county = request.GET.get('county')
     trail_type = request.GET.get('trail_type')
-
+    
     if min_length:
         trails = trails.filter(distance_km__gte=float(min_length))
     if max_length:

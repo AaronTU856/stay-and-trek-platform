@@ -1,9 +1,8 @@
-{% extends 'dashboard/base.html' %}
+{% extends "base.html" %}
 {% load static %}
 {% block title %}Dashboard - Irish Trails{% endblock %}
 
-{% block head_extra %}
-<!-- Custom Dashboard CSS -->
+{% block extra_css %}
 <style>
     #map { height: 600px; }
     .control-panel {
@@ -241,12 +240,8 @@
     </div>
 {% endblock %}
 
-{% block scripts %}
-
-    <!-- ✅ Load the external map script -->
+{% block extra_js %}
     <script src="{% static 'dashboard/js/dashboard_map.js' %}"></script>
-
-
 {% endblock %}
 
 

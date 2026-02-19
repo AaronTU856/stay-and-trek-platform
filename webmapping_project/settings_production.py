@@ -69,3 +69,5 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles_production'
 STATICFILES_DIRS = [ BASE_DIR / 'static' ]  
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+from .settings import *

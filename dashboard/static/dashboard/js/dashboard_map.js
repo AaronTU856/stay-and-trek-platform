@@ -42,6 +42,8 @@ document.addEventListener("DOMContentLoaded", () => {
     function loadTrails(filters = {}) {
         let url = '/api/trails/geojson/';
         const params = new URLSearchParams(filters);
+
+        params.set('limit', '10000'); // Ensure we get all trails for mapping
         for (const [key, val] of params.entries()) {
             if (!val) params.delete(key); // remove empty
         }

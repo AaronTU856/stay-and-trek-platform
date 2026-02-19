@@ -12,6 +12,8 @@
   --control-size: 44px;
 }
 
+/* Styles are now inherited from global-theme.css for consistency */
+
 /* top nav / back link */
 .top-nav {
   padding: 12px 18px;
@@ -174,10 +176,5 @@ body {
 /* Navbar brand background - local to advanced mapping */
 .bg-brand {
   background-color: var(--brand-primary) !important;
-}
-
-.navbar-dark .navbar-brand,
-.navbar-dark .nav-link {
-  color: #fff !important;
 }
 
