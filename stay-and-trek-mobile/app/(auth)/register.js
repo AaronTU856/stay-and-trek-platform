@@ -100,8 +100,8 @@ const Register = () => {
         )}
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button} onPress={handleRegister}>
-        <Text style={styles.buttonText}>Register</Text>
+      <TouchableOpacity style={[styles.button, styles.loginButton]} onPress={() => router.push('/(auth)/login')}>
+        <Text style={styles.loginButtonText}>Back to Login</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -134,9 +134,32 @@ const styles = StyleSheet.create({
     placeholderTextColor: '#ece7e7'
   },
 
-  button: { backgroundColor: '#2e7d32', padding: 18, borderRadius: 8, alignItems: 'center' },
+  button: { 
+    backgroundColor: '#2e7d32', 
+    padding: 18, 
+    borderRadius: 8, 
+    alignItems: 'center' 
+},
+loginButton: { 
+    backgroundColor: '#18648e', 
+    padding: 18, 
+    borderRadius: 8, 
+    alignItems: 'center', 
+    marginTop: 10 },
+
+loginButtonText: {
+    color: '#ffffff', 
+    fontWeight: 'normal', 
+    fontSize: 14, 
+    textAlign: 'center' 
+},
   
-  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  buttonText: { 
+    color: '#ffffff', 
+    fontWeight: 'bold', 
+    fontSize: 16, 
+    textAlign: 'center' 
+},
 
   
 });
