@@ -9,6 +9,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const router = useRouter();
   const [userToken, setUserToken] = useState(null); // Track login state
+  const register = () => router.push('/(auth)/register');
 
   const handleLogin = async () => {
     try {
@@ -52,14 +53,19 @@ export default function LoginScreen() {
       <TouchableOpacity style={styles.button} onPress={handleLogin}>
         <Text style={styles.buttonText}>Login</Text>
       </TouchableOpacity>
+      <TouchableOpacity style={styles.registerButton} onPress={register}>
+        <Text style={styles.registerButtonText}>Register</Text>
+      </TouchableOpacity>
     </View>
   );
 }
 
+
 const styles = StyleSheet.create({
+
   container: { flexGrow: 1, justifyContent: 'center', padding: 20, backgroundColor: '#a3a998' },
 
-  title: { fontSize: 28, fontWeight: 'bold', marginBottom: 20, color: '#2e7d32' },
+  title: { fontSize: 28, fontWeight: 'bold', marginBottom: 20, color: '#175c1d' },
 
   input: { 
     borderWidth: 1, 
@@ -76,5 +82,8 @@ const styles = StyleSheet.create({
   button: { backgroundColor: '#2e7d32', padding: 18, borderRadius: 8, alignItems: 'center' },
   
   buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  
+  registerButton: { backgroundColor: '#175c1d', padding: 18, borderRadius: 8, alignItems: 'center', marginTop: 10 },
+  registerButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
   
 });
