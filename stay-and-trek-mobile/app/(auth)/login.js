@@ -35,7 +35,7 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Stay & Trek Login</Text>
+      <Text style={styles.title}>🥾 Stay & Trek ⛰️</Text>
       <TextInput 
         style={styles.input} 
         placeholder="Username" 
@@ -54,7 +54,7 @@ export default function LoginScreen() {
         <Text style={styles.buttonText}>Login</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.registerButton} onPress={register}>
-        <Text style={styles.registerButtonText}>Register</Text>
+        <Text style={styles.registerButtonText}>Not Registered? Register Here</Text>
       </TouchableOpacity>
     </View>
   );
@@ -65,7 +65,12 @@ const styles = StyleSheet.create({
 
   container: { flexGrow: 1, justifyContent: 'center', padding: 20, backgroundColor: '#a3a998' },
 
-  title: { fontSize: 28, fontWeight: 'bold', marginBottom: 20, color: '#175c1d' },
+  title: { 
+    fontSize: 28, 
+    fontWeight: 'bold', 
+    marginBottom: 20, 
+    color: '#175c1d', 
+    textAlign: 'center' },
 
   input: { 
     borderWidth: 1, 
@@ -79,11 +84,26 @@ const styles = StyleSheet.create({
     placeholderTextColor: '#ffffff'
   },
 
-  button: { backgroundColor: '#2e7d32', padding: 18, borderRadius: 8, alignItems: 'center' },
+  button: { 
+    backgroundColor: '#2e7d32', 
+    padding: 18, 
+    borderRadius: 8, 
+    alignItems: 'center' },
   
-  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  buttonText: { 
+    color: '#fff', 
+    fontWeight: 'bold', 
+    fontSize: 16 },
   
-  registerButton: { backgroundColor: '#175c1d', padding: 18, borderRadius: 8, alignItems: 'center', marginTop: 10 },
-  registerButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  registerButton: { 
+    backgroundColor: '#18648e', 
+    padding: 18, borderRadius: 8, 
+    alignItems: 'center', 
+    marginTop: 10 },
+
+  registerButtonText: { 
+    color: '#fff', 
+    fontWeight: 'normal', 
+    fontSize: 14 },
   
 });
