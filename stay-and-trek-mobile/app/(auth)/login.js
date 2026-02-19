@@ -10,7 +10,7 @@ export default function LoginScreen() {
   const router = useRouter();
   const [userToken, setUserToken] = useState(null); // Track login state
   const register = () => router.push('/(auth)/register');
-
+  
   const handleLogin = async () => {
     try {
       // Call login through apiClient
@@ -54,7 +54,7 @@ export default function LoginScreen() {
         <Text style={styles.buttonText}>Login</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.registerButton} onPress={register}>
-        <Text style={styles.registerButtonText}>Not Registered? Register Here</Text>
+        <Text style={styles.registerButtonText}>Not Registered? Register Here..</Text>
       </TouchableOpacity>
     </View>
   );

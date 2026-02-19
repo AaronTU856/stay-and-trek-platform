@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, Text, StyleSheet, Alert, ScrollView } from 'react-native';
+import { View, TextInput, TouchableOpacity, Text, StyleSheet, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import axios from 'axios'; // Or use your apiClient
 import { API_BASE_URL } from '../../services/apiClient'; 
@@ -7,6 +7,7 @@ import { register } from '../../services/apiClient'; // Import the register func
 
 const Register = () => {
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -26,6 +27,7 @@ const Register = () => {
       Alert.alert("Error", "Passwords do not match");
       return;
     }
+    setLoading(true);
 
     try {
         const data = await register(formData.username, formData.email, formData.password);
@@ -41,9 +43,11 @@ const Register = () => {
                             "Could not create account.";
 
         Alert.alert("Registration Failed", serverMessage);
+    } finally {
+      // 3. Stop Loading (regardless of success or failure)
+      setLoading(false);
     }
-
-};
+  };
 
     
   return (
@@ -83,6 +87,19 @@ const Register = () => {
         onChangeText={(val) => setFormData({...formData, cpassword: val})}
       />
 
+
+    <TouchableOpacity 
+        style={[styles.button, loading && styles.buttonDisabled]} 
+        onPress={handleRegister}
+        disabled={loading} // Prevent double-tapping
+      >
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>Register</Text>
+        )}
+      </TouchableOpacity>
+
       <TouchableOpacity style={styles.button} onPress={handleRegister}>
         <Text style={styles.buttonText}>Register</Text>
       </TouchableOpacity>
@@ -92,7 +109,12 @@ const Register = () => {
 
 const styles = StyleSheet.create({
 
+
   container: { flexGrow: 1, justifyContent: 'center', padding: 20, backgroundColor: '#a3a998' },
+
+  buttonDisabled: {
+    backgroundColor: '#a5d6a7', // Lighter green to show it's disabled
+  },
 
   title: { 
     fontSize: 28, 
