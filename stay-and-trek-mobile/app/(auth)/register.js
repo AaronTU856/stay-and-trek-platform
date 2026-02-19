@@ -48,6 +48,7 @@ const Register = () => {
     
   return (
     <ScrollView contentContainerStyle={styles.container}>
+        <Text style={styles.title}>Stay & Trek</Text>
       <Text style={styles.title}>Create Account</Text>
       
       <TextInput
@@ -89,11 +90,26 @@ const Register = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, justifyContent: 'center', padding: 20, backgroundColor: '#fff' },
+  container: { flexGrow: 1, justifyContent: 'center', padding: 20, backgroundColor: '#a3a998' },
+
   title: { fontSize: 28, fontWeight: 'bold', marginBottom: 20, color: '#2e7d32' },
-  input: { borderWidth: 1, borderColor: '#ddd', padding: 15, borderRadius: 8, marginBottom: 15 },
+
+  input: { 
+    borderWidth: 1, 
+    borderColor: '#170d0d', 
+    padding: 15, 
+    borderRadius: 8, 
+    marginBottom: 15,
+    fontSize: 16,
+    color: '#153a18',
+    placeholderTextColor: '#ece7e7'
+  },
+
   button: { backgroundColor: '#2e7d32', padding: 18, borderRadius: 8, alignItems: 'center' },
-  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 }
+  
+  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+
+  
 });
 
 export default Register;
