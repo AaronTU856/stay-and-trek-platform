@@ -5,6 +5,7 @@ from . import views
 from .views import trail_map
 from .views import api_test_view
 
+
 app_name = 'trails'
 
 

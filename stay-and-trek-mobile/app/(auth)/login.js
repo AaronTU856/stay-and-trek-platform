@@ -23,7 +23,7 @@ export default function LoginScreen() {
       Alert.alert("Success", "Welcome back!");
       
       // Redirect to the main map/app
-      router.replace('/(tabs)'); 
+      router.replace('/index.js'); 
     } catch (error) {
       Alert.alert("Error", "Invalid username or password");
     }

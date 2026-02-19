@@ -17,31 +17,59 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
-        <div class="container-fluid px-4">
+    <nav class="navbar navbar-expand-lg modern-navbar shadow-sm sticky-top">
+        <div class="container-fluid">
             <a class="navbar-brand d-flex align-items-center" href="/">
-                <span class="me-2">🗺️</span> <strong>Stay and Trek 2025</strong>
+                <span class="me-2">🥾</span>
+                <span>Stay and Trek <small class="fw-light">2025</small></span>
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            <div class="collapse navbar-collapse" id="mainNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item"><a class="nav-link" href="/">🏠 House</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'trails:map' %}">🥾 Trails</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'advanced_js_mapping:map' %}">📍 Interactive Map</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'advanced_js_mapping:analytics' %}">📊 Analytics</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/dashboard/">📈 Dashboard</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'advanced_js_mapping:index' %}">🏨 Accommodations</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/admin/">⚙️ Admin</a></li>
+
+            <div class="collapse navbar-collapse" id="mainNavbar">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/"><i class="bi bi-house-door"></i> Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'trails:map' %}">🥾 Trails</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'advanced_js_mapping:map' %}">📍 Interactive Map</a>
+                    </li>
+                    
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="analysisDrop" data-bs-toggle="dropdown">
+                            📊 Insights
+                        </a>
+                        <ul class="dropdown-menu shadow border-0 mt-2">
+                            <li><a class="dropdown-item" href="{% url 'advanced_js_mapping:analytics' %}">Town Analytics</a></li>
+                            <li><a class="dropdown-item" href="/dashboard/">User Dashboard</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'advanced_js_mapping:index' %}">🏨 Accommodations</a></li>
+                        </ul>
+                    </li>
                 </ul>
-                <div class="d-flex align-items-center gap-2 border-start ps-3 ms-3">
+
+                <div class="d-flex align-items-center">
                     {% if user.is_authenticated %}
-                        <span class="text-light me-2 d-none d-xl-inline">Logged in as: <strong>{{ user.username }}</strong></span>
-                        <a href="{% url 'authentication:profile' %}" class="btn btn-sm btn-outline-info">👤 Profile</a>
-                        <a href="{% url 'authentication:logout' %}" class="btn btn-sm btn-danger">Logout</a>
+                        <div class="dropdown">
+                            <button class="btn btn-outline-success dropdown-toggle d-flex align-items-center gap-2" data-bs-toggle="dropdown">
+                                <div class="rounded-circle bg-secondary text-white d-flex justify-content-center align-items-center" style="width: 24px; height: 24px; font-size: 12px;">
+                                    {{ user.username|first|upper }}
+                                </div>
+                                <span>{{ user.username }}</span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                                <li><a class="dropdown-item" href="/admin/">⚙️ Admin Panel</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><form action="{% url 'authentication:logout' %}" method="post">{% csrf_token %}<button type="submit" class="dropdown-item text-danger">Logout</button></form></li>
+                            </ul>
+                        </div>
                     {% else %}
-                        <a href="{% url 'authentication:login' %}" class="btn btn-sm btn-primary">Login</a>
+                        <a href="{% url 'authentication:login' %}" class="btn btn-primary px-4">Login</a>
                     {% endif %}
                 </div>
             </div>

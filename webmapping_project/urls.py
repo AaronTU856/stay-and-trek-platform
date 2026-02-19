@@ -21,7 +21,8 @@ from django.conf.urls.static import static
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 from trails_api.views import trail_map
 from trails_api.views import NearbyAccommodationView
-from webmapping_project import views as project_views 
+from webmapping_project import views as project_views
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 
 urlpatterns = [
@@ -30,6 +31,10 @@ urlpatterns = [
     # Home page (main map view)
     #path('', trail_map, name='home'),
     path('', project_views.home, name='home'),
+    
+    # AUTHENTICATION ENDPOINTS
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     
     # Accommodations API
     #path('api/accommodations/nearby/', NearbyAccommodationView.as_view(), name='nearby-accommodations'),

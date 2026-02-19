@@ -12,8 +12,8 @@ if (Platform.OS !== 'web') {
 
 
 // Use Mac's local network IP (works for simulator and physical devices)
-//const BASE_URL = 'http://192.168.1.83:8000';
-const BASE_URL = 'http://172.20.10.2:8000'; // Update this to your local IP address and port
+const BASE_URL = 'http://192.168.1.83:8000';
+// const BASE_URL = 'http://172.20.10.2:8000'; // Update this to your local IP address and port
 
 const FETCH_TIMEOUT = 10000; //10 seconds
 

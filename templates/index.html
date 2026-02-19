@@ -23,13 +23,13 @@
     
     <img src="{% static 'images/hike_2.jpg' %}" alt="Hiking in Ireland" class="home-hero" loading="lazy" style="width:100%; height:auto; border-radius:12px; margin-bottom:20px;">
 
-    <p>Quick links to main pages:</p>
+    {% comment %} <p>Quick links to main pages:</p>
     <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px">
       <a href="{% url 'trails:map' %}" style="padding:12px 18px;background:#2E8B57;color:#fff;border-radius:8px;text-decoration:none;">🥾 Trails in Ireland</a>
       <a href="/dashboard/" style="padding:12px 18px;background:#8B4513;color:#fff;border-radius:8px;text-decoration:none;">📊 Dashboard</a>
       <a href="{% url 'advanced_js_mapping:map' %}" style="padding:12px 18px;background:#2E27F5;color:#fff;border-radius:8px;text-decoration:none;">🗺️ Interactive Map</a>
       <a href="{% url 'advanced_js_mapping:index' %}" style="padding:12px 18px;background:#F5273F;color:#fff;border-radius:8px;text-decoration:none;">🏨 Accommodations</a>
       <a href="{% url 'advanced_js_mapping:analytics' %}" style="padding:12px 18px;background:#FFB86B;color:#111;border-radius:8px;text-decoration:none;">📈 Analytics</a>
-    </div>
+    </div> {% endcomment %}
   </main>
 {% endblock %}
