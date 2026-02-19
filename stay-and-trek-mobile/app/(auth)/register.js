@@ -3,6 +3,7 @@ import { View, TextInput, TouchableOpacity, Text, StyleSheet, Alert, ScrollView 
 import { useRouter } from 'expo-router';
 import axios from 'axios'; // Or use your apiClient
 import { API_BASE_URL } from '../../services/apiClient'; 
+import { register } from '../../services/apiClient'; // Import the register function
 
 const Register = () => {
   const router = useRouter();
@@ -14,6 +15,16 @@ const Register = () => {
   });
 
   const handleRegister = async () => {
+    try {
+        const data = await register(formData.username, formData.email, formData.password);
+
+        Alert.alert("Success", "Account created! You can now log in.");
+        router.replace('/(auth)/login');
+    } catch (error) {
+        console.error('Registration error:', error);
+        Alert.alert("Registration Failed", error.response?.data?.username?.[0] || "Could not create account. Username might be taken.");
+    }
+
     // 1. Validation (Keep your logic, just use Alerts)
     if (formData.password !== formData.cpassword) {
       Alert.alert("Error", "Passwords do not match");
