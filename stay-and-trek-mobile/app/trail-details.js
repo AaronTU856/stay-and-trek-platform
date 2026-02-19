@@ -7,8 +7,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { getTrailById } from '../services/apiClient';
 
-// const API_BASE_URL = 'http://10.46.73.27:8000';
-const API_BASE_URL = 'http://192.168.1.83:8000';
+const API_BASE_URL = 'http://172.20.10.2:8000';
+//const API_BASE_URL = 'http://192.168.1.83:8000';
 
 
 export default function TrailDetails() {

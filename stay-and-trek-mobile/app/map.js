@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Linking,ActivityIndicator, Text } from 'react-native';
-import MapView, { Marker, Callout } from 'react-native-maps';
+import { StyleSheet, View, Linking, ActivityIndicator, Text, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
-
+let MapView, Marker, Callout;
+if (Platform.OS !== 'web') {
+  const maps = require('react-native-maps');
+  MapView = maps.default;
+  Marker = maps.Marker;
+  Callout = maps.Callout;
+}
 
 
 // Use Mac's local network IP (works for simulator and physical devices)
-const BASE_URL = 'http://192.168.1.83:8000';
-// const BASE_URL = 'http://:8000'; // Update this to your local IP address and port
+//const BASE_URL = 'http://192.168.1.83:8000';
+const BASE_URL = 'http://172.20.10.2:8000'; // Update this to your local IP address and port
 
 const FETCH_TIMEOUT = 10000; //10 seconds
 

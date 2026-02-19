@@ -3,7 +3,8 @@
 
 // API Base URL - use local network IP for both simulator and physical devices
 // const MAC_IP = '192.168.1.83'; // Mac's actual local network IP (run `ifconfig` to verify)
-const MAC_IP = '192.168.1.83'; // Update this to your local IP address
+const MAC_IP = '172.20.10.2'; // Update this to your local IP address
+
 const API_BASE_URL = `http://${MAC_IP}:8000`; // Always use local IP for development
 
 const DEFAULT_TIMEOUT = 60000; // 60 seconds for slow backend responses
