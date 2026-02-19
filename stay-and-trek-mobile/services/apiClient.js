@@ -33,6 +33,16 @@ export async function refreshToken(refresh) {
   });
 }
 
+/**
+ * AUTHENTICATION: Register a new user
+ */
+export async function register(username, email, password) {
+  return apiCall('/api/trails/register/', {
+    method: 'POST',
+    body: JSON.stringify({ username, email, password }),
+  });
+}
+
 /** 
  * Generic fetch wrapper with error handling
  * @param {string} endpoint - API endpoint (path after base URL - '/api/trails/')
