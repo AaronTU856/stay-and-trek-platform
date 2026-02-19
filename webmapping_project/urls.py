@@ -36,6 +36,8 @@ urlpatterns = [
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     
+    
+    
     # Accommodations API
     #path('api/accommodations/nearby/', NearbyAccommodationView.as_view(), name='nearby-accommodations'),
 
