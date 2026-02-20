@@ -1,72 +1,37 @@
-import { Stack, useRouter, useSegments } from 'expo-router';
-import { useEffect, useState, createContext, useContext } from 'react';
-import { SafeAreaView, StatusBar, StyleSheet } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
-import { AccessibilityProvider } from '../context/AccessibilityContext'; // Keep your existing provider
+import { Tabs } from "expo-router";
+import { AccessibilityProvider } from '../context/AccessibilityContext';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StyleSheet, StatusBar } from 'react-native';
 
-const AuthContext = createContext({
-  userToken: null,
-  setUserToken: () => {},
-});
 
-export const useAuth = () => useContext(AuthContext);
 
-export default function RootLayout() {
-  const [userToken, setUserToken] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const segments = useSegments();
-  const router = useRouter();
-
-  // Load token on startup
-  useEffect(() => {
-    const loadToken = async () => {
-      const token = await SecureStore.getItemAsync('userToken');
-      setUserToken(token);
-      setIsLoading(false);
-    };
-    loadToken();
-  }, []);
-
-  // Auth Guard: Directs user to Login or Dashboard
-  useEffect(() => {
-    if (isLoading) return;
-    const inAuthGroup = segments[0] === '(auth)';
-
-    if (!userToken && !inAuthGroup) {
-      router.replace('/(auth)/login');
-    } else if (userToken && inAuthGroup) {
-      router.replace('/');
-    }
-  }, [userToken, segments, isLoading]);
-
-  if (isLoading) return null;
-
+export default function Layout() {
   return (
-    <AccessibilityProvider> 
+    <AccessibilityProvider>
       <SafeAreaView style={styles.root}>
-        <StatusBar backgroundColor="#63755fff" barStyle="light-content" />
-        <AuthContext.Provider value={{ userToken, setUserToken }}>
-          <Stack screenOptions={{ 
-            headerStyle: { backgroundColor: '#63755fff' },
-            headerTintColor: '#fff',
-          }}>
-            {/* The Login screens stay hidden from the header */}
-            <Stack.Screen name="(auth)/login" options={{ headerShown: false }} />
-            <Stack.Screen name="(auth)/register" options={{ headerShown: false }} />
-            
-            {/* These are your main app pages */}
-            <Stack.Screen name="index" options={{ title: "My Profile" }} />
-            <Stack.Screen name="map" options={{ title: "Trail Map" }} />
-            <Stack.Screen name="trails" options={{ title: "Explore Trails" }} />
-            <Stack.Screen name="stay" options={{ title: "Accommodations" }} />
-            <Stack.Screen name="weather" options={{ title: "Weather" }} />
-            <Stack.Screen name="trail-details" options={{ title: "Trail Details" }} />
-          </Stack>
-        </AuthContext.Provider>
+        <StatusBar backgroundColor={styles.root.backgroundColor} barStyle="light-content" />
+        <Tabs screenOptions={{ headerShown: false, sceneContainerStyle: { backgroundColor: styles.root.backgroundColor } }}>
+          <Tabs.Screen name="map" options={{ title: "Map View" }} />
+          <Tabs.Screen name="list" options={{ title: "All Items" }} />
+          <Tabs.Screen name="index" options={{ title: "Home" }} />
+          <Tabs.Screen name="trails" options={{ title: "Trails" }} />
+          <Tabs.Screen name="stay" options={{ title: "Stay" }} />
+          <Tabs.Screen name="weather" options={{ title: "Weather" }} />
+          {/* Hide trail-details from tab bar */}
+          <Tabs.Screen 
+            name="trail-details" 
+            options={{ 
+              href: null,
+              title: "Trail Details"
+            }} 
+          />
+        </Tabs>
       </SafeAreaView>
     </AccessibilityProvider>
   );
 }
+
+
 
 const styles = StyleSheet.create({
   root: {
@@ -74,4 +39,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#63755fff', 
   },
 });
+
+
+
 
