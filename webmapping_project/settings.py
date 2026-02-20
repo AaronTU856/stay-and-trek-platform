@@ -60,7 +60,7 @@ OPENWEATHERMAP_API_KEY = os.getenv('OPENWEATHERMAP_API_KEY')
 # For production, set DEBUG=0 or unset (defaults to False)
 DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 'yes', 'on')
 
-ALLOWED_HOSTS = ['*']  # Allow all hosts for demo/checkpoint
+ALLOWED_HOSTS = ['*','localhost', '127.0.0.1']  # Allow all hosts for demo/checkpoint
 
 
 # Application definition

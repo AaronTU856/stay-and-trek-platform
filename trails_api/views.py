@@ -9,6 +9,7 @@ from django.contrib.gis.measure import Distance as D
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
+from django.contrib.auth.models import User
 
 from rest_framework import generics, status
 from rest_framework.response import Response
@@ -31,6 +32,31 @@ from .serializers import TrailPathGeoSerializer
 from .filters import TrailFilter
 import json
 from django.contrib.auth.decorators import login_required
+
+
+# 
+# AUTHENTICATION ENDPOINTS
+#
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def register_user(request):
+    """Register a new user account."""
+    print("🚀 REGISTRATION ATTEMPT RECEIVED!")
+    username = request.data.get('username')
+    password = request.data.get('password')
+    email = request.data.get('email')
+    
+    if User.objects.filter(username=username).exists():
+        return Response({"error": "Username taken"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    user = User.objects.create_user(username=username, email=email, password=password)
+    return Response({"message": "User created"}, status=status.HTTP_201_CREATED)
+
+
+# 
+# TRAIL VIEWS
+# 
 
 @login_required
 def trail_map(request):

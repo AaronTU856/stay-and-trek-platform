@@ -4,11 +4,6 @@ from django.urls import path
 from . import views
 from .views import trail_map
 from .views import api_test_view
-from django.contrib.auth.models import User
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
-from rest_framework.response import Response
-from rest_framework import status
 
 
 app_name = 'trails'
@@ -72,19 +67,6 @@ urlpatterns = [
     path('accommodations/stats/', views.accommodations_statistics, name='accommodations-stats'),
     path('accommodations/nearby/', views.NearbyAccommodationView.as_view(), name='nearby-accommodations'),
 ]
-
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def register_user(request):
-    username = request.data.get('username')
-    password = request.data.get('password')
-    email = request.data.get('email')
-    
-    if User.objects.filter(username=username).exists():
-        return Response({"error": "Username taken"}, status=status.HTTP_400_BAD_REQUEST)
-    
-    user = User.objects.create_user(username=username, email=email, password=password)
-    return Response({"message": "User created"}, status=status.HTTP_201_CREATED)
 
 
 

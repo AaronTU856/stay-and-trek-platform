@@ -152,4 +152,7 @@ const styles = StyleSheet.create({
 
   // iconRow: { flexDirection: 'row', marginTop: 18, justifyContent: 'center', width: '100%', flexWrap: 'wrap' },
   // searchResult: { marginTop: 12, fontSize: 16, color: '#333' },
+
+  
 });
+

@@ -1,0 +1,45 @@
+import { Tabs } from "expo-router";
+import { AccessibilityProvider } from '../context/AccessibilityContext';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StyleSheet, StatusBar } from 'react-native';
+
+
+
+export default function Layout() {
+  return (
+    <AccessibilityProvider>
+      <SafeAreaView style={styles.root}>
+        <StatusBar backgroundColor={styles.root.backgroundColor} barStyle="light-content" />
+        <Tabs screenOptions={{ headerShown: false, sceneContainerStyle: { backgroundColor: styles.root.backgroundColor } }}>
+          <Tabs.Screen name="map" options={{ title: "Map View" }} />
+          <Tabs.Screen name="list" options={{ title: "All Items" }} />
+          <Tabs.Screen name="index" options={{ title: "Home" }} />
+          <Tabs.Screen name="trails" options={{ title: "Trails" }} />
+          <Tabs.Screen name="stay" options={{ title: "Stay" }} />
+          <Tabs.Screen name="weather" options={{ title: "Weather" }} />
+          {/* Hide trail-details from tab bar */}
+          <Tabs.Screen 
+            name="trail-details" 
+            options={{ 
+              href: null,
+              title: "Trail Details"
+            }} 
+          />
+        </Tabs>
+      </SafeAreaView>
+    </AccessibilityProvider>
+  );
+}
+
+
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: '#63755fff', 
+  },
+});
+
+
+
+
