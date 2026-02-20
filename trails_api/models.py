@@ -391,6 +391,8 @@ class Accommodation(models.Model):
     url = models.URLField(max_length=500, blank=True)
     image_url = models.URLField(max_length=500, blank=True)
     
+    nearby_trails = models.ManyToManyField('Trail', related_name='accommodations', blank=True)
+    
     def __str__(self):
         return f"{self.name} ({self.source})"
     
