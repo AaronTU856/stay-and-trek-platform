@@ -1,12 +1,12 @@
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, TextInput } from "react-native";
-import { useAccessibility } from "../context/AccessibilityContext";
-import IconButton from '../components/IconButton';
+import { useAccessibility } from "../../../context/AccessibilityContext";
+import IconButton from '../../../components/IconButton';
 import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
-import { getTrails } from '../services/apiClient';
+import { getTrails } from '../../../services/apiClient';
 
 
-export default function TrailDetails() {
+export default function TrailsScreen() {
   const { largeText } = useAccessibility();
   const [trails, setTrails] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -122,7 +122,7 @@ export default function TrailDetails() {
                 style={styles.card}
                 activeOpacity={0.85}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                onPress={() => router.push({ pathname: '/trail-details', params: { id: trail.id } })}
+                onPress={() => router.push({ pathname: '/trails/[id]', params: { id: trail.id } })}
                 accessibilityRole="button"
                 accessibilityLabel={`Open details for ${trail.trail_name}`}
               >

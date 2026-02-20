@@ -2,31 +2,33 @@ import React, { useState } from 'react';
 import { View, TextInput, TouchableOpacity, Text, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
+import { useAuth } from '../_layout';
 import { login } from '../../services/apiClient';
 
 export default function LoginScreen() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
-  const [userToken, setUserToken] = useState(null); // Track login state
+  const { setUserToken } = useAuth();
   const register = () => router.push('/(auth)/register');
   
   const handleLogin = async () => {
     try {
+      console.log('🔐 Attempting login with username:', username);
       // Call login through apiClient
       const data = await login(username, password);
+      console.log('✅ Login response:', data);
 
       // Save the JWT tokens
       await SecureStore.setItemAsync('userToken', data.access);
       await SecureStore.setItemAsync('refreshToken', data.refresh);
+      console.log('💾 Tokens saved to SecureStore');
 
-      // Update state to reflect login
+      // Update AuthContext to reflect login
+      console.log('🔄 Updating AuthContext with token');
       setUserToken(data.access);
 
-      Alert.alert("Success", "Welcome back!");
-      
-      // Redirect to the main app
-      router.replace('/index'); 
+      Alert.alert("Success", "Welcome back!"); 
     } catch (error) {
       console.error('Login error:', error);
       Alert.alert("Error", "Invalid username or password");

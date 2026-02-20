@@ -128,7 +128,7 @@ const getMarkerContent = (source) => {
 
   const onTrailPress = (trailId) => {
     fetchStaysForTrail(trailId);
-    navigation.navigate('trail-details', { id: trailId });
+    navigation.navigate('trails', { screen: '[id]', params: { id: trailId } });
   };
 
   const loadData = async () => {
@@ -197,9 +197,9 @@ const getMarkerContent = (source) => {
               onPress={() => onTrailPress(trail.id)} // Calls the helper function above
             >
 
-              <Callout onPress={() =>  navigation.navigate('trail-details', { id: trail.id })}>
+              <Callout onPress={() => navigation.navigate('trails', { screen: '[id]', params: { id: trail.id } })}>
 
-              <View style={{ padding: 5, minWidth: 120 }}>
+                <View style={{ padding: 5, minWidth: 120 }}>
                     <Text style={{ fontWeight: 'bold' }}>{trail.trail_name}</Text>
                     <Text>{String(trail.difficulty)}</Text>
                   </View>
@@ -408,4 +408,3 @@ const styles = StyleSheet.create({
   btnOn: { backgroundColor: '#2E7D32' }, // Green
   btnOff: { backgroundColor: '#ee1414' }, // Grey
 });
-

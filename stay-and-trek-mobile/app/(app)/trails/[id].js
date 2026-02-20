@@ -2,10 +2,10 @@
 // Shows information like difficulty, distance, description, and weather conditions
 
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, TextInput } from "react-native";
-import { useAccessibility } from "../context/AccessibilityContext";
+import { useAccessibility } from "../../../context/AccessibilityContext";
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
-import { getTrailById } from '../services/apiClient';
+import { getTrailById } from '../../../services/apiClient';
 
 // const API_BASE_URL = 'http://172.20.10.2:8000';
 const API_BASE_URL = 'http://192.168.1.83:8000';

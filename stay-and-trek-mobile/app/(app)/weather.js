@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TextInput, FlatList, TouchableOpacity } from 'react-native';
-import { useAccessibility } from "../context/AccessibilityContext";
-import IconButton from '../components/IconButton';
+import { useAccessibility } from "../../context/AccessibilityContext";
+import IconButton from '../../components/IconButton';
 import { useRouter } from 'expo-router';
 
 const SAMPLE_FORECAST = [

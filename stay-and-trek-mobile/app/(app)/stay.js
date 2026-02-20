@@ -10,7 +10,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { useAccessibility } from '../context/AccessibilityContext';
+import { useAccessibility } from '../../context/AccessibilityContext';
 
 
 const API_BASE_URL = 'http://192.168.1.83:8000';
@@ -213,4 +213,37 @@ const styles = StyleSheet.create({
   infoButton: { borderWidth: 1, borderColor: '#2E7D32', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8 },
   infoText: { color: '#2E7D32', fontWeight: '700' },
   pointerEvents: { pointerEvents: 'none' },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  badge: {
+    backgroundColor: '#2E7D32',
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    borderRadius: 4,
+    marginLeft: 8,
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  priceText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#2E7D32',
+  },
+  priceSub: {
+    fontSize: 12,
+    color: '#666',
+  },
+  descriptionText: {
+    color: '#666',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  cardExpanded: {
+    backgroundColor: '#f9f9f9',
+  },
 });
