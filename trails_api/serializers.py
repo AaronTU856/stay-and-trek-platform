@@ -16,7 +16,7 @@ class TrailListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'trail_name', 'county', 'region', 'distance_km',
             'difficulty', 'elevation_gain_m', 'latitude', 'longitude', 'dogs_allowed',
-            'parking_available'
+            'parking_available','accommodations'
         ]
 
 
@@ -31,7 +31,7 @@ class TrailDetailSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'trail_name', 'county', 'region', 'distance_km',
             'difficulty', 'elevation_gain_m', 'description', 'status','latitude', 'longitude', 
-            'dogs_allowed', 'parking_available'
+            'dogs_allowed', 'parking_available','accommodations'
         ]
  
         

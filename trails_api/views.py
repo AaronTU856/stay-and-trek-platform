@@ -853,15 +853,17 @@ def accommodations_near_trail(request):
     try:
         # 2. Find the trail's starting location
         trail = Trail.objects.get(id=trail_id)
-        start_point = trail.start_point 
+        
+        # start_point = trail.start_point 
         
         # Find accommodations within radius
-        nearby_accommodations = Accommodation.objects.filter(
-            location__distance_lte=(start_point, D(km=radius_km))
-        ).annotate(
-            distance=DistanceFunction('location', start_point)
-        ).order_by('distance')
+        # nearby_accommodations = Accommodation.objects.filter(
+        #     location__distance_lte=(start_point, D(km=radius_km))
+        # ).annotate(
+        #     distance=DistanceFunction('location', start_point)
+        # ).order_by('distance')
         
+        nearby_accommodations = trail.accommodations.all()
         features = []
         for acc in nearby_accommodations:
         
@@ -874,7 +876,7 @@ def accommodations_near_trail(request):
                 "properties": {
                     "id": acc.id,
                     "name": acc.name,
-                    "source": acc.get_source_display(),
+                    "source": acc.source,
                     #"description": acc.description or "",
                     "distance_km": round(acc.distance.km, 2),
                     "price_per_night": float(acc.price_per_night) if acc.price_per_night else None,

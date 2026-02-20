@@ -48,39 +48,48 @@ export default function TrailDetails() {
 
   useEffect(() => {
       // Fetch nearby accommodations when trail data is loaded
-    if (!trail?.latitude || !trail?.longitude) return;
+    if (!id) return;
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-      fetch(
-        `http://192.168.1.83:8000/api/trails/accommodations/nearby/?lat=${trail.latitude}&lng=${trail.longitude}&radius=20`,
-        { signal: controller.signal }
-      )
-        .then(res => {
-          clearTimeout(timeoutId);
-          if (!res.ok) throw new Error(`API returned ${res.status}`);
-          return res.json();
-        })
-        .then(data => {
-          if (!data) {
-            setAccommodation([]);
-            return;
-          }
-          const places = Array.isArray(data) ? data : (data.results || []);
-          if (Array.isArray(places)) {
-            places.sort((a, b) => a.price_per_night - b.price_per_night);
-            setAccommodation(places);
-          } else {
-            setAccommodation([]);
-          }
-        })
-        .catch((err) => {
-          clearTimeout(timeoutId);
-          console.warn('Failed to fetch accommodation:', err.message);
+    // Optimized endpoint
+    fetch(
+      `${API_BASE_URL}/api/accommodations-near-trail/?trail_id=${id}`,
+      { signal: controller.signal }
+    )
+      .then(res => {
+        clearTimeout(timeoutId);
+        if (!res.ok) throw new Error(`API returned ${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        // GeoJSON FeatureCollection:
+        if (data && data.features) {
+          // Map GeoJSON features to a flat list for existing card UI
+          const places = data.features.map(f => ({
+            id: f.properties.id,
+            name: f.properties.name,
+            price_per_night: f.properties.price_per_night,
+            source: f.properties.source
+          }));
+          
+          // Sorting logic
+          places.sort((a, b) => (a.price_per_night || 0) - (b.price_per_night || 0));
+          setAccommodation(places);
+        } else {
           setAccommodation([]);
-        });
-    }, [trail]);
+        }
+      })
+      .catch((err) => {
+        clearTimeout(timeoutId);
+        if (err.name !== 'AbortError') {
+          console.warn('Failed to fetch linked accommodation:', err.message);
+        }
+        setAccommodation([]);
+      });
+  }, [id]); // Triggers when the trail ID changes
+
 
   useEffect(() => {
     const fetchTrailDetails = async () => {
