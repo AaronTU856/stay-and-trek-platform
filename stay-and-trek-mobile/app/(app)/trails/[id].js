@@ -25,7 +25,7 @@ export default function TrailDetails() {
   const textFontSize = largeText ? 16 : 14;
 
   
-
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [newDesc, setNewDesc] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -51,9 +51,9 @@ export default function TrailDetails() {
   if (!id) return;
 
   const controller = new AbortController();
-  
+  const categoryParam = selectedCategory ? `&category=${selectedCategory}` : '';
   // 2. Point to the new endpoint we optimized today
-  fetch(`${API_BASE_URL}/api/trails/accommodations/near-trail/?trail_id=${id}`)
+  fetch(`${API_BASE_URL}/api/trails/accommodations/near-trail/?trail_id=${id}${categoryParam}`)
     .then(res => {
       if (!res.ok) throw new Error(`API returned ${res.status}`);
       return res.json();
@@ -84,7 +84,7 @@ export default function TrailDetails() {
     });
 
   return () => controller.abort();
-}, [id]); // Dependency is 'id', not 'trail'
+}, [id, selectedCategory]); // Dependency is 'id', not 'trail'
 
 
   useEffect(() => {
@@ -205,9 +205,33 @@ export default function TrailDetails() {
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { fontSize: headingFontSize }]}>Accommodations Along Route</Text>
 
-        <Text style={{ color: '#666', marginBottom: 8 }}>
+        <Text style={{ color: '#666', marginBottom: 12 }}>
           {accommodation.length} places found along this trail
         </Text>
+
+        {/* Category Filter Buttons */}
+        <View style={styles.filterButtonsRow}>
+          <TouchableOpacity 
+            onPress={() => setSelectedCategory('hotel')}
+            style={[styles.filterButton, selectedCategory === 'hotel' && styles.filterButtonActive]}
+          >
+            <Text style={[styles.filterButtonText, selectedCategory === 'hotel' && styles.filterButtonTextActive]}>Hotels</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            onPress={() => setSelectedCategory('hostel')}
+            style={[styles.filterButton, selectedCategory === 'hostel' && styles.filterButtonActive]}
+          >
+            <Text style={[styles.filterButtonText, selectedCategory === 'hostel' && styles.filterButtonTextActive]}>Hostels</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            onPress={() => setSelectedCategory('all')}
+            style={[styles.filterButton, selectedCategory === 'all' && styles.filterButtonActive]}
+          >
+            <Text style={[styles.filterButtonText, selectedCategory === 'all' && styles.filterButtonTextActive]}>All</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Check if the array itself exists first */}
         {!accommodation ? (
@@ -413,6 +437,34 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     marginTop: 10,
     color: '#333'
+  },
+
+  // Filter buttons styling
+  filterButtonsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 10,
+    marginBottom: 12,
+  },
+  filterButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    backgroundColor: '#f5f5f5',
+  },
+  filterButtonActive: {
+    backgroundColor: '#2E7D32',
+    borderColor: '#2E7D32',
+  },
+  filterButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#666',
+  },
+  filterButtonTextActive: {
+    color: '#fff',
   },
 
 });

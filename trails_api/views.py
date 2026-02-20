@@ -826,48 +826,35 @@ def accommodations_near_trail(request):
     
     Query Parameters:
     - trail_id: Required. The trail ID to search around
-    - radius: Optional. Search radius in kilometers (default: 10)
+    - category: Optional. Filter by 'hotel', 'hostel', 'all' (default: 'all')
     
     Returns accommodations sorted by distance.
     """
-    
-    # 1. Get parameters from the Mobile App request
     trail_id = request.GET.get('trail_id')
+    category = request.GET.get('category', 'all').lower()
     
     if not trail_id:
         return Response({"error": "trail_id is required"}, status=400)
     
-    
-    
-    try: 
-         trail = Trail.objects.get(id=trail_id)
-         radius_km = float(request.GET.get('radius', 10))
-    except (ValueError, TypeError):
-        radius_km = 10.0  # Default radius if invalid input
-        
-        
-    if not trail_id:
-        return Response({'error': 'trail_id parameter required'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        
     try:
-        # 2. Find the trail's starting location
         trail = Trail.objects.get(id=trail_id)
         
-        # start_point = trail.start_point 
-        
-        # Find accommodations within radius
-        # nearby_accommodations = Accommodation.objects.filter(
-        #     location__distance_lte=(start_point, D(km=radius_km))
-        # ).annotate(
-        #     distance=DistanceFunction('location', start_point)
-        # ).order_by('distance')
-        
+        # Start with all linked accommodations
         nearby_accommodations = Accommodation.objects.filter(nearby_trails=trail)
-        features = []
-        for acc in nearby_accommodations:
         
-            features = []
+        # Apply category filtering based on accommodation name
+        if category and category != 'all':
+            if category == 'hotel':
+                nearby_accommodations = nearby_accommodations.filter(name__icontains='hotel')
+            elif category == 'hostel':
+                nearby_accommodations = nearby_accommodations.filter(name__icontains='hostel')
+            elif category == 'b&b' or category == 'bb':
+                nearby_accommodations = nearby_accommodations.filter(
+                    Q(name__icontains='b&b') | Q(name__icontains='bed and breakfast')
+                )
+        
+        # Build GeoJSON response
+        features = []
         for acc in nearby_accommodations:
             features.append({
                 "type": "Feature",
@@ -878,7 +865,7 @@ def accommodations_near_trail(request):
                 "properties": {
                     "id": acc.id,
                     "name": acc.name,
-                    "source": acc.source, # Confirmed as 'source'
+                    "source": acc.source,
                     "price_per_night": float(acc.price_per_night) if acc.price_per_night else None,
                     "rating": acc.rating,
                 }
@@ -886,10 +873,16 @@ def accommodations_near_trail(request):
         
         return Response({
             "type": "FeatureCollection",
-            "features": features
+            "features": features,
+            "count": len(features),
+            "trail_id": trail_id,
+            "category_filter": category
         })
+        
     except Trail.DoesNotExist:
         return Response({"error": "Trail not found"}, status=404)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
