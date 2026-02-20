@@ -38,8 +38,8 @@ import platform
 if platform.system() == "Darwin":
     # macOS development (Apple Silicon Homebrew)
     # Try the specific version first, then fall back to generic name
-    os.environ["GDAL_LIBRARY_PATH"] = "/opt/homebrew/lib/libgdal.37.dylib"
-    os.environ["GEOS_LIBRARY_PATH"] = "/opt/homebrew/opt/geos/lib/libgeos_c.dylib"
+    GDAL_LIBRARY_PATH = "/opt/homebrew/opt/gdal/lib/libgdal.dylib"
+    GEOS_LIBRARY_PATH = "/opt/homebrew/opt/geos/lib/libgeos_c.dylib"
     os.environ["PROJ_LIB"] = "/opt/homebrew/opt/proj/share/proj"
 else:
     # Linux (Docker/production) - rely on system libraries
