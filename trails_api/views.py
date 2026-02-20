@@ -863,10 +863,12 @@ def accommodations_near_trail(request):
         #     distance=DistanceFunction('location', start_point)
         # ).order_by('distance')
         
-        nearby_accommodations = trail.accommodations.all()
+        nearby_accommodations = Accommodation.objects.filter(nearby_trails=trail)
         features = []
         for acc in nearby_accommodations:
         
+            features = []
+        for acc in nearby_accommodations:
             features.append({
                 "type": "Feature",
                 "geometry": {
@@ -876,28 +878,18 @@ def accommodations_near_trail(request):
                 "properties": {
                     "id": acc.id,
                     "name": acc.name,
-                    "source": acc.source,
-                    #"description": acc.description or "",
-                    "distance_km": round(acc.distance.km, 2),
+                    "source": acc.source, # Confirmed as 'source'
                     "price_per_night": float(acc.price_per_night) if acc.price_per_night else None,
-                    # "phone": acc.phone,
-                    # "website": acc.website,
                     "rating": acc.rating,
-                    "url": acc.url
                 }
             })
         
         return Response({
             "type": "FeatureCollection",
-            # "trail_id": trail_id,
-            "trail_name": trail.trail_name,
-            # "search_radius_km": radius_km,
-            "features": features,
-            #"count": len(features)
+            "features": features
         })
-    
     except Trail.DoesNotExist:
-            return Response({'error': 'Trail not found'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"error": "Trail not found"}, status=404)
 
 @api_view(['GET'])
 @permission_classes([AllowAny])

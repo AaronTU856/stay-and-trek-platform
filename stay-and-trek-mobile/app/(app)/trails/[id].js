@@ -47,48 +47,44 @@ export default function TrailDetails() {
   };
 
   useEffect(() => {
-      // Fetch nearby accommodations when trail data is loaded
-    if (!id) return;
+    // 1. Ensure we have the trail ID from the URL params
+  if (!id) return;
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-    // Optimized endpoint
-    fetch(
-      `${API_BASE_URL}/api/accommodations-near-trail/?trail_id=${id}`,
-      { signal: controller.signal }
-    )
-      .then(res => {
-        clearTimeout(timeoutId);
-        if (!res.ok) throw new Error(`API returned ${res.status}`);
-        return res.json();
-      })
-      .then(data => {
-        // GeoJSON FeatureCollection:
-        if (data && data.features) {
-          // Map GeoJSON features to a flat list for existing card UI
-          const places = data.features.map(f => ({
-            id: f.properties.id,
-            name: f.properties.name,
-            price_per_night: f.properties.price_per_night,
-            source: f.properties.source
-          }));
-          
-          // Sorting logic
-          places.sort((a, b) => (a.price_per_night || 0) - (b.price_per_night || 0));
-          setAccommodation(places);
-        } else {
-          setAccommodation([]);
-        }
-      })
-      .catch((err) => {
-        clearTimeout(timeoutId);
-        if (err.name !== 'AbortError') {
-          console.warn('Failed to fetch linked accommodation:', err.message);
-        }
+  const controller = new AbortController();
+  
+  // 2. Point to the new endpoint we optimized today
+  fetch(`${API_BASE_URL}/api/trails/accommodations/near-trail/?trail_id=${id}`)
+    .then(res => {
+      if (!res.ok) throw new Error(`API returned ${res.status}`);
+      return res.json();
+    })
+    .then(data => {
+      // 3. Convert GeoJSON features into the format your UI expects
+      if (data && data.features) {
+        const places = data.features.map(f => ({
+          id: f.properties.id,
+          name: f.properties.name,
+          price_per_night: f.properties.price_per_night ? parseFloat(f.properties.price_per_night) : 0,
+          source: f.properties.source,
+          // Extract coordinates for mapping if you add a map later
+          latitude: f.geometry.coordinates[1],
+          longitude: f.geometry.coordinates[0]
+        }));
+        
+        // Sort by price as you had before
+        places.sort((a, b) => (a.price_per_night || 0) - (b.price_per_night || 0));
+        setAccommodation(places);
+      }
+    })
+    .catch((err) => {
+      if (err.name !== 'AbortError') {
+        console.warn('Failed to fetch trail-linked accommodation:', err.message);
         setAccommodation([]);
-      });
-  }, [id]); // Triggers when the trail ID changes
+      }
+    });
+
+  return () => controller.abort();
+}, [id]); // Dependency is 'id', not 'trail'
 
 
   useEffect(() => {
@@ -204,44 +200,50 @@ export default function TrailDetails() {
         )}
     </View>
 
+
       {/* Accommodation section */}
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { fontSize: headingFontSize }]}>Nearby Accommodation</Text>
+        <Text style={[styles.sectionTitle, { fontSize: headingFontSize }]}>Accommodations Along Route</Text>
 
         <Text style={{ color: '#666', marginBottom: 8 }}>
-          {accommodation.length ?? 0} places nearby
+          {accommodation.length} places found along this trail
         </Text>
 
-
-      {!accommodation ? (
-        <Text style={{ color: '#666' }}>Loading accommodation…</Text>
-        
-      ) : accommodation.length === 0 ? (
-        <Text style={{ color: '#666' }}>No nearby accommodation found.</Text>
-      ) : (
-
-        accommodation.map(place => (
-          <TouchableOpacity
-            key={place.id}
-            style={styles.accommodationCard}
-            onPress={() =>
-              router.push({
-                pathname: '/stay-details',
-                params: { id: place.id }
-              })
-            }
-          >
-            <Text style={{ fontWeight: '700', fontSize: 15 }}>{place.name}</Text>
-            <Text style={{ color: '#666' }}>€{place.price_per_night} per night</Text>
-            <Text style={{ color: '#1565C0', marginTop: 4 }}>
-              View details →
-            </Text>
-          </TouchableOpacity>
-        ))
-      )}
-
-
+        {/* Check if the array itself exists first */}
+        {!accommodation ? (
+          <ActivityIndicator size="small" color="#2E7D32" />
+        ) : accommodation.length === 0 ? (
+          <Text style={{ color: '#666' }}>No accommodations found along this route yet.</Text>
+        ) : (
+          accommodation.map(place => (
+            <TouchableOpacity
+              key={place.id}
+              style={styles.accommodationCard}
+              onPress={() =>
+                router.push({
+                  pathname: '/stay', // Updated to match folder structure (app)/stay.js
+                  params: { id: place.id }
+                })
+              }
+            >
+              <Text style={{ fontWeight: '700', fontSize: 15 }}>{place.name}</Text>
+              
+              {/* Handle cases where price is 0 or null from OSM */}
+              <Text style={{ color: '#666' }}>
+                {place.price_per_night && place.price_per_night > 0 
+                  ? `€${place.price_per_night} per night` 
+                  : 'Contact for pricing'}
+              </Text>
+              
+              <Text style={{ color: '#1565C0', marginTop: 4, fontSize: 12 }}>
+                Source: {place.source?.toUpperCase() || 'OSM'} • View details →
+              </Text>
+            </TouchableOpacity>
+          ))
+        )}
       </View>
+
+
 
       {/* Highlights section */}
       <View style={styles.section}>
