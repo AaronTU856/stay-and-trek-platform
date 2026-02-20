@@ -42,17 +42,32 @@ useEffect(() => {
   
   const inAuthGroup = segments[0] === '(auth)';
 
-  const isPublicRoute =
-    segments.includes('map') ||
-    segments.includes('trails') ||
-    segments.includes('weather');
+  const fullPath = segments.join('/');
 
-  if (!userToken && !inAuthGroup && !isPublicRoute) {
-    console.log('No token found, redirecting to login');
-    router.replace('/(auth)/login');
+
+  const isCurrentlyOnPublicRoute =
+    fullPath.includes('map') ||
+    fullPath.includes('trails') ||
+    fullPath.includes('weather');
+
+  // CASE 1: NOT LOGGED IN
+  if (!userToken) {
+    // If they aren't in Auth and aren't on a Public page, force them to Map
+    if (!inAuthGroup && !isCurrentlyOnPublicRoute) {
+      console.log('🛡️ Guest Access: Redirecting to Map');
+      router.replace('/map');
+    }
+  } 
+  
+  // CASE 2: LOGGED IN
+  else if (userToken) {
+    // If they try to go to Login/Register while logged in, send them Home
+    if (inAuthGroup) {
+      console.log('🛡️ Authenticated: Redirecting to Home');
+      router.replace('/');
+    }
   }
-
-}, [segments, userToken, isLoading]);
+}, [userToken, segments, isLoading]);
 
   if (isLoading) {
     return (

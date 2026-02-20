@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Linking, ActivityIndicator, Text, Platform } from 'react-native';
+import { StyleSheet, View, Linking, ActivityIndicator, Text, Platform, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
+import { useAuth } from '../../_layout';
 
 let MapView, Marker, Callout;
 if (Platform.OS !== 'web') {
@@ -34,19 +36,19 @@ const fetchWithTimeout = (url, timeout = FETCH_TIMEOUT) => {
 
 
 
-
 export default function MapScreen() {
   const navigation = useNavigation();
-
+  const router = useRouter();
+  const { userToken } = useAuth();
+  
   const [trails, setTrails] = useState([]);
   const [stays, setStays] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showStays, setShowStays] = useState(true);
-  const [nearbyStays, setNearbyStays] = useState([]); // Results from Trail click
-  const [globalStays, setGlobalStays] = useState([]); // Results from Global Toggle
+  const [nearbyStays, setNearbyStays] = useState([]);
+  const [globalStays, setGlobalStays] = useState([]);
   const [showGlobalLayer, setShowGlobalLayer] = useState(false);
 
-  // Using a state for region so it can be updated if needed
   const [region] = useState({
     latitude: 53.5,
     longitude: -7.7,
@@ -55,76 +57,66 @@ export default function MapScreen() {
   });
 
   const handleOpenURL = (url) => {
-  if (url) {
-    Linking.openURL(url).catch((err) => console.error("Couldn't load page", err));
-  } else {
-    alert("No website available for this stay.");
-  }
-};
+    if (url) {
+      Linking.openURL(url).catch((err) => console.error("Couldn't load page", err));
+    } else {
+      alert("No website available for this stay.");
+    }
+  };
 
-const getMarkerContent = (source) => {
-  switch (source?.toLowerCase()) {
-    case 'airbnb':
-      return { color: '#FF5A5F', icon: '🏠' }; // Airbnb brand red
-    case 'booking':
-      return { color: '#003580', icon: '🏢' }; // Booking brand blue
-    case 'tivago':
-      return { color: '#007FAD', icon: '🔍' }; // Trivago teal
-    default:
-      return { color: '#2E7D32', icon: '🛏️' }; // Local/Manual green
-  }
-};
-
-  
+  const getMarkerContent = (source) => {
+    switch (source?.toLowerCase()) {
+      case 'airbnb':
+        return { color: '#FF5A5F', icon: '🏠' };
+      case 'booking':
+        return { color: '#003580', icon: '🏢' };
+      case 'tivago':
+        return { color: '#007FAD', icon: '🔍' };
+      default:
+        return { color: '#2E7D32', icon: '🛏️' };
+    }
+  };
 
   useEffect(() => {
     loadData();
   }, []);
 
-  // Logic for the Toggle
   const toggleGlobalStays = async () => {
-      // 1. Calculate the target state first
-      const nextState = !showGlobalLayer;
-      
-      // 2. Update the UI immediately so the toggle moves
-      setShowGlobalLayer(nextState);
+    const nextState = !showGlobalLayer;
+    setShowGlobalLayer(nextState);
 
-      // 3. If turning ON and we have no data, fetch it
-      if (nextState && globalStays.length === 0) {
-        const targetUrl = `${BASE_URL}/api/trails/accommodations/geojson/`;
-        console.log("Fetching from:", targetUrl);
+    if (nextState && globalStays.length === 0) {
+      const targetUrl = `${BASE_URL}/api/trails/accommodations/geojson/`;
+      console.log("Fetching from:", targetUrl);
 
-        try {
-          const res = await fetchWithTimeout(targetUrl);
-          if (res.ok) {
-            const data = await res.json();
-            setGlobalStays(data.features || []);
-          } else {
-            console.error("Server error:", res.status);
-            // Optional: If server fails, flip toggle back off
-            setShowGlobalLayer(false);
-          }
-        } catch (err) {
-          console.error("Network Error:", err);
+      try {
+        const res = await fetchWithTimeout(targetUrl);
+        if (res.ok) {
+          const data = await res.json();
+          setGlobalStays(data.features || []);
+        } else {
+          console.error("Server error:", res.status);
           setShowGlobalLayer(false);
         }
+      } catch (err) {
+        console.error("Network Error:", err);
+        setShowGlobalLayer(false);
       }
-    };
+    }
+  };
 
   const fetchStaysForTrail = async (trailId) => {
     try {
-        // Simple fetch using the new trail-specific endpoint we built
-        const res = await fetchWithTimeout(`${BASE_URL}/api/trails/accommodations/near-trail/?trail_id=${trailId}`);
-        if (res.ok) {
-            const data = await res.json();
-            // We update the 'stays' state with the new results
-            setStays(data.features);
-            setShowStays(true); // Show the stays layer on the map 
-        }
+      const res = await fetchWithTimeout(`${BASE_URL}/api/trails/accommodations/near-trail/?trail_id=${trailId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setStays(data.features);
+        setShowStays(true);
+      }
     } catch (err) {
-        console.error("Error fetching nearby stays:", err);
+      console.error("Error fetching nearby stays:", err);
     }
-};
+  };
 
   const onTrailPress = (trailId) => {
     fetchStaysForTrail(trailId);
@@ -282,6 +274,15 @@ const getMarkerContent = (source) => {
           </View>
         </View>
       </MapView>
+
+      {!userToken && (
+        <TouchableOpacity 
+          style={styles.floatingLoginBtn} 
+          onPress={() => router.push('/(auth)/login')}
+        >
+          <Text style={styles.btnText}>Log In for More Features</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -407,4 +408,19 @@ const styles = StyleSheet.create({
  
   btnOn: { backgroundColor: '#2E7D32' }, // Green
   btnOff: { backgroundColor: '#ee1414' }, // Grey
+
+  floatingLoginBtn: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    backgroundColor: '#63755fff',
+    padding: 15,
+    borderRadius: 30,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+  },
+  btnText: { color: '#fff', fontWeight: 'bold' }
+
 });
