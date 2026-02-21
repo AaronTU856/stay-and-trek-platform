@@ -45,17 +45,17 @@ useEffect(() => {
   const fullPath = segments.join('/');
 
 
-  const isCurrentlyOnPublicRoute =
+  const isPublicPage =
     fullPath.includes('map') ||
     fullPath.includes('trails') ||
-    fullPath.includes('weather');
+    fullPath.includes('stay');
 
   // CASE 1: NOT LOGGED IN
   if (!userToken) {
     // If they aren't in Auth and aren't on a Public page, force them to login
-    if (!inAuthGroup && !isCurrentlyOnPublicRoute) {
+    if (!inAuthGroup && !isPublicPage) {
       console.log('🛡️ Guest Access: Redirecting to Login');
-      router.replace('/login');
+      router.replace('/(auth)/login');
     }
   } 
   

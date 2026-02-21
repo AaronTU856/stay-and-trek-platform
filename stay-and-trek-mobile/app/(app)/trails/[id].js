@@ -3,6 +3,7 @@
 
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, TextInput } from "react-native";
 import { useAccessibility } from "../../../context/AccessibilityContext";
+import { useAuth } from "../_layout";
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { getTrailById } from '../../../services/apiClient';
@@ -37,6 +38,8 @@ export default function TrailDetails() {
   const [weather, setWeather] = useState(null);
   const [unit, setUnit] = useState('C');
   const [weatherLoading, setWeatherLoading] = useState(false);
+
+  const { userToken } = useAuth();
 
   const handleContribution = async () => {
     try {
@@ -176,7 +179,29 @@ export default function TrailDetails() {
     : '--';
 
   return (
+
+
+
+
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 60 }}>
+
+      {/* Suggest Description Button - only enabled for logged in users */}
+      <TouchableOpacity 
+        disabled={!userToken} 
+        style={[styles.suggestBtn, !userToken && styles.disabledBtn]}
+        onPress={handleContribution}
+      >
+        <Ionicons 
+          name={userToken ? "pencil" : "lock-closed"} 
+          size={18} 
+          color={userToken ? "#FFF" : "#999"} 
+        />
+        <Text style={[styles.btnText, !userToken && styles.disabledText]}>
+          {userToken ? "Suggest Description" : "Login to Suggest"}
+        </Text>
+      </TouchableOpacity>
+
+
       {/* Header with back button */}
       <View style={styles.header}>
         <TouchableOpacity 
