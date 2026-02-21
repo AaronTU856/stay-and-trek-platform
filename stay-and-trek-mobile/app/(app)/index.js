@@ -28,10 +28,18 @@ export default function HomeScreen() {
       
       {/* SECTION A: Constant Features */}
       <View style={styles.iconRow}>
-        <IconButton name="map-outline" iconSet="ionicon" label="View Map" bgColor="#2E7D32" onPress={() => router.push('/map')} />
-        <IconButton name="hiking" iconSet="fontawesome" label="Find Trails" bgColor="#2E7D32" onPress={() => router.push('/trails')} />
-        <IconButton name="bed" iconSet="material" label="Find Accommodation" bgColor="#1565C0" onPress={() => router.push('/stay')} />
+        <IconButton name="map-outline" iconSet="ionicon" label="View Map" bgColor="#1dba54" onPress={() => router.push('/map')} />
+        <IconButton name="hiking" iconSet="fontawesome" label="Find Trails" bgColor="#c45a0ebf" onPress={() => router.push('/trails')} />
+        <IconButton name="bed" iconSet="material" label="Find Stays" bgColor="#1565C0" onPress={() => router.push('/stay')} />
       </View>
+
+        <View style={{ height: 1, backgroundColor: '#ccc', width: '80%', marginVertical: 24 }} />
+        <Text style={styles.description}>
+          Stay and Trek helps you discover trails, find nearby stays, check the weather, and save your favourite adventures all in one place.
+        </Text>
+        <Text style={styles.description}>
+          Whether you`re a seasoned hiker or just looking for a weekend getaway, we`ve got you covered. Explore the beauty of nature with confidence and ease.
+        </Text>
 
       <View style={styles.contentArea}>
         {userToken ? (
@@ -73,11 +81,12 @@ const styles = StyleSheet.create({
   },
   iconRow: {
     flexDirection: 'row',
-    marginTop: 12,
-    justifyContent: 'center',
+    marginTop: 10,
+    justifyContent: 'space-evenly',
     width: '100%',
     flexWrap: 'wrap',
     paddingHorizontal: 16,
+   
   },
   contentArea: {
     flex: 1,
@@ -100,7 +109,7 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     marginTop: 24,
-    backgroundColor: '#d32f2f',
+    backgroundColor: '#5478b590',
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
@@ -109,5 +118,17 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
     fontSize: 14,
+    textAlign: 'center',
   },
+
+  description: {
+      fontSize: 16,
+      textAlign: 'center',
+      color: '#2E3A2F',          // soft forest tone instead of grey
+      marginBottom: 16,
+      lineHeight: 24,
+      paddingHorizontal: 20,
+      fontWeight: '500',
+      letterSpacing: 0.3,
+    },
 });
