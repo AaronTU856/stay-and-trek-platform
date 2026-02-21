@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import { useAccessibility } from '../../context/AccessibilityContext';
 
@@ -140,7 +141,7 @@ export default function StayScreen() {
        {expanded && (
         <View style={styles.expanded}>
           <Text style={styles.descriptionText}>
-            {item.description || "Experience the best of trekking with this premium accommodation located conveniently near the main trails."}
+            {item.description || "Experience the best of trails with this premium accommodation located conveniently near the main trails."}
           </Text>
           <View style={styles.actionsRow}>
             <TouchableOpacity 
@@ -163,16 +164,17 @@ export default function StayScreen() {
     <View style={styles.container}>
       <Text style={[styles.title, { fontSize: largeText ? 28 : 22 }]}>Accommodation</Text>
       
-      {/* Search and Filters */}
+      {/* Search and Filters - Always Visible */}
       <View style={styles.controls}>
         <TextInput
           placeholder="Search stays..."
           value={query}
           onChangeText={setQuery}
           style={styles.searchInput}
+          placeholderTextColor="#999"
         />
         <View style={styles.filters}>
-          {['All', 'Hotel', 'B&B', 'Hostel'].map(f => (
+          {['All', 'Hotel', 'B&B', 'Lodge', 'Camping'].map(f => (
             <TouchableOpacity key={f} onPress={() => setFilter(f)} style={[styles.filterChip, filter === f && styles.filterChipActive]}>
               <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>{f}</Text>
             </TouchableOpacity>
@@ -180,25 +182,31 @@ export default function StayScreen() {
         </View>
       </View>
 
+      {/* Scrollable List */}
       {loading ? (
         <ActivityIndicator size="large" color="#2E7D32" style={{ marginTop: 20 }} />
-      ) : (
+      ) : filtered.length > 0 ? (
         <FlatList 
           data={filtered} 
           keyExtractor={i => i.id.toString()} 
           renderItem={renderItem} 
-          contentContainerStyle={{ paddingBottom: 80 }} 
+          contentContainerStyle={{ paddingBottom: 80 }}
+          scrollEnabled={true}
         />
+      ) : (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text style={{ color: '#999', fontSize: 14 }}>No accommodations found</Text>
+        </View>
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: 'transparent' },
-  title: { fontWeight: '700', marginBottom: 8, textAlign: 'center' },
-  controls: { marginBottom: 12 },
-  searchInput: { backgroundColor: '#fff', padding: 10, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(0,0,0,0.06)' },
+  container: { flex: 1, paddingHorizontal: 16, paddingTop: 12, backgroundColor: 'transparent' },
+  title: { fontWeight: '700', marginBottom: 12, textAlign: 'center' },
+  controls: { marginBottom: 12, backgroundColor: '#fff', paddingVertical: 8, borderRadius: 8 },
+  searchInput: { backgroundColor: '#f5f5f5', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: '#e0e0e0', marginHorizontal: 8, marginBottom: 8 },
   filters: { flexDirection: 'row', marginTop: 10, justifyContent: 'center', gap: 8 },
   filterChip: { paddingVertical: 6, paddingHorizontal: 10, borderRadius: 16, backgroundColor: '#eee' },
   filterChipActive: { backgroundColor: '#2E7D32' },
