@@ -58,6 +58,11 @@ export default function LoginScreen() {
       <TouchableOpacity style={styles.registerButton} onPress={register}>
         <Text style={styles.registerButtonText}>Not Registered? Register Here..</Text>
       </TouchableOpacity>
+      <TouchableOpacity style={styles.guestButton} onPress={() => router.replace('/map')}>
+        <Text style={styles.guestButtonText}>Continue as Guest</Text>
+      </TouchableOpacity>
+
+
     </View>
   );
 }
@@ -107,5 +112,19 @@ const styles = StyleSheet.create({
     color: '#fff', 
     fontWeight: 'normal', 
     fontSize: 14 },
-  
+
+  guestButton: {
+    marginTop: 15,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#2E7D32',
+    borderRadius: 8,
+    width: '100%',
+    alignItems: 'center',
+    backgroundColor: '#4fa09f',
+  },
+  guestButtonText: {
+    color: '#f7f9f7',
+    fontWeight: '600',
+  }
 });
