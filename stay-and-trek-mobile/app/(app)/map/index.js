@@ -411,16 +411,16 @@ const styles = StyleSheet.create({
 
   floatingLoginBtn: {
     position: 'absolute',
-    bottom: 20,
-    right: 20,
-    backgroundColor: '#63755fff',
-    padding: 15,
-    borderRadius: 30,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-  },
-  btnText: { color: '#fff', fontWeight: 'bold' }
+    top: 50,
+    left: 20,
+    backgroundColor: '#2E7D32',
+    flexDirection: 'row',
+    padding: 20,
+    borderRadius: 15,
+    zIndex: 10,
+    alignItems: 'center',
+    },
+    btnText: { color: '#fff', fontWeight: 'bold' }
+
 
 });

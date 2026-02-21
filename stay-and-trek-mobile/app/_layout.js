@@ -60,12 +60,10 @@ useEffect(() => {
   } 
   
   // CASE 2: LOGGED IN
-  else if (userToken) {
+  else if (userToken && inAuthGroup) {
     // If they try to go to Login/Register while logged in, send them to Profile/Home
-    if (inAuthGroup) {
       console.log('🛡️ Authenticated: Redirecting to Home');
       router.replace('/');
-    }
   }
 }, [userToken, segments, isLoading]);
 
