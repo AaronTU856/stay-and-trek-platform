@@ -52,16 +52,16 @@ useEffect(() => {
 
   // CASE 1: NOT LOGGED IN
   if (!userToken) {
-    // If they aren't in Auth and aren't on a Public page, force them to Map
+    // If they aren't in Auth and aren't on a Public page, force them to login
     if (!inAuthGroup && !isCurrentlyOnPublicRoute) {
-      console.log('🛡️ Guest Access: Redirecting to Map');
-      router.replace('/map');
+      console.log('🛡️ Guest Access: Redirecting to Login');
+      router.replace('/login');
     }
   } 
   
   // CASE 2: LOGGED IN
   else if (userToken) {
-    // If they try to go to Login/Register while logged in, send them Home
+    // If they try to go to Login/Register while logged in, send them to Profile/Home
     if (inAuthGroup) {
       console.log('🛡️ Authenticated: Redirecting to Home');
       router.replace('/');
