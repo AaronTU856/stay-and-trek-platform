@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, FlatList, TouchableOpacity, SafeAreaView, ActivityIndicator, Alert } from 'react-native';
 import { useAccessibility } from "../../context/AccessibilityContext";
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
 
 const IRISH_LOCATIONS = [
+  { name: 'Athlone', lat: 53.4239, lon: -7.9407 },
+  { name: 'Longford', lat: 53.7272, lon: -7.7932 },
+  { name: 'Dundalk', lat: 54.0039, lon: -6.4059 },
+  { name: 'Sligo', lat: 54.2766, lon: -8.4761 },
+  { name: 'Wexford', lat: 52.3360, lon: -6.4633 },
   { name: 'Westport', lat: 53.8008, lon: -9.5203 },
   { name: 'Galway', lat: 53.2707, lon: -9.0568 },
   { name: 'Dublin', lat: 53.3498, lon: -6.2603 },
@@ -120,9 +125,6 @@ export default function WeatherScreen() {
 
     if (currRes.ok && foreRes.ok) {
       const filteredForecast = filterForecast(foreData.list);
-      console.log("Forecast data count:", foreData.list?.length);
-      console.log("Filtered forecast count:", filteredForecast?.length);
-      console.log("Filtered forecast:", filteredForecast);
       
       setWeatherData({
         current: currData,
@@ -142,20 +144,20 @@ export default function WeatherScreen() {
   }, [selectedLocation]);
 
   const renderForecast = ({ item }) => {
-  const dayName = new Date(item.dt * 1000).toLocaleDateString('en-IE', { weekday: 'short' });
-  const temp = unit === 'C' ? Math.round(item.main.temp) : cToF(item.main.temp);
-  const condition = item.weather[0].main;
+    const dayName = new Date(item.dt * 1000).toLocaleDateString('en-IE', { weekday: 'short' });
+    const temp = unit === 'C' ? Math.round(item.main.temp) : cToF(item.main.temp);
+    const condition = item.weather[0].main;
 
-  return (
-    <View style={styles.card}>
-      <Text style={styles.cardDay}>{dayName}</Text>
-      {/* Dynamic icon from API */}
-      <Ionicons name={getIcon(condition)} size={32} color="#FFF" style={{ marginVertical: 10 }} />
-      <Text style={styles.cardCond}>{condition}</Text>
-      <Text style={styles.highTemp}>{temp}°</Text>
-    </View>
-  );
-};
+    return (
+      <View style={styles.card}>
+        <Text style={styles.cardDay}>{dayName}</Text>
+        {/* Dynamic icon from API */}
+        <Ionicons name={getIcon(condition)} size={32} color="#FFF" style={{ marginVertical: 10 }} />
+        <Text style={styles.cardCond}>{condition}</Text>
+        <Text style={styles.highTemp}>{temp}°</Text>
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>

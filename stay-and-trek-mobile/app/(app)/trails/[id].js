@@ -1,9 +1,9 @@
 // Trail details screen - displays detailed information about a selected hiking trail
 // Shows information like difficulty, distance, description, and weather conditions
 
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, TextInput } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, TextInput, Alert } from "react-native";
 import { useAccessibility } from "../../../context/AccessibilityContext";
-import { useAuth } from "../_layout";
+import { useAuth } from "../../_layout";
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { getTrailById } from '../../../services/apiClient';
@@ -42,15 +42,29 @@ export default function TrailDetails() {
   const { userToken } = useAuth();
 
   const handleContribution = async () => {
+
+    if (!userToken) {
+      Alert.alert("Login Required", "Please sign in to suggest a description.");
+      return;
+    }
+
     try {
         const response = await fetch(`${API_BASE_URL}/api/trails/${id}/suggest_description/`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${userToken}`
+            },
             body: JSON.stringify({ description: newDesc }),
+
         });
+
         if (response.ok) {
             setSubmitted(true);
             setNewDesc(''); // Clear input after successful submission
+            Alert.alert("Success", "Your suggestion has been sent for review!");
+        } else {
+          Alert.alert("Error", "Something went wrong. Please try again.");
         }
     } catch (error) {
         console.error("Submission failed", error);
@@ -181,8 +195,6 @@ export default function TrailDetails() {
   return (
 
 
-
-
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 60 }}>
 
       {/* Suggest Description Button - only enabled for logged in users */}
@@ -291,17 +303,36 @@ export default function TrailDetails() {
                 </Text>
                 
                 <TextInput
-                    style={styles.textInput}
-                    placeholder="Describe the terrain, views, or difficulty..."
-                    value={newDesc}
-                    onChangeText={setNewDesc}
-                    multiline
+                  style={[styles.input, !userToken && styles.disabledInput]}
+                  value={newDesc}
+                  onChangeText={setNewDesc}
+                  placeholder={userToken ? "Suggest a better description..." : "Log in to suggest changes"}
+                  editable={!!userToken} // Prevents typing if logged out
+                  multiline
                 />
                 <TouchableOpacity 
                     style={[styles.saveButton, { backgroundColor: isSubmitting ? '#999' : '#2E7D32' }]} 
                     onPress={handleContribution}
                     disabled={isSubmitting}
                 >
+
+                  <TouchableOpacity 
+                    style={[
+                      styles.saveButton, 
+                      // Logic: Grey out if guest OR if currently sending
+                      { backgroundColor: (!userToken || isSubmitting) ? '#A0AEC0' : '#2E7D32' }
+                    ]} 
+                    onPress={handleContribution}
+                    disabled={!userToken || isSubmitting} // Disable for guests AND during submission
+                  >
+                    <Text style={styles.buttonText}>
+                      {!userToken 
+                        ? "Login to Suggest Changes" 
+                        : isSubmitting 
+                          ? "Sending..." 
+                          : "Submit to Trail Moderator"}
+                    </Text>
+                  </TouchableOpacity>
                     <Text style={styles.buttonText}>
                         {isSubmitting ? "Sending..." : "Submit to Trail Moderator"}
                     </Text>
@@ -595,6 +626,24 @@ const styles = StyleSheet.create({
     divider: { width: 1, height: '80%', backgroundColor: '#ddd', marginHorizontal: 15 },
     detailColumn: { flex: 1 },
     miniDetail: { fontSize: 11, color: '#555', marginBottom: 2 },
-    expandButton: { paddingLeft: 10 }
+    expandButton: { paddingLeft: 10 },
+
+    submitBtn: {
+      backgroundColor: '#2E7D32',
+      flexDirection: 'row',
+      padding: 15,
+      borderRadius: 10,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginTop: 10
+    },
+  lockedBtn: {
+    backgroundColor: '#E2E8F0', // Greyed out color
+    borderWidth: 1,
+    borderColor: '#CBD5E0'
+  },
+  btnText: { color: '#FFF', fontWeight: 'bold', marginLeft: 8 },
+  lockedText: { color: '#184fa2' },
+  disabledInput: { backgroundColor: '#F7FAFC', color: '#7d96b8' }
 
 });
