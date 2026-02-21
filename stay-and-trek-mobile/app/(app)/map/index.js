@@ -110,7 +110,17 @@ export default function MapScreen() {
       const res = await fetchWithTimeout(`${BASE_URL}/api/trails/accommodations/near-trail/?trail_id=${trailId}`);
       if (res.ok) {
         const data = await res.json();
-        setStays(data.features);
+        let features = [];
+        
+        // Handle different API response formats
+        if (data.features) {
+          features = data.features;
+        } else if (Array.isArray(data)) {
+          features = data;
+        }
+        
+        console.log(`Loaded ${features.length} accommodations for trail ${trailId}`);
+        setStays(features);
         setShowStays(true);
       }
     } catch (err) {
@@ -139,7 +149,20 @@ export default function MapScreen() {
       );
       if (staysRes.ok) {
         const staysData = await staysRes.json();
-        const features = staysData.features || (Array.isArray(staysData) ? staysData : []);
+        let features = [];
+        
+        // Handle different API response formats
+        if (staysData.results && staysData.results.features) {
+          features = staysData.results.features;
+        } else if (staysData.features) {
+          features = staysData.features;
+        } else if (Array.isArray(staysData.results)) {
+          features = staysData.results;
+        } else if (Array.isArray(staysData)) {
+          features = staysData;
+        }
+        
+        console.log(`Loaded ${features.length} nearby accommodations`);
         setStays(features);
 
       } else {
@@ -251,10 +274,12 @@ export default function MapScreen() {
                 coordinate={{ latitude: lat, longitude: lng }}
                 pinColor="blue"
               >
-                <Callout>
-                  <View style={{ padding: 5, minWidth: 120 }}>
-                    <Text style={{ fontWeight: "bold" }}>{String(props.name) || "Accommodation"}</Text>
-                    <Text>{props.distance_km ? `${String(props.distance_km)}km away` : "Nearby"}</Text>
+                <Callout tooltip onPress={() => props.url && handleOpenURL(props.url)}>
+                  <View style={styles.calloutCard}>
+                    <Text style={styles.calloutTitle}>{props.name || "Accommodation"}</Text>
+                    <Text style={styles.calloutPrice}>€{props.price || "Contact"} {props.source ? `via ${props.source}` : ""}</Text>
+                    <Text style={styles.ratingText}>⭐ {String(props.rating || 'No rating')}</Text>
+                    <Text style={styles.bookButton}>{props.distance_km ? `${String(props.distance_km)}km away` : "View Details"} ➔</Text>
                   </View>
                 </Callout>
               </Marker>
