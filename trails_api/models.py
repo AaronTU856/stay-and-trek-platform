@@ -87,6 +87,7 @@ class Trail(models.Model):
     trail_name = models.CharField(max_length=200, db_index=True)
     #description = models.TextField(blank=True, null=True)
     activity = models.CharField(max_length=100, blank=True)
+    source_url = models.URLField(max_length=500, null=True, blank=True)
     
     # Location
     county = models.CharField(max_length=100, db_index=True)

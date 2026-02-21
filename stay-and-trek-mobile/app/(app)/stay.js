@@ -74,14 +74,29 @@ export default function StayScreen() {
 
   
   const filtered = React.useMemo(() => {
-    if (!Array.isArray(stays)) return [];
-    return stays.filter(s => {
-      if (filter !== 'All' && s.accommodation_source !== filter) return false;
-      if (!query) return true;
-      const q = query.toLowerCase();
-      return s.name.toLowerCase().includes(q);
-    });
-  }, [stays, query, filter]);
+  if (!Array.isArray(stays)) return [];
+  
+  return stays.filter(s => {
+    // 1. Handle Category Filter (Search inside the name)
+    if (filter !== 'All') {
+      const nameMatch = s.name.toLowerCase();
+      const category = filter.toLowerCase();
+      
+      if (category === 'b&b') {
+        // Special case for B&B to catch "Bed and Breakfast" too
+        if (!nameMatch.includes('b&b') && !nameMatch.includes('bed and breakfast')) return false;
+      } else {
+        // Check if "hotel" or "hostel" is in the name
+        if (!nameMatch.includes(category)) return false;
+      }
+    }
+
+    // 2. Handle Search Query
+    if (!query) return true;
+    const q = query.toLowerCase();
+    return s.name.toLowerCase().includes(q);
+  });
+}, [stays, query, filter]);
 
   function handleBook(item) {
     // lightweight prototype action
