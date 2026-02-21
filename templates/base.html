@@ -53,7 +53,16 @@
                     </li>
                 </ul>
 
-                <div class="d-flex align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <!-- High Contrast Toggle Button -->
+                    <button id="high-contrast-toggle" 
+                            class="btn btn-outline-warning d-flex align-items-center gap-2"
+                            aria-label="Toggle high contrast mode" 
+                            aria-pressed="false"
+                            title="High Contrast Mode">
+                        👁️
+                    </button>
+                    
                     {% if user.is_authenticated %}
                         <div class="dropdown">
                             <button class="btn btn-outline-success dropdown-toggle d-flex align-items-center gap-2" data-bs-toggle="dropdown">
@@ -90,6 +99,8 @@
     <script src="{% static 'leaflet/draw/leaflet.draw.js' %}"></script>
     <!-- MarkerCluster JS for trail clustering -->
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    <!-- Accessibility Features -->
+    <script src="{% static 'js/accessibility-toggle.js' %}"></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>
