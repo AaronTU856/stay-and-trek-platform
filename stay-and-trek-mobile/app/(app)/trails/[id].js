@@ -165,7 +165,11 @@ export default function TrailDetails() {
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { fontSize: headingFontSize }]}>About this Trail</Text>
         
-        {trail.description && (trail.status === 'verified' || trail.status === 'scraped') ? (
+        {trail.description && (
+            trail.status?.toLowerCase() === 'verified' || 
+            trail.status?.toLowerCase() === 'scraped' || 
+            trail.status?.toLowerCase() === 'completed'
+        ) ? (
             <Text style={[styles.description, { fontSize: textFontSize }]}>{trail.description}</Text>
         ) : (trail.status === 'pending' || submitted) ? (
           
