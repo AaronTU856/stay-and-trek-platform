@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 50,
     right: 20,
-    backgroundColor: 'rgba(66, 248, 242, 0.9)',
+    backgroundColor: 'rgba(38, 137, 46, 0.9)',
     borderRadius: 10,
     padding: 10,
     elevation: 5,
@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: 'bold',
     marginBottom: 5,
-    color: '#333',
+    color: '#fdfbfb',
   },
   toggleButton: {
     paddingVertical: 6,
@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
   },
  
   btnOn: { backgroundColor: '#2E7D32' }, // Green
-  btnOff: { backgroundColor: '#ee1414' }, // Grey
+  btnOff: { backgroundColor: '#ca7f22' }, // Grey
 
   floatingLoginBtn: {
     position: 'absolute',
