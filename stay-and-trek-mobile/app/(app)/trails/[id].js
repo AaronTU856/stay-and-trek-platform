@@ -6,9 +6,13 @@ import { useAccessibility } from "../../../context/AccessibilityContext";
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { getTrailById } from '../../../services/apiClient';
+import { Ionicons } from '@expo/vector-icons';
 
 // const API_BASE_URL = 'http://172.20.10.2:8000';
 const API_BASE_URL = 'http://192.168.1.83:8000';
+
+// Helper for Unit Conversion
+const cToF = (c) => Math.round((c * 9) / 5 + 32);
 
 
 export default function TrailDetails() {
@@ -30,6 +34,10 @@ export default function TrailDetails() {
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [weather, setWeather] = useState(null);
+  const [unit, setUnit] = useState('C');
+  const [weatherLoading, setWeatherLoading] = useState(false);
+
   const handleContribution = async () => {
     try {
         const response = await fetch(`${API_BASE_URL}/api/trails/${id}/suggest_description/`, {
@@ -46,6 +54,7 @@ export default function TrailDetails() {
     }
   };
 
+ 
   useEffect(() => {
     // 1. Ensure we have the trail ID from the URL params
   if (!id) return;
@@ -106,9 +115,45 @@ export default function TrailDetails() {
       }
     };
 
+  
+
     fetchTrailDetails();
   }, [id]);
 
+  // 2. Fetch Weather only AFTER trail is loaded
+  useEffect(() => {
+    if (!trail) return;
+    
+    const fetchTrailWeather = async () => {
+    try {
+      setWeatherLoading(true);
+      // Ensure this matches your .env exactly
+      const API_KEY = process.env.EXPO_PUBLIC_OPENWEATHERMAP_API_KEY; 
+
+      console.log("WEATHER DEBUG - Key loaded:", API_KEY ? "YES" : "NO");
+      
+      const url = `https://api.openweathermap.org/data/2.5/weather?lat=${trail.latitude}&lon=${trail.longitude}&units=metric&appid=${API_KEY}`;
+      
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log("Weather API Success:", data.weather[0].main);
+        setWeather(data);
+      } else {
+        console.warn("Weather API rejected the request:", data.message);
+      }
+    } catch (error) {
+      console.error("Weather Network Error:", error);
+    } finally {
+      setWeatherLoading(false);
+    }
+  };
+  
+  fetchTrailWeather();
+}, [trail]);
+
+  // Handle Initial Trail Loading
   if (loading) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
@@ -124,8 +169,12 @@ export default function TrailDetails() {
       </View>
     );
   }
-
  
+  // Calculate temp only if weather exists
+  const temp = (weather && weather.main) 
+    ? (unit === 'C' ? Math.round(weather.main.temp) : cToF(weather.main.temp)) 
+    : '--';
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 60 }}>
       {/* Header with back button */}
@@ -160,6 +209,38 @@ export default function TrailDetails() {
           <Text style={{ fontSize: textFontSize - 1, color: '#666' }}>{trail.elevation_gain_m}m</Text>
         </View>
       </View>
+
+{/* Weather strip - shows current weather conditions at the trail location */}
+      <View style={styles.weatherStrip}>
+        {weatherLoading ? (
+          <ActivityIndicator size="small" color="#2E7D32" />
+      ) : weather?.weather ? ( // Check if weather AND the weather array exist
+        <>
+            <View style={styles.mainInfo}>
+              <Ionicons 
+                name="partly-sunny" 
+                size={24} 
+                color="#FFA000" />
+              <View style={styles.textColumn}>
+                <TouchableOpacity onPress={() => setUnit(unit === 'C' ? 'F' : 'C')}>
+                  <Text style={styles.tempText}>{temp}°{unit}</Text>
+                </TouchableOpacity>
+                <Text style={styles.conditionText}>
+                  {weather.weather[0]?.main || "Unknown"}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.divider} />
+            <View style={styles.detailColumn}>
+              <Text style={styles.miniDetail}>💨 {Math.round(weather.wind.speed)} km/h</Text>
+              <Text style={styles.miniDetail}>💧 {weather.main.humidity}% Hum.</Text>
+            </View>
+          </>
+        ) : (
+          <Text style={{ color: '#666' }}>Weather data currently unavailable</Text>
+        )}
+      </View>
+
 
       {/* Description section */}
       <View style={styles.section}>
@@ -470,5 +551,25 @@ const styles = StyleSheet.create({
   filterButtonTextActive: {
     color: '#fff',
   },
+
+  weatherStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    padding: 12,
+    marginHorizontal: 20,
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
+    mainInfo: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+    textColumn: { marginLeft: 10 },
+    tempText: { fontSize: 20, fontWeight: '800', color: '#333' },
+    conditionText: { fontSize: 12, color: '#666', textTransform: 'capitalize' },
+    divider: { width: 1, height: '80%', backgroundColor: '#ddd', marginHorizontal: 15 },
+    detailColumn: { flex: 1 },
+    miniDetail: { fontSize: 11, color: '#555', marginBottom: 2 },
+    expandButton: { paddingLeft: 10 }
 
 });
