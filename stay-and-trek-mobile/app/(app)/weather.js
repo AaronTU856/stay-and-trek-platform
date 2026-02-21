@@ -110,7 +110,7 @@ export default function WeatherScreen() {
   // URL 1: Current Weather
   const currentUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${selectedLocation.lat}&lon=${selectedLocation.lon}&units=metric&appid=${API_KEY}`;
   
-  // URL 2: 5-Day Forecast (Included in your Developer Plan)
+  // URL 2: 5-Day Forecast
   const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${selectedLocation.lat}&lon=${selectedLocation.lon}&units=metric&appid=${API_KEY}`;
 
   try {
@@ -162,7 +162,7 @@ export default function WeatherScreen() {
       <View style={styles.container}>
         {/* Header with title */}
         <View style={styles.header}>
-          <Text style={styles.title}>Weather</Text>
+          <Text style={styles.title}>Stay and Trek Weather Forecast</Text>
         </View>
 
         {/* Location Selection */}
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#d7ece7' },
   container: { flex: 1, backgroundColor: '#d7ece7', paddingTop: 10 },
   header: { flexDirection: 'row', justifyContent: 'space-between', padding: 20, alignItems: 'center' },
-  title: { fontSize: 28, fontWeight: '800', color: '#1A1C1E' },
+  title: { fontSize: 20, fontWeight: '800', color: '#0e5830', fontStyle: 'italic' },
   headerRow: { flexDirection: 'row', paddingHorizontal: 20, gap: 10, alignItems: 'center', marginBottom: 10 },
   dropdownHeader: { flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#FFF', paddingHorizontal: 15, paddingVertical: 12, borderRadius: 10 },
   locationTitle: { fontSize: 16, fontWeight: '600', color: '#333' },
