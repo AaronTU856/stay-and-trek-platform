@@ -22,16 +22,18 @@ export default function TrailsScreen() {
     const fetchTrails = async () => {
       try {
         setLoading(true);
-        console.log('Fetching trails from API with limit=100');
+        console.log('🥾 Fetching trails from API with limit=100');
         
         const data = await getTrails({ limit: 100 });
-        console.log('Successfully fetched trails:', data.results?.length || data?.length || 0);
+        console.log('✅ Successfully fetched trails:', data.results?.length || data?.length || 0);
         const trailsArray = Array.isArray(data) ? data : (data.results || []);
+        console.log('📊 Parsed trails array length:', trailsArray.length);
         setTrails(trailsArray);
        
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : String(err);
-        console.warn('Failed to fetch trails:', errorMsg);
+        console.error('❌ Failed to fetch trails:', errorMsg);
+        console.error('Full error:', err);
         setTrails([]);
       } finally {
         setLoading(false);

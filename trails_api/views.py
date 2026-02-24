@@ -755,16 +755,15 @@ class AccommodationsListView(generics.ListAPIView):
     List all accommodations with optional filtering.
     
     Query Parameters:
-    - county: Filter by county name
-    - region: Filter by region
-    - search: Search accommodation name/description
+    - source: Filter by accommodation source (airbnb, booking, trivago, manual)
+    - search: Search accommodation name
     """
-    queryset = PointOfInterest.objects.filter(poi_type='accommodation')
-    serializer_class = PointOfInterestSerializer
+    queryset = Accommodation.objects.all()
+    serializer_class = AccommodationSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    search_fields = ['name', 'description', 'county']
-    ordering_fields = ['name', 'county']
+    search_fields = ['name', 'url']
+    ordering_fields = ['name', 'rating', 'price_per_night']
     ordering = ['name']
     permission_classes = [AllowAny]
     
@@ -772,13 +771,10 @@ class AccommodationsListView(generics.ListAPIView):
         """Apply optional filters"""
         queryset = super().get_queryset()
         
-        county = self.request.GET.get('county')
-        region = self.request.GET.get('region')
+        source = self.request.GET.get('source')
         
-        if county:
-            queryset = queryset.filter(county__iexact=county)
-        if region:
-            queryset = queryset.filter(region__iexact=region)
+        if source:
+            queryset = queryset.filter(source__iexact=source)
             
         return queryset
 
@@ -822,16 +818,18 @@ def accommodations_geojson(request):
 @permission_classes([AllowAny])
 def accommodations_near_trail(request):
     """
-    Get accommodations near a specific trail.
+    Get accommodations near a specific trail using spatial proximity.
     
     Query Parameters:
     - trail_id: Required. The trail ID to search around
     - category: Optional. Filter by 'hotel', 'hostel', 'all' (default: 'all')
+    - radius_km: Optional. Search radius in kilometers (default: 10km)
     
-    Returns accommodations sorted by distance.
+    Returns accommodations sorted by distance from trail start point.
     """
     trail_id = request.GET.get('trail_id')
     category = request.GET.get('category', 'all').lower()
+    radius_km = float(request.GET.get('radius_km', 10))  # Default 10km search radius
     
     if not trail_id:
         return Response({"error": "trail_id is required"}, status=400)
@@ -839,23 +837,37 @@ def accommodations_near_trail(request):
     try:
         trail = Trail.objects.get(id=trail_id)
         
-        # Start with all linked accommodations
-        nearby_accommodations = Accommodation.objects.filter(nearby_trails=trail)
+        if not trail.start_point:
+            return Response({"error": "Trail has no coordinates"}, status=400)
+        
+        # Convert radius (km) to meters for PostGIS queries
+        radius_meters = radius_km * 1000
+        
+        # Query accommodations using dwithin (better for geography fields)
+        from django.contrib.gis.db.models import Value as V
+        from django.contrib.gis.db.models.functions import Transform
+        
+        # Use dwithin lookup which is designed for geography fields
+        accommodations = Accommodation.objects.annotate(
+            distance=DistanceFunction('location', trail.start_point)
+        ).filter(
+            location__dwithin=(trail.start_point, D(m=radius_meters))
+        ).order_by('distance')
         
         # Apply category filtering based on accommodation name
         if category and category != 'all':
             if category == 'hotel':
-                nearby_accommodations = nearby_accommodations.filter(name__icontains='hotel')
+                accommodations = accommodations.filter(name__icontains='hotel')
             elif category == 'hostel':
-                nearby_accommodations = nearby_accommodations.filter(name__icontains='hostel')
+                accommodations = accommodations.filter(name__icontains='hostel')
             elif category == 'b&b' or category == 'bb':
-                nearby_accommodations = nearby_accommodations.filter(
+                accommodations = accommodations.filter(
                     Q(name__icontains='b&b') | Q(name__icontains='bed and breakfast')
                 )
         
         # Build GeoJSON response
         features = []
-        for acc in nearby_accommodations:
+        for acc in accommodations:
             features.append({
                 "type": "Feature",
                 "geometry": {
@@ -868,6 +880,8 @@ def accommodations_near_trail(request):
                     "source": acc.source,
                     "price_per_night": float(acc.price_per_night) if acc.price_per_night else None,
                     "rating": acc.rating,
+                    "distance_km": round(acc.distance.km, 2),
+                    "url": acc.url,
                 }
             })
         
@@ -876,7 +890,9 @@ def accommodations_near_trail(request):
             "features": features,
             "count": len(features),
             "trail_id": trail_id,
-            "category_filter": category
+            "trail_name": trail.trail_name,
+            "category_filter": category,
+            "radius_km": radius_km
         })
         
     except Trail.DoesNotExist:

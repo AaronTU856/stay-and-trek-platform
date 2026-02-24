@@ -1,17 +1,18 @@
 import * as SecureStore from 'expo-secure-store';
+import getApiBaseUrl, { logApiConfig } from '../config/apiConfig';
+
 // API service for all backend communications
 // Handles configuration, error handling, request and response setup
 
-// API Base URL - use local network IP for both simulator and physical devices
-const MAC_IP = '192.168.1.83'; // Mac's actual local network IP (run `ifconfig` to verify)
-
-// const MAC_IP = '172.20.10.2'; // Update this to your local IP address
-
-const API_BASE_URL = `http://${MAC_IP}:8000`; // Always use local IP for development
+// API Base URL - auto-detect environment and platform
+// Set environment to 'docker' when Docker is running
+const ENVIRONMENT = 'docker';  // Change to 'production' for cloud deployment
+const API_BASE_URL = getApiBaseUrl(ENVIRONMENT);
 
 const DEFAULT_TIMEOUT = 60000; // 60 seconds for slow backend responses
 
-console.log('API Client initialized with base URL:', API_BASE_URL);
+// Log configuration on startup
+logApiConfig(ENVIRONMENT);
 
 /**
  * AUTHENTICATION: Login user and return JWT tokens
@@ -64,7 +65,8 @@ async function apiCall(endpoint, options = {}){
       ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
   };
 
-  console.log(`Making API call to: ${url}`);
+  console.log(`📡 Making API call to: ${url}`);
+  console.log(`   Method: ${options.method || 'GET'}`);
 
   try {
       const response = await Promise.race([
@@ -80,15 +82,23 @@ async function apiCall(endpoint, options = {}){
           ),
       ]);
       
-      console.log(`API response status: ${response.status}`);
+      console.log(`✅ API response status: ${response.status} ${response.statusText}`);
       
       if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          const errorText = await response.text();
+          console.error(`❌ HTTP Error ${response.status}:`, errorText);
+          throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
       }
 
-      return await response.json();
+      const jsonData = await response.json();
+      console.log(`📦 Received ${Array.isArray(jsonData) ? jsonData.length : jsonData.results?.length || 1} items`);
+      return jsonData;
   } catch (error) {
-      console.error('API call error:', error);
+      console.error('❌ API call failed:', {
+          url,
+          error: error.message,
+          stack: error.stack
+      });
       throw error;    
   }
 }

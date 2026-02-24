@@ -311,31 +311,21 @@ export default function TrailDetails() {
                   multiline
                 />
                 <TouchableOpacity 
-                    style={[styles.saveButton, { backgroundColor: isSubmitting ? '#999' : '#2E7D32' }]} 
-                    onPress={handleContribution}
-                    disabled={isSubmitting}
+                  style={[
+                    styles.saveButton, 
+                    // Logic: Grey out if guest OR if currently sending
+                    { backgroundColor: (!userToken || isSubmitting) ? '#A0AEC0' : '#2E7D32' }
+                  ]} 
+                  onPress={handleContribution}
+                  disabled={!userToken || isSubmitting} // Disable for guests AND during submission
                 >
-
-                  <TouchableOpacity 
-                    style={[
-                      styles.saveButton, 
-                      // Logic: Grey out if guest OR if currently sending
-                      { backgroundColor: (!userToken || isSubmitting) ? '#A0AEC0' : '#2E7D32' }
-                    ]} 
-                    onPress={handleContribution}
-                    disabled={!userToken || isSubmitting} // Disable for guests AND during submission
-                  >
-                    <Text style={styles.buttonText}>
-                      {!userToken 
-                        ? "Login to Suggest Changes" 
-                        : isSubmitting 
-                          ? "Sending..." 
-                          : "Submit to Trail Moderator"}
-                    </Text>
-                  </TouchableOpacity>
-                    <Text style={styles.buttonText}>
-                        {isSubmitting ? "Sending..." : "Submit to Trail Moderator"}
-                    </Text>
+                  <Text style={styles.buttonText}>
+                    {!userToken 
+                      ? "Login to Suggest Changes" 
+                      : isSubmitting 
+                        ? "Sending..." 
+                        : "Submit to Trail Moderator"}
+                  </Text>
                 </TouchableOpacity>
             </View>
         )}
@@ -644,6 +634,19 @@ const styles = StyleSheet.create({
   },
   btnText: { color: '#FFF', fontWeight: 'bold', marginLeft: 8 },
   lockedText: { color: '#184fa2' },
+  input: {
+    backgroundColor: '#f9f9f9',
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    minHeight: 120,
+    textAlignVertical: 'top',
+    marginBottom: 10,
+    marginTop: 10,
+    color: '#333',
+    fontSize: 14,
+  },
   disabledInput: { backgroundColor: '#F7FAFC', color: '#7d96b8' }
 
 });
