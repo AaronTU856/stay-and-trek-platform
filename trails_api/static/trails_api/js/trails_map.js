@@ -284,8 +284,6 @@ function initializeMap() {
   //Add control box to the map
   L.control.layers(null, overlayMaps).addTo(window.trailsMap);
 
-  // DO NOT auto-load accommodations - wait for user to toggle or search
-  // setTimeout(() => {updateAccommodations();}, 500);
 
   //  Custom green icon
   const defaultGreenIcon = L.icon({
@@ -1630,7 +1628,7 @@ function updateAccommodations(searchLat = null, searchLng = null) {
   const lng = searchLng || window.trailsMap.getCenter().lng;
 
   // Clear old markers before fetching new accommodations
-  accommodationLayer.clearLayers();
+  window.accommodationLayer.clearLayers();
   console.log("🏨 Cleared old accommodation markers");
 
   console.log(`🏨 Fetching accommodations for lat=${lat}, lng=${lng}`);
@@ -1650,11 +1648,26 @@ function updateAccommodations(searchLat = null, searchLng = null) {
       }
 
       window.accommodationLayer.clearLayers();
-
-      // Handle both GeoJSON (features) and direct results format
-      const features = data.results || data.features || [];
       
-      console.log(`🏨 Processing ${features.length} accommodations`);
+      // Handle both GeoJSON (features) and direct results format
+      let features = [];
+
+      console.log("RAW DATA:", JSON.stringify(data, null, 2));
+
+      if (data.results?.features) {
+          console.log("GeoJSON FeatureCollection detected");
+          features = data.results.features;
+      } else if (Array.isArray(data.results)) {
+          console.log("Array results detected");
+          features = data.results;
+      } else if (data.features) {
+          console.log("Top-level features detected");
+          features = data.features;
+      } else {
+          console.log("Unknown response structure");
+      }
+
+      
       
       if (Array.isArray(features) && features.length > 0) {
         features.forEach((item, idx) => {
@@ -1694,10 +1707,15 @@ function updateAccommodations(searchLat = null, searchLng = null) {
             `).addTo(window.accommodationLayer);
             
             console.log(`✅ Added: ${name}`);
+
+            
+
           } catch (err) {
             console.error("❌ Error adding marker:", err);
           }
         });
+
+        window.accommodationLayer.bringToFront(); // Ensure accommodations are above trails
 
         const countEl = document.getElementById("accommodation-count");
         if (countEl) {
