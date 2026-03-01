@@ -852,7 +852,7 @@ def accommodations_near_trail(request):
             distance=DistanceFunction('location', trail.start_point)
         ).filter(
             location__dwithin=(trail.start_point, D(m=radius_meters))
-        ).order_by('distance')
+        ).order_by('distance') [:10] # Limit to 10 closest for performance
         
         # Apply category filtering based on accommodation name
         if category and category != 'all':
