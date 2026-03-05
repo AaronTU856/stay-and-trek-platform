@@ -27,7 +27,7 @@ import Constants from 'expo-constants';
 
 // Get your Mac's IP address by running:
 // ifconfig | grep "inet " | grep -v 127.0.0.1
-const MAC_LOCAL_IP = '192.168.1.83';  // ← CHANGE THIS TO YOUR MAC'S IP
+const MAC_LOCAL_IP = '192.168.1.83';  //  CHANGE THIS TO YOUR MAC'S IP
 
 const API_CONFIGS = {
   // Development with Docker running

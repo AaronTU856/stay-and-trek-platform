@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    .auth-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 70vh;
+        padding: 2rem 1rem;
+    }
+
+    .auth-card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 440px;
+        overflow: hidden;
+    }
+
+    .auth-header {
+        background: linear-gradient(135deg, #2E8B57, #3cb371);
+        color: #fff;
+        padding: 2rem;
+        text-align: center;
+    }
+
+    .auth-header i {
+        font-size: 2.5rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .auth-header h2 {
+        margin-bottom: 0.25rem;
+        font-weight: 600;
+    }
+
+    .auth-body {
+        padding: 2rem;
+    }
+
+    .auth-links {
+        margin-top: 1.5rem;
+        text-align: center;
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+
+    .auth-links a {
+        color: #2E8B57;
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .auth-links a:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}

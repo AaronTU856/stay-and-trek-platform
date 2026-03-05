@@ -8,15 +8,25 @@ def fetch_external_description(trail_name):
     
     # 1. CLEAN THE NAME 
     search_name = re.split(r' - | \(', trail_name)[0].strip()
+    full_name = trail_name.split('(')[0].strip()
+    right_side = trail_name.split(' - ', 1)[1].split(')')[0].strip() if ' - ' in trail_name else None
     
     # 2. VALIDATION SETTINGS
     trail_keywords = ['trail', 'walk', 'loop', 'waymarked', 'hiking', 'mountain', 'nature', 'path', 'cycle', 'hub']
     blacklist = ['theatre', 'drama', 'actor', 'playwright', 'film', 'abbey theatre', 'company', 'accident', 'incident']
 
     # 3. SPORT IRELAND SLUG GENERATION
-    slug = search_name.lower().replace(' ', '-')
-    variants = [f"{slug}-trail", slug, slug.replace('island', '')]
-
+    slugs = [
+        search_name.lower().replace(' ', '-') , 
+        full_name.lower().replace(' ', '-'), 
+    ]
+    if right_side:
+        slugs.append(right_side.lower().replace(' ', '-'))
+    
+    variants = []
+    for s in slugs:
+        variants.extend([f"{s}-trail", s, s.replace('island', '')])
+        
     # --- PHASE 1: SPORT IRELAND ---
     for v in variants:
         si_url = f"https://www.sportireland.ie/outdoors/walking/trails/{v.strip('-')}"
