@@ -793,13 +793,13 @@ def accommodations_geojson(request):
                     "type": "Feature",
                     "geometry": {
                         "type": "Point",
-                        "coordinates": [acc.longitude, acc.latitude]
+                        "coordinates": [acc.location.x, acc.location.y]
                     },
                     "properties": {
                         "id": acc.id,
                         "name": acc.name,
                         "source": acc.source,
-                        "price": str(acc.price_per_night) if acc.price_per_night else "N/A",
+                        "price_per_night": float(acc.price_per_night) if acc.price_per_night else None,
                         "rating": acc.rating or 0,
                         "url": acc.url,
                     }
@@ -811,7 +811,6 @@ def accommodations_geojson(request):
             "count": len(features)
         })
     except Exception as e:
-        print(f"CRASH: {e}")
         return Response({"error": str(e)}, status=500)
     
 @api_view(['GET'])
