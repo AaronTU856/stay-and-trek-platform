@@ -1633,7 +1633,7 @@ function updateAccommodations(searchLat = null, searchLng = null) {
 
   console.log(`🏨 Fetching accommodations for lat=${lat}, lng=${lng}`);
   
-  fetch(`/api/trails/accommodations/nearby/?lat=${lat}&lng=${lng}`)
+  fetch(`/api/trails/accommodations/nearby/?lat=${lat}&lng=${lng}&radius=10`)
     .then(res => {
       console.log("🏨 Response status:", res.status);
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -1650,59 +1650,46 @@ function updateAccommodations(searchLat = null, searchLng = null) {
       window.accommodationLayer.clearLayers();
       
       // Handle both GeoJSON (features) and direct results format
-      let features = [];
 
       console.log("RAW DATA:", JSON.stringify(data, null, 2));
 
-      if (data.results?.features) {
-          console.log("GeoJSON FeatureCollection detected");
-          features = data.results.features;
-      } else if (Array.isArray(data.results)) {
-          console.log("Array results detected");
-          features = data.results;
-      } else if (data.features) {
-          console.log("Top-level features detected");
-          features = data.features;
-      } else {
-          console.log("Unknown response structure");
-      }
-
+      const features = data.features || [];
       
       
       if (Array.isArray(features) && features.length > 0) {
         features.forEach((item, idx) => {
           try {
-            let lng, lat, name;
+            let accLng, accLat, name;
             
             // Handle GeoJSON Feature format (geometry.coordinates)
             if (item.geometry && item.geometry.coordinates) {
-              [lng, lat] = item.geometry.coordinates;
+              [accLng, accLat] = item.geometry.coordinates;
               name = item.properties.name || 'Accommodation';
             } 
             // Handle direct Accommodation object with location property
             else if (item.location && item.location.coordinates) {
-              [lng, lat] = item.location.coordinates;
+              [accLng, accLat] = item.location.coordinates;
               name = item.name || 'Accommodation';
             }
             // Fallback to direct lat/lng properties
             else {
-              lat = item.latitude;
-              lng = item.longitude;
+              accLat = item.latitude;
+              accLng = item.longitude;
               name = item.name || 'Accommodation';
             }
 
-            if (isNaN(lat) || isNaN(lng)) {
+            if (isNaN(accLat) || isNaN(accLng)) {
               console.warn(`⚠️ Invalid coords for ${name}`);
               return;
             }
-
-            const marker = L.marker([lat, lng], { 
+            const props = item.properties || item; // Support both GeoJSON properties and direct object fields;
+            const marker = L.marker([accLat, accLng], { 
               icon: window.hotelIcon 
             }).bindPopup(`
               <div style="font-size: 12px;">
                 <strong>${name}</strong><br>
-                ${item.price_per_night ? '💰 €' + item.price_per_night + '/night<br>' : ''}
-                ${item.rating ? '⭐ ' + item.rating : ''}
+                ${props.price_per_night ? '💰 €' + props.price_per_night + '/night<br>' : ''}
+                ${props.rating ? '⭐ ' + props.rating : ''}
               </div>
             `).addTo(window.accommodationLayer);
             

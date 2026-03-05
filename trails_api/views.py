@@ -783,10 +783,26 @@ class AccommodationsListView(generics.ListAPIView):
 @permission_classes([AllowAny])
 def accommodations_geojson(request):
     print("!!! THE VIEW IS RUNNING !!!")
+    
+    lat = request.GET.get("lat")
+    lng = request.GET.get("lng")
+    radius = request.GET.get("radius", 10)
+    
+    if not lat or not lng:
+        return Response({"error": "lat and lng required"}, status=400)
+
+    point = Point(float(lng), float(lat), srid=4326)
+
     try:
-        accommodations = Accommodation.objects.all()
+        accommodations = (
+            Accommodation.objects
+            .filter(location__distance_lte=(point, D(km=radius)))
+            .annotate(distance=DistanceFunction('location', point))
+            .order_by('distance')[:10]  # Limit to 10 for performance
+        )
         
         features = []
+        
         for acc in accommodations:
             if acc.location:
                 features.append({
