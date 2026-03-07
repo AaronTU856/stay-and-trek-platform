@@ -40,7 +40,7 @@ urlpatterns = [
     
     # Accommodations API
     #path('api/accommodations/nearby/', NearbyAccommodationView.as_view(), name='nearby-accommodations'),
-    path('api/', include('trails_api.urls')),
+    #path('api/', include('trails_api.urls')),
 
     # Maps app
     path('maps/', include(('maps.urls', 'maps'), namespace='maps')),

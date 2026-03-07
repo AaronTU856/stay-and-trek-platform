@@ -31,7 +31,7 @@ services:
       - DEBUG=1
       - SECRET_KEY=your_secret_key_here
       - DATABASE_URL=postgres://postgres:postgres@db:5432/trails_db
-      - POSTGRES_DB=trails_db
+      - POSTGRES_DB=stayandtrek
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - DB_HOST=db

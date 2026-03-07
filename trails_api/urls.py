@@ -66,6 +66,9 @@ urlpatterns = [
     path('accommodations/by-county/', views.accommodations_by_county, name='accommodations-by-county'),
     path('accommodations/stats/', views.accommodations_statistics, name='accommodations-stats'),
     path('accommodations/nearby/', views.NearbyAccommodationView.as_view(), name='nearby-accommodations'),
+    
+    # Route testing endpoint
+    path('route-test/', views.route_test, name='route-test'),
 ]
 
 

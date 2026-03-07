@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from django.core.serializers import serialize
-from django.db import models
+from django.db import models, connection 
 from django.db.models import Count, Q
 from django.contrib.gis.geos import Point
 from django.contrib.gis.db.models.functions import Distance as DistanceFunction
@@ -992,7 +992,33 @@ def accommodations_near_town(request):
         "features": features,
         "count": len(features)
     })
+    
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def route_test(request):
 
+    start_node = 124037
+    end_node = 124065
+
+    with connection.cursor() as cursor:
+        cursor.execute("""
+        SELECT ST_AsGeoJSON(r.way)
+        FROM pgr_dijkstra(
+        'SELECT osm_id AS id, source, target, ST_Length(way) AS cost FROM planet_osm_roads',
+        %s,
+        %s
+        ) d
+        JOIN planet_osm_roads r
+        ON d.edge = r.osm_id
+        """, [start_node, end_node])
+
+        route = [row[0] for row in cursor.fetchall()]
+
+    return JsonResponse({"route": route})
+
+
+
+    
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -1062,7 +1088,4 @@ class NearbyAccommodationView(generics.ListAPIView):
                 return Accommodation.objects.none()
             
         return Accommodation.objects.none()
-
-    
-    
     

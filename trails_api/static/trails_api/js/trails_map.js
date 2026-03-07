@@ -11,6 +11,16 @@ let allTrailsData = [];
 document.addEventListener("DOMContentLoaded", function () {
   console.log("📍 DOM loaded, initializing map...");
   initializeMap();
+   fetch("/route-test/")
+  .then(r => r.json())
+  .then(data => {
+
+      data.route.forEach(line => {
+          L.geoJSON(JSON.parse(line)).addTo(window.trailsMap)
+      })
+
+  })
+  
   //loadTrails(); // Don't load all trails by default
   loadTrailPaths();
   setupEventListeners();
@@ -33,6 +43,9 @@ document.addEventListener("DOMContentLoaded", function () {
         console.error("❌ trailsMap not found during initialization");
     }
 });
+
+ 
+
 
 
 /*Load trails from the start point when search radius is performed
