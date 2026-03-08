@@ -11,15 +11,21 @@ let allTrailsData = [];
 document.addEventListener("DOMContentLoaded", function () {
   console.log("📍 DOM loaded, initializing map...");
   initializeMap();
-   fetch("/route-test/")
-  .then(r => r.json())
-  .then(data => {
-
-      data.route.forEach(line => {
-          L.geoJSON(JSON.parse(line)).addTo(window.trailsMap)
-      })
-
-  })
+  fetch("/api/trails/route-test/")
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`Route test failed: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then((data) => {
+      data.route.forEach((line) => {
+        L.geoJSON(JSON.parse(line)).addTo(window.trailsMap);
+      });
+    })
+    .catch((error) => {
+      console.warn("Route test skipped:", error.message);
+    });
   
   //loadTrails(); // Don't load all trails by default
   loadTrailPaths();

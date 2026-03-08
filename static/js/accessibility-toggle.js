@@ -5,12 +5,14 @@
  */
 
 function initializeAccessibilityToggle() {
-  // Find the toggle button (multiple possible IDs/classes)
-  const toggle = document.getElementById('high-contrast-toggle') ||
-                 document.querySelector('.high-contrast-toggle') ||
-                 document.querySelector('[data-accessibility="toggle"]');
+  // Find all possible toggle buttons (support multiple instances per page)
+  const toggleCandidates = Array.from(document.querySelectorAll(
+    '#high-contrast-toggle, .high-contrast-toggle, [data-accessibility="toggle"]'
+  ));
 
-  if (!toggle) {
+  const toggles = toggleCandidates.filter((el, index, self) => self.indexOf(el) === index);
+
+  if (toggles.length === 0) {
     console.warn('High contrast toggle button not found - accessibility features disabled');
     return;
   }
@@ -22,12 +24,14 @@ function initializeAccessibilityToggle() {
     document.body.classList.add('high-contrast-mode');
     localStorage.setItem('highContrastMode', 'true');
     
-    // Update toggle button state
-    if (toggle.setAttribute) {
-      toggle.setAttribute('aria-pressed', 'true');
-    }
-    toggle.classList.add('active');
-    toggle.classList.remove('inactive');
+    // Update all toggle button states
+    toggles.forEach((toggle) => {
+      if (toggle.setAttribute) {
+        toggle.setAttribute('aria-pressed', 'true');
+      }
+      toggle.classList.add('active');
+      toggle.classList.remove('inactive');
+    });
     
     console.log('High contrast mode enabled');
   }
@@ -39,12 +43,14 @@ function initializeAccessibilityToggle() {
     document.body.classList.remove('high-contrast-mode');
     localStorage.setItem('highContrastMode', 'false');
     
-    // Update toggle button state
-    if (toggle.setAttribute) {
-      toggle.setAttribute('aria-pressed', 'false');
-    }
-    toggle.classList.remove('active');
-    toggle.classList.add('inactive');
+    // Update all toggle button states
+    toggles.forEach((toggle) => {
+      if (toggle.setAttribute) {
+        toggle.setAttribute('aria-pressed', 'false');
+      }
+      toggle.classList.remove('active');
+      toggle.classList.add('inactive');
+    });
     
     console.log('High contrast mode disabled');
   }
@@ -70,14 +76,24 @@ function initializeAccessibilityToggle() {
     disableHighContrast();
   }
 
-  // Attach click handler to toggle button
-  toggle.addEventListener('click', toggleHighContrast);
+  // Attach handlers to all toggle buttons
+  toggles.forEach((toggle) => {
+    if (toggle.dataset && toggle.dataset.contrastInitialized === 'true') {
+      return;
+    }
 
-  // Also support keyboard activation (Enter or Space keys)
-  toggle.addEventListener('keydown', function(event) {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      toggleHighContrast();
+    toggle.addEventListener('click', toggleHighContrast);
+
+    // Also support keyboard activation (Enter or Space keys)
+    toggle.addEventListener('keydown', function(event) {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        toggleHighContrast();
+      }
+    });
+
+    if (toggle.dataset) {
+      toggle.dataset.contrastInitialized = 'true';
     }
   });
 

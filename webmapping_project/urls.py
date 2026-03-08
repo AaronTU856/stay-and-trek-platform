@@ -75,7 +75,12 @@ if settings.DEBUG:
     # Helper to serve files from multiple static directories (root + app-specific)
     def static_files_view(request, path):
         """Serve static files from root static/ and app-specific static/ dirs"""
-        # Try root static directory first
+        # Prefer collected static (STATIC_ROOT) to avoid host bind-mount locking issues
+        static_root = Path(settings.STATIC_ROOT)
+        if (static_root / path).exists():
+            return static_serve(request, path, document_root=str(static_root))
+
+        # Try root static directory next
         root_static = settings.BASE_DIR / 'static'
         if (root_static / path).exists():
             return static_serve(request, path, document_root=str(root_static))
