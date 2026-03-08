@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from pathlib import Path
 import os
 import ctypes
+import sys
 
 # Try to load environment variables from a .env file if python-dotenv is installed.
 # This keeps the app from crashing if the package isn't available in the environment.
@@ -138,10 +139,20 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'webmapping_project.wsgi.application'
 
+# Use in-memory DB only for tests
+if "test" in sys.argv:
+    print("🔹 Using in-memory Spatialite (tests)")
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.contrib.gis.db.backends.spatialite",
+            "NAME": ":memory:",
+        }
+    }
 
-if os.getenv("CI"):
+elif os.getenv("CI"):
     print("🔹 Using SpatiaLite (SQLite GIS) for CI build")
     os.environ["SPATIALITE_LIBRARY_PATH"] = "mod_spatialite"
+
     DATABASES = {
         "default": {
             "ENGINE": "django.contrib.gis.db.backends.spatialite",
@@ -166,13 +177,16 @@ else:
         }
     else:
         print("🔹 Using local PostGIS (default)")
+        
+        
         # Check if running in Docker (env vars set by docker-compose)
         if os.getenv('DATABASE_URL'):
+        
             # Docker environment - use docker-compose variables
             DATABASES = {
                 'default': {
                     'ENGINE': 'django.contrib.gis.db.backends.postgis',
-                    'NAME': os.getenv('POSTGRES_DB', 'stayandtrek'),
+                    'NAME': os.getenv('POSTGRES_DB', 'trails_db'),
                     'USER': os.getenv('POSTGRES_USER', 'postgres'),
                     'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'postgres'),
                     'HOST': os.getenv('DB_HOST', 'db'),  # Docker service name

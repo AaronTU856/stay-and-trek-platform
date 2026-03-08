@@ -69,6 +69,7 @@ urlpatterns = [
     
     # Route testing endpoint
     path('route-test/', views.route_test, name='route-test'),
+    path('route/', views.route_between_nodes, name='route-between-nodes'),
 ]
 
 

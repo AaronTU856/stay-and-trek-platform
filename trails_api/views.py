@@ -1002,11 +1002,11 @@ def route_test(request):
 
     with connection.cursor() as cursor:
         cursor.execute("""
-        SELECT ST_AsGeoJSON(r.way)
+        SELECT ST_AsGeoJSON(ST_Transform(r.way, 4326))
         FROM pgr_dijkstra(
-        'SELECT osm_id AS id, source, target, ST_Length(way) AS cost FROM planet_osm_roads',
-        %s,
-        %s
+        'SELECT osm_id AS id, source, target, ST_Length(way) AS cost FROM planet_osm_roads'::text,
+        %s::bigint,
+        %s::bigint
         ) d
         JOIN planet_osm_roads r
         ON d.edge = r.osm_id
@@ -1017,6 +1017,47 @@ def route_test(request):
     return JsonResponse({"route": route})
 
 
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def route_between_nodes(request):
+
+    start = request.GET.get("start")
+    end = request.GET.get("end")
+
+    try:
+        start_node = int(start)
+        end_node = int(end)
+    except (TypeError, ValueError):
+        return JsonResponse({"error": "start and end must be integers"}, status=400)
+
+    with connection.cursor() as cursor:
+
+        cursor.execute("""
+        SELECT ST_AsGeoJSON(ST_Transform(r.way,4326))
+        FROM pgr_dijkstra(
+            'SELECT osm_id AS id, source, target, ST_Length(way) AS cost FROM planet_osm_roads',
+            %s,
+            %s,
+            false
+        ) d
+        JOIN planet_osm_roads r
+        ON d.edge = r.osm_id;
+        """, [start_node, end_node])
+
+        rows = cursor.fetchall()
+
+    features = []
+
+    for row in rows:
+        features.append({
+            "type": "Feature",
+            "geometry": json.loads(row[0])
+        })
+
+    return JsonResponse({
+        "type": "FeatureCollection",
+        "features": features
+    })
 
     
 
