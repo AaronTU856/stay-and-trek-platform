@@ -10,6 +10,7 @@ let allTrailsData = [];
 let startNode = null;
 let endNode = null;
 let routeLayer = null;
+let accommodationRequestId = 0;
 
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -1608,7 +1609,7 @@ function updateResultsPanel(data) {
   // Hide accommodation card when showing trail results
   const accommodationCard = document.getElementById("accommodation-card");
   if (accommodationCard) {
-    accommodationCard.style.display = "none";
+    accommodationCard.style.display = "block";
   }
 }
 
@@ -1663,12 +1664,24 @@ function updateAccommodations(searchLat = null, searchLng = null) {
     return;
   }
 
+  if (!window.accommodationLayer) {
+    console.error("❌ Accommodation layer not initialized");
+    return;
+  }
+
+  const accommodationsToggle = document.getElementById("toggle-accommodations");
+  if (accommodationsToggle && !accommodationsToggle.checked) {
+    accommodationsToggle.checked = true;
+  }
+
+  if (!window.trailsMap.hasLayer(window.accommodationLayer)) {
+    window.trailsMap.addLayer(window.accommodationLayer);
+  }
+
   const lat = searchLat || window.trailsMap.getCenter().lat;
   const lng = searchLng || window.trailsMap.getCenter().lng;
 
-  // Clear old markers before fetching new accommodations
-  window.accommodationLayer.clearLayers();
-  console.log("🏨 Cleared old accommodation markers");
+  const requestId = ++accommodationRequestId;
 
   console.log(`🏨 Fetching accommodations for lat=${lat}, lng=${lng}`);
   
@@ -1679,94 +1692,61 @@ function updateAccommodations(searchLat = null, searchLng = null) {
       return res.json();
     })
     .then(data => {
-      console.log("🏨 API Response:", data);
-      
-      if (!window.accommodationLayer) {
-        console.error("❌ Accommodation layer not initialized");
+      if (requestId !== accommodationRequestId) {
         return;
       }
-
-      window.accommodationLayer.clearLayers();
+      console.log("🏨 API Response:", data);
       
       // Handle both GeoJSON (features) and direct results format
 
       console.log("RAW DATA:", JSON.stringify(data, null, 2));
 
-      const features = data.features || [];
-      
-      
-      if (Array.isArray(features) && features.length > 0) {
-        features.forEach((item, idx) => {
-          try {
-            let accLng, accLat, name;
-            
-            // Handle GeoJSON Feature format (geometry.coordinates)
-            if (item.geometry && item.geometry.coordinates) {
-              [accLng, accLat] = item.geometry.coordinates;
-              name = item.properties.name || 'Accommodation';
-            } 
-            // Handle direct Accommodation object with location property
-            else if (item.location && item.location.coordinates) {
-              [accLng, accLat] = item.location.coordinates;
-              name = item.name || 'Accommodation';
+      const features = data.results?.features || data.features || [];
+
+      console.log("🏨 Features extracted:", features);
+
+      window.accommodationLayer.clearLayers();
+      console.log("🏨 Cleared old accommodation markers");
+
+      let addedCount = 0;
+      features.forEach((feature) => {
+        const coords = feature?.geometry?.coordinates;
+        if (!Array.isArray(coords) || coords.length < 2) {
+          return;
+        }
+        const [accLng, accLat] = coords;
+        const props = feature.properties || {};
+
+        const marker = L.marker([accLat, accLng], {
+            icon: window.hotelIcon
+        }).bindPopup(`
+            <div style="font-size: 12px;">
+              <strong>${props.name || "Accommodation"}</strong><br>
+              ${props.price_per_night ? '💰 €' + props.price_per_night + '/night<br>' : ''}
+              ${props.rating ? '⭐ ' + props.rating : ''}
+            </div>
+        `);
+
+        marker.addTo(window.accommodationLayer);
+        addedCount += 1;
+      });
+
+      console.log(`🏨 Added ${addedCount} accommodation markers`);
+
+        if (typeof window.accommodationLayer.bringToFront === "function") {
+          window.accommodationLayer.bringToFront();
+        } else {
+          window.accommodationLayer.eachLayer((layer) => {
+            if (layer && typeof layer.bringToFront === "function") {
+              layer.bringToFront();
             }
-            // Fallback to direct lat/lng properties
-            else {
-              accLat = item.latitude;
-              accLng = item.longitude;
-              name = item.name || 'Accommodation';
-            }
-
-            if (isNaN(accLat) || isNaN(accLng)) {
-              console.warn(`⚠️ Invalid coords for ${name}`);
-              return;
-            }
-            const props = item.properties || item; // Support both GeoJSON properties and direct object fields;
-            const marker = L.marker([accLat, accLng], { 
-              icon: window.hotelIcon 
-            }).bindPopup(`
-              <div style="font-size: 12px;">
-                <strong>${name}</strong><br>
-                ${props.price_per_night ? '💰 €' + props.price_per_night + '/night<br>' : ''}
-                ${props.rating ? '⭐ ' + props.rating : ''}
-              </div>
-            `);
-            
-            marker.on("click", async function () {
-
-              const lat = marker.getLatLng().lat
-              const lng = marker.getLatLng().lng
-
-              const res = await fetch(`/api/trails/nearest-node/?lat=${lat}&lng=${lng}`)
-              const data = await res.json()
-
-              endNode = data.node_id
-
-              console.log("End node selected:", endNode)
-
-              if(startNode && endNode){
-                  calculateRoute()
-              }
-
-          })
-          marker.addTo(window.accommodationLayer);
-            
-            console.log(`✅ Added: ${name}`);
-
-            
-
-          } catch (err) {
-            console.error("❌ Error adding marker:", err);
-          }
-        });
-
-        window.accommodationLayer.bringToFront(); // Ensure accommodations are above trails
+          });
+        }
 
         const countEl = document.getElementById("accommodation-count");
         if (countEl) {
           countEl.textContent = `Found ${features.length} accommodations nearby`;
         }
-      }
     })
     .catch(err => {
       console.error("❌ API Error:", err);
