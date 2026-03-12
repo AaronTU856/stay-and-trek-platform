@@ -50,6 +50,14 @@
       color: #f6f2ea;
     }
 
+    .home-hero-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
     .home-hero-title {
       font-family: "Fraunces", serif;
       font-size: clamp(26px, 4vw, 44px);
@@ -74,6 +82,29 @@
       border-radius: 16px;
       padding: 18px;
       box-shadow: 0 12px 30px rgba(14, 27, 18, 0.12);
+    }
+
+    .home-audio {
+      display: none;
+    }
+
+    .home-audio-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 18px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      background: linear-gradient(135deg, #1f6b43, #2e8b57);
+      color: #f6f2ea;
+      font-weight: 600;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: 0 10px 20px rgba(11, 21, 16, 0.3);
+    }
+
+    .home-audio-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 26px rgba(14, 27, 18, 0.18);
     }
 
     .home-hero {
@@ -111,6 +142,11 @@
           Discover hiking in Ireland with Stay and Trek. Plan scenic routes, find local stays,
           and explore the countryside with interactive maps built for real adventures.
         </p>
+        <div class="home-hero-actions">
+          <button class="home-audio-btn" type="button" id="home-audio-toggle" aria-pressed="false">
+            Play music
+          </button>
+        </div>
       </div>
     </section>
 
@@ -118,7 +154,51 @@
       <img src="{% static 'images/logo.png' %}" alt="Hiking in Ireland" class="home-hero" loading="lazy">
       <h2 class="home-section-title">Stay and Trek - Home</h2>
       <p>Welcome to Irish Trails and Towns where winding mountain paths meet warm village stays. Here you’ll discover Ireland’s hidden valleys, sweeping coastal views, glacial lakes and charming towns that make every journey more meaningful.</p>
+      <audio class="home-audio" autoplay loop preload="metadata" id="home-audio">
+        <source src="{% static 'music/irish_music.mp3' %}" type="audio/mpeg">
+      </audio>
     </section>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const audio = document.getElementById("home-audio");
+        const toggle = document.getElementById("home-audio-toggle");
+
+        if (!audio || !toggle) return;
+
+        const setState = (isPlaying) => {
+          toggle.textContent = isPlaying ? "Pause music" : "Play music";
+          toggle.setAttribute("aria-pressed", String(isPlaying));
+        };
+
+        const tryAutoplay = async () => {
+          try {
+            await audio.play();
+            setState(true);
+            toggle.style.display = "none";
+          } catch (err) {
+            setState(false);
+            toggle.style.display = "inline-flex";
+          }
+        };
+
+        toggle.addEventListener("click", async () => {
+          if (audio.paused) {
+            try {
+              await audio.play();
+              setState(true);
+            } catch (err) {
+              setState(false);
+            }
+          } else {
+            audio.pause();
+            setState(false);
+          }
+        });
+
+        tryAutoplay();
+      });
+    </script>
 
     <img src="{% static 'images/hike_2.jpg' %}" alt="Hiking in Ireland" class="home-hero" loading="lazy">
 
