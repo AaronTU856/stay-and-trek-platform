@@ -680,6 +680,8 @@ function displayTrailsOnMap(trails) {
         startNode = data.node_id
         console.log("Start node selected:", startNode)
 
+        alert("Trail selected. Now click an accommodation to generate route")
+
     })
     
 
