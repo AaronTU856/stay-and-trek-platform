@@ -678,8 +678,10 @@ function displayTrailsOnMap(trails) {
         const data = await res.json()
 
         startNode = data.node_id
+        console.log("Start node selected:", startNode)
 
     })
+    
 
       window.trailMarkers.addLayer(marker);
       validMarkers++;
@@ -1738,6 +1740,8 @@ function updateAccommodations(searchLat = null, searchLng = null) {
 
               endNode = data.node_id
 
+              console.log("End node selected:", endNode)
+
               if(startNode && endNode){
                   calculateRoute()
               }
@@ -1773,27 +1777,27 @@ function updateAccommodations(searchLat = null, searchLng = null) {
 
 async function calculateRoute(){
 
-    const res = await fetch(`/api/trails/route/?start=${startNode}&end=${endNode}`)
-    const route = await res.json()
+    const response = await fetch(`/api/trails/route/?start=${startNode}&end=${endNode}`)
+    const routeData = await response.json()
 
-    drawRoute(route)
+    drawRoute(routeData);
 
 }
 
-function drawRoute(route){
+function drawRoute(routeData){
     // Remove old route layer if it exists
     if(routeLayer){
-        map.removeLayer(routeLayer)
+        trailsMap.removeLayer(routeLayer)
     }
 
-    routeLayer = L.geoJSON(route,{
+    routeLayer = L.geoJSON(routeData,{
         style:{
             color:"red",
             weight:5,
             opacity:0.9
         }
-    }).addTo(map)
+    }).addTo(trailsMap)
     // Zoom to route bounds
-    map.fitBounds(routeLayer.getBounds());
+    trailsMap.fitBounds(routeLayer.getBounds());
 
 }
