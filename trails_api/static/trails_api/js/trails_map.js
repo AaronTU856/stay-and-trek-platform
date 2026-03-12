@@ -669,6 +669,18 @@ function displayTrailsOnMap(trails) {
         county: props.county || "",
       }).bindPopup(popupHTML);
 
+      marker.on("click", async function () {
+
+        const lat = marker.getLatLng().lat
+        const lng = marker.getLatLng().lng
+
+        const res = await fetch(`/api/trails/nearest-node/?lat=${lat}&lng=${lng}`)
+        const data = await res.json()
+
+        startNode = data.node_id
+
+    })
+
       window.trailMarkers.addLayer(marker);
       validMarkers++;
     } catch (err) {
@@ -1714,7 +1726,24 @@ function updateAccommodations(searchLat = null, searchLng = null) {
                 ${props.price_per_night ? '💰 €' + props.price_per_night + '/night<br>' : ''}
                 ${props.rating ? '⭐ ' + props.rating : ''}
               </div>
-            `).addTo(window.accommodationLayer);
+            `);
+            
+            marker.on("click", async function () {
+
+              const lat = marker.getLatLng().lat
+              const lng = marker.getLatLng().lng
+
+              const res = await fetch(`/api/trails/nearest-node/?lat=${lat}&lng=${lng}`)
+              const data = await res.json()
+
+              endNode = data.node_id
+
+              if(startNode && endNode){
+                  calculateRoute()
+              }
+
+          })
+          marker.addTo(window.accommodationLayer);
             
             console.log(`✅ Added: ${name}`);
 
