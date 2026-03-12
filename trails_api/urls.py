@@ -67,9 +67,10 @@ urlpatterns = [
     path('accommodations/stats/', views.accommodations_statistics, name='accommodations-stats'),
     path('accommodations/nearby/', views.NearbyAccommodationView.as_view(), name='nearby-accommodations'),
     
-    # Route testing endpoint
+    # Route testing endpoint and nearest node endpoint
     path('route-test/', views.route_test, name='route-test'),
     path('route/', views.route_between_nodes, name='route-between-nodes'),
+    path('nearest-node/', views.nearest_node, name='nearest-node'),
 ]
 
 

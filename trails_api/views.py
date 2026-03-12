@@ -1059,7 +1059,30 @@ def route_between_nodes(request):
         "features": features
     })
 
-    
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def nearest_node(request):
+    lat = request.GET.get("lat")
+    lng = request.GET.get("lng")
+
+    if not lat or not lng:
+        return JsonResponse({"error": "lat and lng required"}, status=400)
+
+    with connection.cursor() as cursor:
+        cursor.execute("""
+        SELECT id
+        FROM planet_osm_roads_vertices_pgr
+        ORDER BY the_geom <-> ST_SetSRID(ST_Point(%s,%s),4326)
+        LIMIT 1
+        """, [lng, lat])
+
+
+        row = cursor.fetchone()
+
+    if row:
+        return JsonResponse({"nearest_node_id": row[0], "distance_meters": row[1]})
+    else:
+        return JsonResponse({"error": "No nodes found"}, status=404)
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
