@@ -6,6 +6,10 @@
 console.log("✅ trails_map.js loaded");
 let map;
 let allTrailsData = [];
+// Global variables for route planning
+let startNode = null;
+let endNode = null;
+let routeLayer = null;
 
 
 document.addEventListener("DOMContentLoaded", function () {
