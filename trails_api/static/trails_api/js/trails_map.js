@@ -1781,7 +1781,7 @@ async function calculateRoute(){
 }
 
 function drawRoute(route){
-
+    // Remove old route layer if it exists
     if(routeLayer){
         map.removeLayer(routeLayer)
     }
@@ -1789,8 +1789,11 @@ function drawRoute(route){
     routeLayer = L.geoJSON(route,{
         style:{
             color:"red",
-            weight:5
+            weight:5,
+            opacity:0.9
         }
     }).addTo(map)
+    // Zoom to route bounds
+    map.fitBounds(routeLayer.getBounds());
 
 }
