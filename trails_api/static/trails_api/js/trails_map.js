@@ -1770,3 +1770,27 @@ function updateAccommodations(searchLat = null, searchLng = null) {
       }
     });
 }
+
+async function calculateRoute(){
+
+    const res = await fetch(`/api/trails/route/?start=${startNode}&end=${endNode}`)
+    const route = await res.json()
+
+    drawRoute(route)
+
+}
+
+function drawRoute(route){
+
+    if(routeLayer){
+        map.removeLayer(routeLayer)
+    }
+
+    routeLayer = L.geoJSON(route,{
+        style:{
+            color:"red",
+            weight:5
+        }
+    }).addTo(map)
+
+}
