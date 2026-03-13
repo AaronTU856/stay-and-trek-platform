@@ -6,11 +6,12 @@
 console.log("✅ trails_map.js loaded");
 let map;
 let allTrailsData = [];
+
 // Global variables for route planning
-let startNode = null;
-let endNode = null;
-let routeLayer = null;
-let accommodationRequestId = 0;
+let accommodationRequestId = 0; // API request control
+let selectedTrail = null; // Store the currently selected trail for route planning
+let selectedAccommodation = null; // Store the currently selected accommodation for route planning
+let routeLayer = null; // Layer to display the generated route
 
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -1531,6 +1532,18 @@ function displayNearestTrails(trails) {
             
         `);
 
+        // Routing store selected trail
+        marker.on("click", function () {
+        selectedTrail = {
+          lat: lat,
+          lng: lng,
+          name: name
+        };
+        console.log("Selected trail for routing:", selectedTrail);
+
+        tryRoute();
+      });
+
     window.nearestTrailsLayer.addLayer(marker);
   });
 
@@ -1727,6 +1740,17 @@ function updateAccommodations(searchLat = null, searchLng = null) {
             </div>
         `);
 
+        marker.on("click", function () {
+          selectedAccommodation = {
+            lat: marker.getLatLng().lat,
+            lng: marker.getLatLng().lng
+          };
+
+          console.log("Selected accommodation:", selectedAccommodation);
+
+          tryRoute();
+        });
+
         marker.addTo(window.accommodationLayer);
         addedCount += 1;
       });
@@ -1757,29 +1781,51 @@ function updateAccommodations(searchLat = null, searchLng = null) {
     });
 }
 
-async function calculateRoute(){
+// Legacy node-based routing. Keep for later if needed.
+// async function calculateRoute(){
+//
+//     const response = await fetch(`/api/trails/route/?start=${startNode}&end=${endNode}`)
+//     const routeData = await response.json()
+//
+//     drawRoute(routeData);
+//
+// }
 
-    const response = await fetch(`/api/trails/route/?start=${startNode}&end=${endNode}`)
-    const routeData = await response.json()
+function drawRoute(geojson) {
 
-    drawRoute(routeData);
+  if (routeLayer) {
+    trailsMap.removeLayer(routeLayer);
+  }
 
+  routeLayer = L.geoJSON(geojson, {
+    style: {
+      color: "blue",
+      weight: 4
+    }
+  }).addTo(trailsMap);
 }
 
-function drawRoute(routeData){
-    // Remove old route layer if it exists
-    if(routeLayer){
-        trailsMap.removeLayer(routeLayer)
-    }
+function tryRoute() {
 
-    routeLayer = L.geoJSON(routeData,{
-        style:{
-            color:"red",
-            weight:5,
-            opacity:0.9
-        }
-    }).addTo(trailsMap)
-    // Zoom to route bounds
-    trailsMap.fitBounds(routeLayer.getBounds());
+  if (!selectedTrail || !selectedAccommodation) {
+    return;
+  }
 
+  console.log("Requesting route...");
+
+  fetch("/api/trails/route/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      trail_lat: selectedTrail.lat,
+      trail_lng: selectedTrail.lng,
+      acc_lat: selectedAccommodation.lat,
+      acc_lng: selectedAccommodation.lng
+    })
+  })
+  .then(res => res.json())
+  .then(data => drawRoute(data))
+  .catch(err => console.error("Route error:", err));
 }

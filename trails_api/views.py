@@ -997,24 +997,24 @@ def accommodations_near_town(request):
 @permission_classes([AllowAny])
 def route_test(request):
 
-    start_node = 124037
-    end_node = 124065
+    trail_lat = request.GET.get("trail_lat")
+    trail_lng = request.GET.get("trail_lng")
+    
+    acc_lat = request.GET.get("acc_lat")
+    acc_lng = request.GET.get("acc_lng")
+    
+    geojson = {
+        "type": "Feature",
+        "geometry": {
+            "type": "LineString",
+            "coordinates": [
+                [trail_lng, trail_lat],
+                [acc_lng, acc_lat]
+            ]
+        }
 
-    with connection.cursor() as cursor:
-        cursor.execute("""
-        SELECT ST_AsGeoJSON(ST_Transform(r.way, 4326))
-        FROM pgr_dijkstra(
-        'SELECT osm_id AS id, source, target, ST_Length(way) AS cost FROM planet_osm_roads'::text,
-        %s::bigint,
-        %s::bigint
-        ) d
-        JOIN planet_osm_roads r
-        ON d.edge = r.osm_id
-        """, [start_node, end_node])
-
-        route = [row[0] for row in cursor.fetchall()]
-
-    return JsonResponse({"route": route})
+    }
+    return Response(geojson)
 
 
 @api_view(['GET'])
