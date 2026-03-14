@@ -12,7 +12,7 @@ let accommodationRequestId = 0; // API request control
 let selectedTrail = null; // Store the currently selected trail for route planning
 let selectedAccommodation = null; // Store the currently selected accommodation for route planning
 let routeLayer = null; // Layer to display the generated route
-
+let routingInProgress = false;
 
 document.addEventListener("DOMContentLoaded", function () {
   console.log("📍 DOM loaded, initializing map...");
@@ -59,6 +59,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
   if (window.trailsMap) {
         window.trailsMap.on('moveend', () => {
+
+            if (routingInProgress) return;
+
             console.log("🔄 Map moved, updating accommodations...");
             updateAccommodations();
         });
@@ -1858,6 +1861,8 @@ function tryRoute() {
     return;
   }
 
+  routingInProgress = true;
+
   console.log("Requesting route...");
 
   fetch("/api/trails/route/", {
@@ -1886,8 +1891,15 @@ function tryRoute() {
       throw new Error("Invalid GeoJSON object");
     }
     drawRoute(data);
+
+    routingInProgress = false;
+
   })
-  .catch(err => console.error("Route error:", err));
+  .catch(err => {
+    routingInProgress = false;
+
+    console.error("Route error:", err);
+  });
 }
 
 
