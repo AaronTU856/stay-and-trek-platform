@@ -25,9 +25,24 @@ document.addEventListener("DOMContentLoaded", function () {
       return response.json();
     })
     .then((data) => {
-      data.route.forEach((line) => {
-        L.geoJSON(JSON.parse(line)).addTo(window.trailsMap);
-      });
+      if (!data) {
+        return;
+      }
+
+      if (Array.isArray(data)) {
+        data.forEach((line) => {
+          const parsed = typeof line === "string" ? JSON.parse(line) : line;
+          L.geoJSON(parsed).addTo(window.trailsMap);
+        });
+        return;
+      }
+
+      if (data.type === "Feature" || data.type === "FeatureCollection") {
+        L.geoJSON(data).addTo(window.trailsMap);
+        return;
+      }
+
+      console.warn("Route test skipped: unexpected payload");
     })
     .catch((error) => {
       console.warn("Route test skipped:", error.message);
@@ -646,7 +661,7 @@ function displayTrailsOnMap(trails) {
         shadowSize: [41, 41],
       });
 
-      // ✅ Use the correct name field from your data
+      
       const name = props.name || props.trail_name || "Unnamed Trail";
       const county = props.county || "Unknown";
       const distance = props.distance_km || "?";
@@ -676,14 +691,17 @@ function displayTrailsOnMap(trails) {
         const lat = marker.getLatLng().lat
         const lng = marker.getLatLng().lng
 
-        const res = await fetch(`/api/trails/nearest-node/?lat=${lat}&lng=${lng}`)
-        const data = await res.json()
+        selectedTrail = {
+          lat: lat,
+          lng: lng,
+          name: name
+        };
 
-        startNode = data.node_id
-        console.log("Start node selected:", startNode)
+        console.log("Selected trail:", selectedTrail)
 
         alert("Trail selected. Now click an accommodation to generate route")
 
+       
     })
     
 
@@ -1541,7 +1559,6 @@ function displayNearestTrails(trails) {
         };
         console.log("Selected trail for routing:", selectedTrail);
 
-        tryRoute();
       });
 
     window.nearestTrailsLayer.addLayer(marker);
@@ -1784,7 +1801,7 @@ function updateAccommodations(searchLat = null, searchLng = null) {
 // Legacy node-based routing. Keep for later if needed.
 // async function calculateRoute(){
 //
-//     const response = await fetch(`/api/trails/route/?start=${startNode}&end=${endNode}`)
+//     const response = await fetch(`/api/trails/route/?start=${selectedTrail}&end=${selectedAccommodation}`)
 //     const routeData = await response.json()
 //
 //     drawRoute(routeData);
@@ -1792,9 +1809,18 @@ function updateAccommodations(searchLat = null, searchLng = null) {
 // }
 
 function drawRoute(geojson) {
-
   if (routeLayer) {
-    trailsMap.removeLayer(routeLayer);
+    window.trailsMap.removeLayer(routeLayer);
+  }
+
+  if (!geojson) {
+    console.warn("Route draw skipped: empty payload");
+    return;
+  }
+
+  if (geojson.type === "FeatureCollection" && (!geojson.features || geojson.features.length === 0)) {
+    console.warn("Route draw skipped: no features returned");
+    return;
   }
 
   routeLayer = L.geoJSON(geojson, {
@@ -1802,7 +1828,28 @@ function drawRoute(geojson) {
       color: "blue",
       weight: 4
     }
-  }).addTo(trailsMap);
+  }).addTo(window.trailsMap);
+
+  const routeNote = geojson.route_note || geojson?.features?.[0]?.properties?.note;
+  if (routeNote && typeof routeLayer.bindTooltip === "function") {
+    routeLayer.bindTooltip(routeNote, { sticky: true, direction: "top" }).openTooltip();
+  }
+
+  const routeStatus = document.getElementById("route-status");
+  if (routeStatus) {
+    routeStatus.textContent = routeNote || "";
+  }
+
+  if (typeof routeLayer.bringToFront === "function") {
+    routeLayer.bringToFront();
+  }
+
+  if (typeof routeLayer.getBounds === "function") {
+    const bounds = routeLayer.getBounds();
+    if (bounds && bounds.isValid && bounds.isValid()) {
+      window.trailsMap.fitBounds(bounds, { padding: [24, 24] });
+    }
+  }
 }
 
 function tryRoute() {
@@ -1816,7 +1863,8 @@ function tryRoute() {
   fetch("/api/trails/route/", {
     method: "POST",
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCsrfToken()
     },
     body: JSON.stringify({
       trail_lat: selectedTrail.lat,
@@ -1825,7 +1873,22 @@ function tryRoute() {
       acc_lng: selectedAccommodation.lng
     })
   })
-  .then(res => res.json())
-  .then(data => drawRoute(data))
+  .then(async res => {
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Route request failed (${res.status}): ${text}`);
+    }
+    return res.json();
+  })
+  .then(data => {
+    console.log("Route response:", data);
+    if (!data || (data.type !== "Feature" && data.type !== "FeatureCollection")) {
+      throw new Error("Invalid GeoJSON object");
+    }
+    drawRoute(data);
+  })
   .catch(err => console.error("Route error:", err));
 }
+
+
+

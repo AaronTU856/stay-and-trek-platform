@@ -198,7 +198,7 @@ else:
             DATABASES = {
                 'default': {
                     'ENGINE': 'django.contrib.gis.db.backends.postgis',
-                    'NAME': 'webmapping_db',
+                    'NAME': 'stayandtrek',
                     'USER': 'aaronbaggot',
                     'PASSWORD': '',
                     'HOST': 'localhost',

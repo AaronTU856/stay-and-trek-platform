@@ -40,7 +40,9 @@ services:
       - app_network
 
   db:
-    image: postgis/postgis:15-3.4
+    build:
+      context: .
+      dockerfile: docker/db/Dockerfile
     container_name: postgres_container
     platform: linux/amd64  # Use amd64 to work on your M1 Mac
     environment:

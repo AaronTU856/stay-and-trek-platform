@@ -1,3 +1,6 @@
+
+
+import logging
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from django.core.serializers import serialize
@@ -863,11 +866,13 @@ def accommodations_near_trail(request):
         from django.contrib.gis.db.models.functions import Transform
         
         # Use dwithin lookup which is designed for geography fields
-        accommodations = Accommodation.objects.annotate(
-            distance=DistanceFunction('location', trail.start_point)
-        ).filter(
-            location__dwithin=(trail.start_point, D(m=radius_meters))
-        ).order_by('distance') [:10] # Limit to 10 closest for performance
+        accommodations = list(
+            Accommodation.objects.annotate(
+                distance=DistanceFunction('location', trail.start_point)
+            ).filter(
+                location__dwithin=(trail.start_point, D(m=radius_meters))
+            ).order_by('distance')[:10]
+        )
         
         # Apply category filtering based on accommodation name
         if category and category != 'all':
@@ -880,9 +885,66 @@ def accommodations_near_trail(request):
                     Q(name__icontains='b&b') | Q(name__icontains='bed and breakfast')
                 )
         
+        accommodations = [acc for acc in accommodations if acc.location]
+
+        road_distances = {}
+        if accommodations:
+            with connection.cursor() as cursor:
+                trail_lng = trail.start_point.x
+                trail_lat = trail.start_point.y
+                start_node = get_road_node_for_point(
+                    cursor,
+                    trail_lng,
+                    trail_lat,
+                    ROAD_HIGHWAY_FILTER
+                )
+                acc_nodes = {}
+                end_nodes = []
+
+                for acc in accommodations:
+                    acc_node = get_road_node_for_point(
+                        cursor,
+                        acc.location.x,
+                        acc.location.y,
+                        ROAD_HIGHWAY_FILTER
+                    )
+                    if acc_node is not None:
+                        acc_nodes[acc.id] = acc_node
+                        end_nodes.append(acc_node)
+
+                end_nodes = list(dict.fromkeys(end_nodes))
+
+                if start_node is not None and end_nodes:
+                    far_acc = max(
+                        accommodations,
+                        key=lambda a: abs(a.location.y - trail_lat) + abs(a.location.x - trail_lng)
+                    )
+                    inner_sql = build_road_inner_sql(
+                        cursor,
+                        (trail_lng, trail_lat),
+                        (far_acc.location.x, far_acc.location.y),
+                        ROAD_HIGHWAY_FILTER
+                    )
+                    cursor.execute(
+                        "SELECT node, agg_cost FROM pgr_kdijkstraCost(%s, %s, %s, false)",
+                        [inner_sql, start_node, end_nodes]
+                    )
+                    cost_rows = cursor.fetchall()
+                    node_costs = {row[0]: row[1] for row in cost_rows if row and row[1] is not None}
+                    for acc_id, node_id in acc_nodes.items():
+                        road_distances[acc_id] = node_costs.get(node_id)
+
+        def road_distance_sort_key(acc_item):
+            dist = road_distances.get(acc_item.id)
+            return dist if dist is not None else float("inf")
+
+        accommodations.sort(key=road_distance_sort_key)
+
         # Build GeoJSON response
         features = []
         for acc in accommodations:
+            road_distance_m = road_distances.get(acc.id)
+            road_distance_km = round(road_distance_m / 1000, 2) if road_distance_m is not None else None
             features.append({
                 "type": "Feature",
                 "geometry": {
@@ -896,6 +958,7 @@ def accommodations_near_trail(request):
                     "price_per_night": float(acc.price_per_night) if acc.price_per_night else None,
                     "rating": acc.rating,
                     "distance_km": round(acc.distance.km, 2),
+                    "road_distance_km": road_distance_km,
                     "url": acc.url,
                 }
             })
@@ -924,73 +987,13 @@ def accommodations_by_county(request):
     Returns county-level statistics including accommodation count.
     """
     accommodations = PointOfInterest.objects.filter(poi_type='accommodation')
-    
     county_stats = accommodations.values('county').annotate(
         count=Count('id')
     ).order_by('-count')
-    
     return Response({
         "counties": list(county_stats),
         "total_counties": county_stats.count(),
         "total_accommodations": accommodations.count()
-    })
-
-
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def accommodations_near_town(request):
-    """
-    Get accommodations near a specific town.
-    
-    Query Parameters:
-    - town_id: Required. The town ID
-    - radius: Optional. Search radius in kilometers (default: 15)
-    """
-    town_id = request.GET.get('town_id')
-    radius_km = float(request.GET.get('radius', 15))
-    
-    if not town_id:
-        return Response({'error': 'town_id parameter required'}, status=status.HTTP_400_BAD_REQUEST)
-    
-    try:
-        town = Town.objects.get(id=town_id)
-    except Town.DoesNotExist:
-        return Response({'error': f'Town {town_id} not found'}, status=status.HTTP_404_NOT_FOUND)
-    
-    # Find accommodations within radius
-    nearby_accommodations = PointOfInterest.objects.filter(
-        poi_type='accommodation',
-        location__distance_lte=(town.location, D(km=radius_km))
-    ).annotate(
-        distance_km=DistanceFunction('location', town.location)
-    ).order_by('distance_km')
-    
-    features = []
-    for acc in nearby_accommodations:
-        features.append({
-            "type": "Feature",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [acc.longitude, acc.latitude]
-            },
-            "properties": {
-                "id": acc.id,
-                "name": acc.name,
-                "source": acc.accommodation_source,
-                "price": str(acc.price_per_night) if acc.price_per_night else "N/A",
-                "rating": acc.rating or 0,
-                "url": acc.url,
-            }
-        })
-    
-    return Response({
-        "type": "FeatureCollection",
-        "town_id": town_id,
-        "town_name": town.name,
-        "town_population": town.population,
-        "search_radius_km": radius_km,
-        "features": features,
-        "count": len(features)
     })
     
 @api_view(['GET'])
@@ -1003,6 +1006,12 @@ def route_test(request):
     acc_lat = request.GET.get("acc_lat")
     acc_lng = request.GET.get("acc_lng")
     
+    if trail_lat is None or trail_lng is None or acc_lat is None or acc_lng is None:
+        return Response({
+            "type": "FeatureCollection",
+            "features": []
+        })
+
     geojson = {
         "type": "Feature",
         "geometry": {
@@ -1017,34 +1026,269 @@ def route_test(request):
     return Response(geojson)
 
 
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def route_between_nodes(request):
+ROAD_HIGHWAY_FILTER = (
+    "highway IN ('primary', 'secondary', 'tertiary', 'unclassified', "
+    "'residential', 'service', 'track', 'living_street', 'road')"
+)
+BBOX_BUFFER_DEG = 0.25 
 
-    start = request.GET.get("start")
-    end = request.GET.get("end")
 
-    try:
-        start_node = int(start)
-        end_node = int(end)
-    except (TypeError, ValueError):
-        return JsonResponse({"error": "start and end must be integers"}, status=400)
+def build_road_inner_sql(cursor, start_coords, end_coords, road_filter, bbox_buffer_deg=BBOX_BUFFER_DEG):
+    start_lng, start_lat = start_coords
+    end_lng, end_lat = end_coords
+    start_geom = cursor.mogrify(
+        "ST_SetSRID(ST_Point(%s,%s),4326)",
+        [start_lng, start_lat]
+    ).decode()
+    end_geom = cursor.mogrify(
+        "ST_SetSRID(ST_Point(%s,%s),4326)",
+        [end_lng, end_lat]
+    ).decode()
+    bbox_geom = (
+        "ST_Transform(ST_Buffer(ST_Envelope(ST_Collect(" +
+        start_geom + "," + end_geom + ")), " + str(bbox_buffer_deg) + "), 3857)"
+    )
+    return f"""
+        SELECT row_number() OVER () AS id,
+               source,
+               target,
+               ST_Length(way) AS cost
+        FROM planet_osm_roads
+        WHERE {road_filter}
+          AND ST_Intersects(way, {bbox_geom})
+    """
+
+
+def get_road_node_for_point(cursor, lng, lat, road_filter):
+    
+    # cursor.execute("""
+    #     SELECT v.id
+    #     FROM planet_osm_roads_vertices_pgr v
+    #     JOIN planet_osm_roads r
+    #     ON v.osm_id= r.source OR v.osm_id= r.target
+    #     ORDER BY v.geom <-> ST_Transform(ST_SetSRID(ST_Point(%s,%s),4326),3857)
+    #     LIMIT 1;
+    # """, [lng, lat])
+
+    # row = cursor.fetchone()
+
+    # return row[0] if row else None
+    
+    # Try snapping within 500m
+    cursor.execute("""
+        SELECT id
+        FROM planet_osm_roads_vertices_pgr
+        WHERE ST_DWithin(
+            geom,
+            ST_Transform(ST_SetSRID(ST_Point(%s,%s),4326),3857),
+            500
+        )
+        ORDER BY geom <-> ST_Transform(ST_SetSRID(ST_Point(%s,%s),4326),3857)
+        LIMIT 1;
+    """, [lng, lat, lng, lat])
+    row = cursor.fetchone()
+    if not row:
+        # Fallback: try snapping within 2000m
+        cursor.execute("""
+            SELECT id
+            FROM planet_osm_roads_vertices_pgr
+            WHERE ST_DWithin(
+                geom,
+                ST_Transform(ST_SetSRID(ST_Point(%s,%s),4326),3857),
+                2000
+            )
+            ORDER BY geom <-> ST_Transform(ST_SetSRID(ST_Point(%s,%s),4326),3857)
+            LIMIT 1;
+        """, [lng, lat, lng, lat])
+        row = cursor.fetchone()
+    return row[0] if row else None
+
+
+def get_transport_route(start_coords, end_coords):
+    import logging
+    start_lng, start_lat = start_coords
+    end_lng, end_lat = end_coords
+    road_filter = ROAD_HIGHWAY_FILTER
 
     with connection.cursor() as cursor:
+        # Snap start and end nodes
+        start_node = get_road_node_for_point(cursor, start_lng, start_lat, road_filter)
+        logging.warning(f"[ROUTE DEBUG] Start node: {start_node} for coords {start_lng},{start_lat}")
+        end_node = get_road_node_for_point(cursor, end_lng, end_lat, road_filter)
+        logging.warning(f"[ROUTE DEBUG] End node: {end_node} for coords {end_lng},{end_lat}")
+        if start_node is None or end_node is None:
+            logging.error("[ROUTE DEBUG] No start/end node found.")
+            return {"status": "no_route_found", "component_ids": None}
 
+        # Get snapped vertex geometry for connector segment
         cursor.execute("""
-        SELECT ST_AsGeoJSON(ST_Transform(r.way,4326))
-        FROM pgr_dijkstra(
-            'SELECT osm_id AS id, source, target, ST_Length(way) AS cost FROM planet_osm_roads',
-            %s,
-            %s,
-            false
-        ) d
-        JOIN planet_osm_roads r
-        ON d.edge = r.osm_id;
-        """, [start_node, end_node])
+            SELECT ST_AsGeoJSON(ST_Transform(geom,4326))
+            FROM planet_osm_roads_vertices_pgr
+            WHERE osm_id= %s;
+        """, [start_node])
+        start_geom_row = cursor.fetchone()
+        cursor.execute("""
+            SELECT ST_AsGeoJSON(ST_Transform(geom,4326))
+            FROM planet_osm_roads_vertices_pgr
+            WHERE osm_id= %s;
+        """, [end_node])
+        end_geom_row = cursor.fetchone()
 
-        rows = cursor.fetchall()
+        features = []
+        # Connector from original start to snapped road vertex
+        if start_geom_row:
+            start_vertex_coords = json.loads(start_geom_row[0])["coordinates"]
+            features.append({
+                "type": "Feature",
+                "properties": {"segment": "connector_start"},
+                "geometry": {
+                    "type": "LineString",
+                    "coordinates": [[start_lng, start_lat], start_vertex_coords]
+                }
+            })
+
+        # Road route merged geometry
+        cursor.execute("""
+            SELECT ST_AsGeoJSON(
+                ST_LineMerge(
+                    ST_Union(ST_Transform(r.way, 4326))
+                )
+            )
+            FROM pgr_dijkstra(
+                'SELECT id, source, target, cost FROM planet_osm_roads',
+                %s,
+                %s,
+                false
+            ) d
+            JOIN planet_osm_roads r
+              ON d.edge = r.osm_id
+            WHERE d.edge <> -1;
+        """, [start_node, end_node])
+        merged_row = cursor.fetchone()
+        logging.warning(f"[ROUTE DEBUG] merged route found: {merged_row is not None}")
+        if merged_row and merged_row[0]:
+            merged_geom = json.loads(merged_row[0])
+            features.append({
+                "type": "Feature",
+                "properties": {"segment": "road_route"},
+                "geometry": merged_geom
+            })
+
+        # Connector from snapped end vertex to original end point
+        if end_geom_row:
+            end_vertex_coords = json.loads(end_geom_row[0])["coordinates"]
+            features.append({
+                "type": "Feature",
+                "properties": {"segment": "connector_end"},
+                "geometry": {
+                    "type": "LineString",
+                    "coordinates": [end_vertex_coords, [end_lng, end_lat]]
+                }
+            })
+
+        if not merged_row or not merged_row[0]:
+            logging.error("[ROUTE DEBUG] No route found by pgr_dijkstra.")
+            return {"status": "no_route_found", "component_ids": None}
+
+    return {
+        "status": "ok",
+        "feature": {
+            "type": "FeatureCollection",
+            "features": features
+        }
+    }
+
+@csrf_exempt
+@api_view(['POST'])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def route_between_nodes(request):
+    trail_lat = request.data.get("trail_lat")
+    trail_lng = request.data.get("trail_lng")
+
+    acc_lat = request.data.get("acc_lat")
+    acc_lng = request.data.get("acc_lng")
+
+    if trail_lat is None or trail_lng is None or acc_lat is None or acc_lng is None:
+        return JsonResponse({"error": "trail_lat/trail_lng/acc_lat/acc_lng required"}, status=400)
+
+    try:
+        trail_lat = float(trail_lat)
+        trail_lng = float(trail_lng)
+        acc_lat = float(acc_lat)
+        acc_lng = float(acc_lng)
+    except (TypeError, ValueError):
+        return JsonResponse({"error": "coordinates must be numbers"}, status=400)
+
+    try:
+        with connection.cursor() as cursor:
+
+            # find nearest road node to trail
+            cursor.execute("""
+                    SELECT id
+                    FROM planet_osm_roads_vertices_pgr
+                    ORDER BY geom <-> ST_Transform(ST_SetSRID(ST_Point(%s,%s),4326), 3857)
+                    LIMIT 1;
+                """, [trail_lng, trail_lat])
+
+            start_row = cursor.fetchone()
+            if not start_row:
+                return JsonResponse({"error": "No nearby start node found"}, status=404)
+            start_node = start_row[0]
+
+            # find nearest road node to accommodation
+            cursor.execute("""
+                    SELECT id
+                    FROM planet_osm_roads_vertices_pgr
+                    ORDER BY geom <-> ST_Transform(ST_SetSRID(ST_Point(%s,%s),4326), 3857)
+                    LIMIT 1;
+                """, [acc_lng, acc_lat])
+            end_row = cursor.fetchone()
+            if not end_row:
+                return JsonResponse({"error": "No nearby end node found"}, status=404)
+            end_node = end_row[0]
+
+            # run Dijkstra with a deterministic synthetic edge id
+            cursor.execute("""
+            SELECT ST_AsGeoJSON(ST_Transform(r.way,4326))
+            FROM pgr_dijkstra(
+                'SELECT osm_id AS id,
+                        source,
+                        target,
+                        cost
+                 FROM planet_osm_roads',
+                %s,
+                %s,
+                false
+            ) d
+            JOIN planet_osm_roads r
+            ON d.edge = r.osm_id;
+            """, [start_node, end_node])
+
+            rows = cursor.fetchall()
+    except Exception as exc:
+        return JsonResponse({"error": str(exc)}, status=500)
+
+    if not rows:
+        transport = get_transport_route((trail_lng, trail_lat), (acc_lng, acc_lat))
+        if transport.get("status") == "ok":
+            # Return merged connector + road route as GeoJSON Feature
+            return JsonResponse(transport["feature"])
+        note = "Distance estimated: Road network incomplete."
+        return JsonResponse({
+            "type": "Feature",
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [
+                    [trail_lng, trail_lat],
+                    [acc_lng, acc_lat]
+                ]
+            },
+            "properties": {
+                "route_type": "projected",
+                "note": note
+            }
+        })
 
     features = []
 
@@ -1072,7 +1316,7 @@ def nearest_node(request):
         cursor.execute("""
         SELECT id
         FROM planet_osm_roads_vertices_pgr
-        ORDER BY the_geom <-> ST_SetSRID(ST_Point(%s,%s),4326)
+        ORDER BY geom <-> ST_Transform(ST_SetSRID(ST_Point(%s,%s),4326), 3857)
         LIMIT 1
         """, [lng, lat])
 
@@ -1080,7 +1324,7 @@ def nearest_node(request):
         row = cursor.fetchone()
 
     if row:
-        return JsonResponse({"nearest_node_id": row[0], "distance_meters": row[1]})
+        return JsonResponse({"nearest_node_id": row[0]})
     else:
         return JsonResponse({"error": "No nodes found"}, status=404)
 
@@ -1152,4 +1396,61 @@ class NearbyAccommodationView(generics.ListAPIView):
                 return Accommodation.objects.none()
             
         return Accommodation.objects.none()
+    
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def accommodations_near_town(request):
+    """
+    Get accommodations near a specific town.
+    
+    Query Parameters:
+    - town_id: Required. The town ID
+    - radius: Optional. Search radius in kilometers (default: 15)
+    """
+    town_id = request.GET.get('town_id')
+    radius_km = float(request.GET.get('radius', 15))
+    
+    if not town_id:
+        return Response({'error': 'town_id parameter required'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        town = Town.objects.get(id=town_id)
+    except Town.DoesNotExist:
+        return Response({'error': f'Town {town_id} not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+    # Find accommodations within radius
+    nearby_accommodations = PointOfInterest.objects.filter(
+        poi_type='accommodation',
+        location__distance_lte=(town.location, D(km=radius_km))
+    ).annotate(
+        distance_km=DistanceFunction('location', town.location)
+    ).order_by('distance_km')
+    
+    features = []
+    for acc in nearby_accommodations:
+        features.append({
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [acc.longitude, acc.latitude]
+            },
+            "properties": {
+                "id": acc.id,
+                "name": acc.name,
+                "source": acc.accommodation_source,
+                "price": str(acc.price_per_night) if acc.price_per_night else "N/A",
+                "rating": acc.rating or 0,
+                "url": acc.url,
+            }
+        })
+    
+    return Response({
+        "type": "FeatureCollection",
+        "town_id": town_id,
+        "town_name": town.name,
+        "town_population": town.population,
+        "search_radius_km": radius_km,
+        "features": features,
+        "count": len(features)
+    })
     
