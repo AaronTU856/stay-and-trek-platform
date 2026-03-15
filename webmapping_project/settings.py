@@ -186,7 +186,8 @@ else:
             DATABASES = {
                 'default': {
                     'ENGINE': 'django.contrib.gis.db.backends.postgis',
-                    'NAME': os.getenv('POSTGRES_DB', 'trails_db'),
+                    'NAME':'stayandtrek',
+                    #'NAME': os.getenv('POSTGRES_DB', 'trails_db'),
                     'USER': os.getenv('POSTGRES_USER', 'postgres'),
                     'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'postgres'),
                     'HOST': os.getenv('DB_HOST', 'db'),  # Docker service name
@@ -198,7 +199,7 @@ else:
             DATABASES = {
                 'default': {
                     'ENGINE': 'django.contrib.gis.db.backends.postgis',
-                    'NAME': 'stayandtrek',
+                    'NAME': 'trails_db',
                     'USER': 'aaronbaggot',
                     'PASSWORD': '',
                     'HOST': 'localhost',

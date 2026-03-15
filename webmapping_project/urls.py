@@ -63,6 +63,8 @@ urlpatterns = [
     
     # Authentication
     path('auth/', include('authentication.urls')),  # Add this line
+    
+    
 ]
 
 # Serve static and media files during development
