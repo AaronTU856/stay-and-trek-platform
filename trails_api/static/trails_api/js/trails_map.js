@@ -1801,37 +1801,46 @@ function updateAccommodations(searchLat = null, searchLng = null) {
     });
 }
 
-// Legacy node-based routing. Keep for later if needed.
-// async function calculateRoute(){
-//
-//     const response = await fetch(`/api/trails/route/?start=${selectedTrail}&end=${selectedAccommodation}`)
-//     const routeData = await response.json()
-//
-//     drawRoute(routeData);
-//
-// }
+
 
 function drawRoute(geojson) {
   if (routeLayer) {
     window.trailsMap.removeLayer(routeLayer);
   }
 
-  if (!geojson) {
-    console.warn("Route draw skipped: empty payload");
-    return;
+  if (geojson.features) {
+    console.log("Checking segment properties:");
+    console.table(geojson.features.map(f => ({
+      type: f.geometry.type,
+      segment: f.properties.segment
+    })));
   }
-
-  if (geojson.type === "FeatureCollection" && (!geojson.features || geojson.features.length === 0)) {
-    console.warn("Route draw skipped: no features returned");
-    return;
-  }
-
   routeLayer = L.geoJSON(geojson, {
-    style: {
-      color: "blue",
-      weight: 4
+
+    style: function(feature) {
+      console.log("Segment found:", feature.properties.segment);
+      const segmentType = feature.properties ? feature.properties.segment : null;
+
+      if  (segmentType == 'connector_start' || segmentType == 'connector_end') {
+        return {
+          color: "green",
+          weight: 4,
+          dashArray: "10, 10",
+          opacity: 1
+        };
+      }
+  
+      // Default for main road route
+      return {
+        color: "blue",
+        weight: 5,
+        opacity: 1
+      };
     }
   }).addTo(window.trailsMap);
+
+  
+ 
 
   const routeNote = geojson.route_note || geojson?.features?.[0]?.properties?.note;
   if (routeNote && typeof routeLayer.bindTooltip === "function") {
@@ -1849,11 +1858,14 @@ function drawRoute(geojson) {
 
   if (typeof routeLayer.getBounds === "function") {
     const bounds = routeLayer.getBounds();
-    if (bounds && bounds.isValid && bounds.isValid()) {
+    const valid = (typeof bounds.isValid === 'function') ? bounds.isValid() : !!bounds;
+    if (valid) {
       window.trailsMap.fitBounds(bounds, { padding: [24, 24] });
     }
   }
 }
+
+
 
 function tryRoute() {
 
@@ -1887,20 +1899,19 @@ function tryRoute() {
   })
   .then(data => {
     console.log("Route response:", data);
-    if (!data || (data.type !== "Feature" && data.type !== "FeatureCollection")) {
-      throw new Error("Invalid GeoJSON object");
+
+  
+    if (data && (data.status === "ok" || data.status === "success")) {
+      console.log("Found valid route data, calling drawRoute...");
+      
+      const routeData = data.feature || data; 
+      drawRoute(routeData);
+
+    } else {
+     // access to error message
+      const msg = data ? (data.message || data.error || "Unknown error") : "No data received";
+      console.log("Routing error from server:", msg);
     }
-    drawRoute(data);
-
     routingInProgress = false;
-
   })
-  .catch(err => {
-    routingInProgress = false;
-
-    console.error("Route error:", err);
-  });
 }
-
-
-
