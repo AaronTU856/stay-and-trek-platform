@@ -1069,30 +1069,35 @@ def build_road_inner_sql(cursor, start_coords, end_coords, road_filter, bbox_buf
         start_geom + "," + end_geom + ")), " + str(bbox_buffer_deg) + "), 3857)"
     )
     return f"""
-        SELECT row_number() OVER () AS id,
+        SELECT id,
                source,
                target,
                cost
-        FROM planet_osm_roads
+        FROM routing_ways
         WHERE {road_filter}
     """
     
     
-    
 def get_road_node_for_point(cursor, lng, lat):
     cursor.execute("""
-        SELECT id FROM planet_osm_roads_vertices_pgr
-        ORDER BY geom <-> ST_Transform(ST_SetSRID(ST_Point(%s, %s), 4326), 3857)
+        SELECT id 
+        FROM routing_ways_vertices_pgr
+        WHERE component_id = 38
+        ORDER BY the_geom <-> ST_Transform(ST_SetSRID(ST_Point(%s, %s), 4326), 3857)
         LIMIT 1;
     """, [lng, lat])
+    
     row = cursor.fetchone()
     return row[0] if row else None
+
 
 def get_transport_route(start_coords, end_coords):
     import logging
     import json
     from django.db import connection
 
+    features = []
+    
     start_lng, start_lat = start_coords
     end_lng, end_lat = end_coords
 
@@ -1113,23 +1118,21 @@ def get_transport_route(start_coords, end_coords):
 
         # Get snapped start vertex
         cursor.execute("""
-            SELECT ST_AsGeoJSON(ST_Transform(geom,4326))
-            FROM planet_osm_roads_vertices_pgr
+            SELECT ST_AsGeoJSON(ST_Transform(the_geom, 4326))
+            FROM routing_ways_vertices_pgr
             WHERE id = %s;
         """, [start_node])
         start_geom_row = cursor.fetchone()
 
         # Get snapped end vertex
         cursor.execute("""
-            SELECT ST_AsGeoJSON(ST_Transform(geom,4326))
-            FROM planet_osm_roads_vertices_pgr
+            SELECT ST_AsGeoJSON(ST_Transform(the_geom, 4326))
+            FROM routing_ways_vertices_pgr
             WHERE id = %s;
         """, [end_node])
         end_geom_row = cursor.fetchone()
 
-        features = []
-
-        # Connector: original start -> snapped road node
+        # Connector: original start - snapped road node
         if start_geom_row:
             start_vertex_coords = json.loads(start_geom_row[0])["coordinates"]
 
@@ -1149,19 +1152,19 @@ def get_transport_route(start_coords, end_coords):
         try:
             logger.warning(f"[ROUTE DEBUG] start_node={start_node}, end_node={end_node}")
             
-            # Use ST_Collect to ensure we get a result even if segments don't touch perfectly
+            # Use ST_Collect to ensure get a result even if segments don't touch perfectly
             cursor.execute("""
                 SELECT ST_AsGeoJSON(
                     ST_Transform(
-                        ST_Collect(r.way), 
+                        ST_Collect(r.geom), 
                         4326
                     )
                 )
                 FROM pgr_dijkstra(
-                    'SELECT id, source, target, ST_Length(way) AS cost, ST_Length(way) AS reverse_cost FROM planet_osm_roads WHERE source != target',
-                    %s, %s, false
+                    'SELECT id, source, target, cost, reverse_cost FROM routing_ways',
+                    %s, %s, true
                 ) d
-                JOIN planet_osm_roads r ON d.edge = r.id
+                JOIN routing_ways r ON d.edge = r.id
                 WHERE d.edge <> -1;
             """, [start_node, end_node])
             
@@ -1173,7 +1176,7 @@ def get_transport_route(start_coords, end_coords):
             logging.error(f"ROUTING SQL ERROR: {e}")
             return {"status": "error", "message": str(e)}
 
-        # This log will now accurately tell us if the DB returned the geometry
+        # This log if the DB returned the geometry
         logging.warning(f"[ROUTE DEBUG] merged route found: {row is not None}")
 
         if row and row[0]:
@@ -1241,65 +1244,56 @@ def route_between_nodes(request):
     with connection.cursor() as cursor:
         start_node = get_road_node_for_point(cursor, trail_lng, trail_lat)
         end_node = get_road_node_for_point(cursor, acc_lng, acc_lat)
-        logging.debug(f"Start node: {start_node}, End node: {end_node}")
+        
+        # CRITICAL LOGGING: Terminal IDs
+        logging.warning(f"--- FYP ROUTE START ---")
+        logging.warning(f"TRAIL: {trail_lng}, {trail_lat} -> NODE: {start_node}")
+        logging.warning(f"ACC: {acc_lng}, {acc_lat} -> NODE: {end_node}")
 
         if start_node is None or end_node is None:
             return JsonResponse({"error": "No nearby routable node found"}, status=404)
+
         cursor.execute("""
-        SELECT ST_AsGeoJSON(
-            ST_LineMerge(
-                ST_Union(
-                    ST_Transform(r.way,4326)
+            SELECT ST_AsGeoJSON(
+                ST_Transform(
+                    ST_LineMerge(
+                        ST_Collect(r.geom)
+                    ), 
+                    4326
                 )
             )
-        )
-        FROM pgr_dijkstra(
-        'SELECT id, source, target, cost, cost AS reverse_cost 
-        FROM planet_osm_roads
-        WHERE source <> target',
-        %s,
-        %s,
-        false
-        ) d
-        JOIN planet_osm_roads r
-        ON d.edge = r.id
-        WHERE d.edge <> -1;
+            FROM pgr_dijkstra(
+                'SELECT id, source, target, cost, reverse_cost FROM routing_ways',
+                %s, %s, true
+            ) d
+            JOIN routing_ways r ON d.edge = r.id
+            WHERE d.edge <> -1;
         """, [start_node, end_node])
 
         row = cursor.fetchone()
-        if not row or not row[0]:
-            logging.error("[ROUTE DEBUG] No route found by pgr_dijkstra.")
+        
+        # Debugging the database result
+        if row and row[0]:
+            logging.warning("ROUTE FOUND: Successfully generated geometry.")
             return JsonResponse({
-                "error": "No route found",
+                "status": "success",
+                "type": "Feature",
+                "geometry": json.loads(row[0]),
+                "properties": {"segment": "road_route"}
+            })
+        else:
+            # Fallback to straight line if Dijkstra fails
+            logging.error(f"DIJKSTRA FAIL: No edges found between {start_node} and {end_node}")
+            return JsonResponse({
+                "status": "fallback",
                 "type": "Feature",
                 "geometry": {
                     "type": "LineString",
-                    "coordinates": [
-                        [trail_lng, trail_lat],
-                        [acc_lng, acc_lat]
-                    ]
+                    "coordinates": [[trail_lng, trail_lat], [acc_lng, acc_lat]]
                 },
-                "properties": {
-                    "route_type": "projected",
-                    "note": "Distance estimated: Road network incomplete."
-                }
-            }, status=200)
-
-        try:
-            geom = json.loads(row[0])
-        except Exception as e:
-            logging.error(f"GeoJSON decode error: {e}")
-            return JsonResponse({"error": "Route geometry decode error"}, status=500)
-
-        return JsonResponse({
-            "type": "Feature",
-            "geometry": geom,
-            "properties": {
-                "route_type": "road"
-            }
-        }, status=200)
-
-    
+                "properties": {"segment": "straight_line"}
+            })
+        
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def nearest_node(request):
@@ -1311,19 +1305,17 @@ def nearest_node(request):
 
     with connection.cursor() as cursor:
         cursor.execute("""
-        SELECT id
-        FROM planet_osm_roads_vertices_pgr
-        ORDER BY geom <-> ST_Transform(ST_SetSRID(ST_Point(%s,%s),4326), 3857)
-        LIMIT 1
-        """, [lng, lat])
-
-
+            SELECT id
+            FROM routing_ways_vertices_pgr
+            WHERE component_id = 38
+            ORDER BY the_geom <-> ST_Transform(ST_SetSRID(ST_Point(%s,%s),4326), 3857)
+            LIMIT 1
+        """, [lng, lat])  # Ensure order is [lng, lat] for ST_Point
         row = cursor.fetchone()
 
     if row:
         return JsonResponse({"nearest_node_id": row[0]})
-    else:
-        return JsonResponse({"error": "No nodes found"}, status=404)
+    return JsonResponse({"error": "No nodes found"}, status=404)
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
