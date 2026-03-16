@@ -1892,10 +1892,12 @@ function tryRoute() {
     })
   })
   .then(response => response.json())
+
+  
   .then(data => {
     console.log("📦 Parsed Route Data:", data);
   
-    if (data && (data.status === "success" || data.status === "success_v2")) {
+    if (data && ["success", "success_v2", "fallback"].includes(data.status)) {
       
       // --- SAFETY WRAPPER START ---
       let geojson = null;

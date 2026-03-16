@@ -1258,7 +1258,6 @@ def route_between_nodes(request):
 
 
 
-
         
 @api_view(['GET'])
 @permission_classes([AllowAny])
