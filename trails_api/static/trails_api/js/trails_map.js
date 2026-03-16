@@ -1804,6 +1804,12 @@ function updateAccommodations(searchLat = null, searchLng = null) {
 
 
 function drawRoute(geojson) {
+
+  console.log("Total segments to draw:", geojson.features.length);
+  geojson.features.forEach((f, i) => {
+      console.log(`Segment ${i}: ${f.properties.segment}`, f.geometry.coordinates);
+  });
+  
   if (routeLayer) {
     window.trailsMap.removeLayer(routeLayer);
   }
@@ -1815,67 +1821,62 @@ function drawRoute(geojson) {
       segment: f.properties.segment
     })));
   }
+
+  // cretae GeoJSON layer
   routeLayer = L.geoJSON(geojson, {
 
     style: function(feature) {
-      console.log("Segment found:", feature.properties.segment);
+      
       const segmentType = feature.properties ? feature.properties.segment : null;
+      console.log("Styling segment:", segmentType);
 
       if  (segmentType == 'connector_start' || segmentType == 'connector_end') {
         return {
-          color: "green",
+          color: "#118240", // A vibrant green
           weight: 4,
-          dashArray: "10, 10",
-          opacity: 1
+          dashArray: "5, 10",
+          lineCap: "round",
+          opacity: 0.8
         };
       }
-  
-      // Default for main road route
+
+
       return {
-        color: "blue",
-        weight: 5,
+        color: "#2b74b0", // Nice blue
+        weight: 6,
         opacity: 1
       };
     }
   }).addTo(window.trailsMap);
-
   
  
 
-  const routeNote = geojson.route_note || geojson?.features?.[0]?.properties?.note;
-  if (routeNote && typeof routeLayer.bindTooltip === "function") {
-    routeLayer.bindTooltip(routeNote, { sticky: true, direction: "top" }).openTooltip();
+  if (routeLayer && typeof routeLayer.getBounds === "function") {
+    routeLayer.bringToFront(); // Moves the whole collection to the top
+    
+    const bounds = routeLayer.getBounds();
+    if (bounds.isValid()) {
+      window.trailsMap.fitBounds(bounds, { padding: [50, 50] });
+    }
   }
 
+  // Handle Tooltips/Status
+  const routeNote = geojson.route_note || (geojson.features[0] && geojson.features[0].properties.note);
   const routeStatus = document.getElementById("route-status");
   if (routeStatus) {
-    routeStatus.textContent = routeNote || "";
-  }
-
-  if (typeof routeLayer.bringToFront === "function") {
-    routeLayer.bringToFront();
-  }
-
-  if (typeof routeLayer.getBounds === "function") {
-    const bounds = routeLayer.getBounds();
-    const valid = (typeof bounds.isValid === 'function') ? bounds.isValid() : !!bounds;
-    if (valid) {
-      window.trailsMap.fitBounds(bounds, { padding: [24, 24] });
-    }
+    routeStatus.textContent = routeNote || "Route calculated successfully";
   }
 }
 
 
 
-function tryRoute() {
 
-  if (!selectedTrail || !selectedAccommodation) {
-    return;
-  }
+
+function tryRoute() {
+  if (!selectedTrail || !selectedAccommodation) return;
 
   routingInProgress = true;
-
-  console.log("Requesting route...");
+  console.log("🚀 Requesting route...");
 
   fetch("/api/trails/route/", {
     method: "POST",
@@ -1890,28 +1891,43 @@ function tryRoute() {
       acc_lng: selectedAccommodation.lng
     })
   })
-  .then(async res => {
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`Route request failed (${res.status}): ${text}`);
-    }
-    return res.json();
-  })
+  .then(response => response.json())
   .then(data => {
-    console.log("Route response:", data);
-
+    console.log("📦 Parsed Route Data:", data);
   
-    if (data && (data.status === "ok" || data.status === "success")) {
-      console.log("Found valid route data, calling drawRoute...");
+    if (data && (data.status === "success" || data.status === "success_v2")) {
       
-      const routeData = data.feature || data; 
-      drawRoute(routeData);
+      // --- SAFETY WRAPPER START ---
+      let geojson = null;
+
+      if (data.feature) {
+          // If the backend updated to the new 'feature' key
+          geojson = data.feature;
+      } else if (data.type === "Feature") {
+          // If backend is still sending the old 'flat' Feature format
+          // We wrap it in a FeatureCollection so .length exists
+          geojson = {
+              type: "FeatureCollection",
+              features: [data]
+          };
+      } else if (data.type === "FeatureCollection") {
+          geojson = data;
+      }
+      // --- SAFETY WRAPPER END ---
+
+      if (geojson && geojson.features) {
+          console.log(`🎨 Drawing ${geojson.features.length} segments`);
+          drawRoute(geojson);
+      } else {
+          console.warn("⚠️ Data was successful but no geometry found:", data);
+      }
 
     } else {
-     // access to error message
-      const msg = data ? (data.message || data.error || "Unknown error") : "No data received";
-      console.log("Routing error from server:", msg);
+      console.error("❌ Routing error:", data.message || "Unknown");
     }
-    routingInProgress = false;
   })
+  .catch(err => console.error("🛑 Fetch error:", err))
+  .finally(() => {
+    routingInProgress = false;
+  });
 }

@@ -1211,13 +1211,12 @@ def get_transport_route(start_coords, end_coords):
                     ]
                 }
             })
-
+        print(f"DEBUG: Sending {len(features)} features with status success_v2")
         return {
-            "status": "ok",
-            "feature": {
+            "status": "success_v2",
                 "type": "FeatureCollection",
                 "features": features
-            }
+            
         }
         
 @csrf_exempt
@@ -1225,74 +1224,41 @@ def get_transport_route(start_coords, end_coords):
 @authentication_classes([])
 @permission_classes([AllowAny])
 def route_between_nodes(request):
-    trail_lat = request.data.get("trail_lat")
-    trail_lng = request.data.get("trail_lng")
-    acc_lat = request.data.get("acc_lat")
-    acc_lng = request.data.get("acc_lng")
-
-    if trail_lat is None or trail_lng is None or acc_lat is None or acc_lng is None:
-        return JsonResponse({"error": "trail_lat/trail_lng/acc_lat/acc_lng required"}, status=400)
-
     try:
-        trail_lat = float(trail_lat)
-        trail_lng = float(trail_lng)
-        acc_lat = float(acc_lat)
-        acc_lng = float(acc_lng)
+        # 1. Get coordinates from request
+        t_lat = float(request.data.get("trail_lat"))
+        t_lng = float(request.data.get("trail_lng"))
+        a_lat = float(request.data.get("acc_lat"))
+        a_lng = float(request.data.get("acc_lng"))
     except (TypeError, ValueError):
-        return JsonResponse({"error": "coordinates must be numbers"}, status=400)
+        return JsonResponse({"error": "Valid coordinates required"}, status=400)
 
-    with connection.cursor() as cursor:
-        start_node = get_road_node_for_point(cursor, trail_lng, trail_lat)
-        end_node = get_road_node_for_point(cursor, acc_lng, acc_lat)
-        
-        # CRITICAL LOGGING: Terminal IDs
-        logging.warning(f"--- FYP ROUTE START ---")
-        logging.warning(f"TRAIL: {trail_lng}, {trail_lat} -> NODE: {start_node}")
-        logging.warning(f"ACC: {acc_lng}, {acc_lat} -> NODE: {end_node}")
+    # 2. Call the helper function to get the 3-segment route
+    # (This calculates connector_start, road_route, and connector_end)
+    route_data = get_transport_route((t_lng, t_lat), (a_lng, a_lat))
 
-        if start_node is None or end_node is None:
-            return JsonResponse({"error": "No nearby routable node found"}, status=404)
-
-        cursor.execute("""
-            SELECT ST_AsGeoJSON(
-                ST_Transform(
-                    ST_LineMerge(
-                        ST_Collect(r.geom)
-                    ), 
-                    4326
-                )
-            )
-            FROM pgr_dijkstra(
-                'SELECT id, source, target, cost, reverse_cost FROM routing_ways',
-                %s, %s, true
-            ) d
-            JOIN routing_ways r ON d.edge = r.id
-            WHERE d.edge <> -1;
-        """, [start_node, end_node])
-
-        row = cursor.fetchone()
-        
-        # Debugging the database result
-        if row and row[0]:
-            logging.warning("ROUTE FOUND: Successfully generated geometry.")
-            return JsonResponse({
-                "status": "success",
-                "type": "Feature",
-                "geometry": json.loads(row[0]),
-                "properties": {"segment": "road_route"}
-            })
-        else:
-            # Fallback to straight line if Dijkstra fails
-            logging.error(f"DIJKSTRA FAIL: No edges found between {start_node} and {end_node}")
-            return JsonResponse({
-                "status": "fallback",
+    # 3. If routing fails, provide a straight-line fallback
+    if route_data.get("status") != "success_v2":
+        return JsonResponse({
+            "status": "fallback",
+            "type": "FeatureCollection",
+            "features": [{
                 "type": "Feature",
                 "geometry": {
                     "type": "LineString",
-                    "coordinates": [[trail_lng, trail_lat], [acc_lng, acc_lat]]
+                    "coordinates": [[t_lng, t_lat], [a_lng, a_lat]]
                 },
                 "properties": {"segment": "straight_line"}
-            })
+            }]
+        })
+
+    # 4. Return the multi-segment GeoJSON
+    return JsonResponse(route_data)
+
+
+
+
+
         
 @api_view(['GET'])
 @permission_classes([AllowAny])
