@@ -519,6 +519,7 @@ padding: 12px 14px;
     box-shadow: 0 3px 6px rgba(0,0,0,0.4);
 }
 
+
 .list-group-item {
     cursor: pointer;
     transition: background-color 0.2s;
@@ -535,5 +536,4 @@ padding: 12px 14px;
     font-size: 11px;
     color: #495057;
 }
-
 

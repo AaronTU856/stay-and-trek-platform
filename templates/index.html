@@ -143,9 +143,23 @@
           and explore the countryside with interactive maps built for real adventures.
         </p>
         <div class="home-hero-actions">
-          <button class="home-audio-btn" type="button" id="home-audio-toggle" aria-pressed="false">
-            Play music
-          </button>
+          <button class="home-audio-btn" id="home-audio-toggle">Play</button>
+
+          <div class="home-audio-controls">
+            <input 
+              type="range" 
+              id="home-volume" 
+              min="0" 
+              max="1" 
+              step="0.01" 
+              value="1"
+              class="home-volume-slider"
+            >
+
+            <button id="home-mute-toggle" class="home-mute-btn">🔊</button>
+          </div>
+        </div>
+              
         </div>
       </div>
     </section>
@@ -157,18 +171,38 @@
       <audio class="home-audio" autoplay loop preload="metadata" id="home-audio">
         <source src="{% static 'music/irish_music.mp3' %}" type="audio/mpeg">
       </audio>
+
+      
     </section>
 
     <script>
       document.addEventListener("DOMContentLoaded", () => {
         const audio = document.getElementById("home-audio");
         const toggle = document.getElementById("home-audio-toggle");
+        const volume = document.getElementById("home-volume");
+        const muteBtn = document.getElementById("home-mute-toggle");
 
+          
+        if (volume) {
+          volume.addEventListener("input", (e) => {
+            audio.volume = e.target.value;
+          });
+        }
         if (!audio || !toggle) return;
 
-        const setState = (isPlaying) => {
-          toggle.textContent = isPlaying ? "Pause music" : "Play music";
-          toggle.setAttribute("aria-pressed", String(isPlaying));
+        
+        muteBtn.addEventListener("click", () => {
+          audio.muted = !audio.muted;
+
+          muteBtn.textContent = audio.muted ? "🔇" : "🔊";
+
+          // toggle style class
+          muteBtn.classList.toggle("muted", audio.muted);
+        });
+                
+
+       const setState = (playing) => {
+          toggle.textContent = playing ? "Pause music" : "Play music";
         };
 
         const tryAutoplay = async () => {
@@ -181,6 +215,9 @@
             toggle.style.display = "inline-flex";
           }
         };
+
+        
+        
 
         toggle.addEventListener("click", async () => {
           if (audio.paused) {
@@ -195,6 +232,12 @@
             setState(false);
           }
         });
+
+        volume.addEventListener("input", (e) => {
+          audio.volume = e.target.value; // 0.0 → 1.0
+        });
+
+       
 
         tryAutoplay();
       });

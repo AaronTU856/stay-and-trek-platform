@@ -1408,3 +1408,59 @@ body.high-contrast-mode .high-contrast-toggle:not(.active) {
     color: #000 !important;
     border-color: #000 !important;
 }
+
+
+ /* Home Page Music Player Controls */
+.home-audio-btn {
+  background: #2e7d32; /* green */
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.home-audio-btn:hover {
+  background: #1b5e20;
+}
+
+
+.home-audio-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 12px;
+}
+
+/* Slider */
+.home-volume-slider {
+  width: 120px;
+  accent-color: #2e7d32;
+  cursor: pointer;
+}
+
+/* mute button */
+.home-mute-btn {
+  background: rgba(46, 125, 50, 0.1);
+  border: 2px solid #2e7d32;
+  color: #2e7d32;
+  font-size: 16px;
+  padding: 6px 10px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* Hover effect */
+.home-mute-btn:hover {
+  background: #2e7d32;
+  color: white;
+  transform: scale(1.1);
+}
+
+/* Active (muted) state */
+.home-mute-btn.muted {
+  background: #2e7d32;
+  color: white;
+}
