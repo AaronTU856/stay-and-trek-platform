@@ -10,7 +10,18 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ✅ Initialize map
-    const map = L.map('map').setView([53.4, -8.2], 7);
+    // Define the corners of the box around Ireland
+    const southWest = L.latLng(51.0, -11.0); // Bottom left (Atlantic)
+    const northEast = L.latLng(55.5, -5.0);  // Top right (North Channel/Irish Sea)
+    const bounds = L.latLngBounds(southWest, northEast);
+
+    // Initialize map with restricted bounds
+    const map = L.map('map', {
+        maxBounds: bounds,         // Restricts panning
+        maxBoundsViscosity: 1.0,   // Makes the bounds "hard" (bounces back)
+        minZoom: 7.2,                // Prevents zooming out to see the whole world
+        maxZoom: 20
+    }).setView([53.4, -8.2], 7.3);
 
     // 🗺️ Base tile layer - Updated to CartoDB to fix 403 Access Blocked
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
