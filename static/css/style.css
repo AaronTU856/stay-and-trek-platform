@@ -416,122 +416,124 @@ body {
             min-width: 250px;
         }
        
-        .results-panel {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            width: 320px;
-            max-height: 80vh;
-            overflow-y: auto;
-                position: fixed; /* positioned relative to viewport to avoid clipping */
-                top: 160px; /* lowered so card sits below navbar */
-                left: 50px;
-                z-index: 9999 !important; /* very high so card appears above navbar and overlays */
-            display: none;
-        }
- 
-        .search-mode-selector {
-            margin-bottom: 10px;
-        }
- 
-    /* Unified controls block: make the search input and radius card look like a single stacked block */
-    .leaflet-control-search.search-exp,
-    .proximity-controls {
-        position: fixed !important; /* fixed so both follow viewport */
-        left: 50px; /* align to left */
-        transform: none;
-        width: 340px; /* slightly wider */
-        z-index: 9999 !important;
-        background: #ffffff;
-        border-radius: 8px;
-        box-shadow: 0 6px 12px rgba(0,0,0,0.12);
-        border: 1px solid rgba(0,0,0,0.08);
-        padding: 6px;
-        box-sizing: border-box;
-    }
+.results-panel {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 320px;
+    max-height: 80vh;
+    overflow-y: auto;
+        position: fixed; /* positioned relative to viewport to avoid clipping */
+        top: 160px; /* lowered so card sits below navbar */
+        left: 50px;
+        z-index: 9999 !important; /* very high so card appears above navbar and overlays */
+    display: none;
+}
 
-    .leaflet-control-search.search-exp {
-        top: 320px !important; /* search sits below navigation buttons */
-    }
+.search-mode-selector {
+    margin-bottom: 10px;
+}
 
-    .leaflet-control-search.search-exp .search-input,
-    .leaflet-control-search.search-exp input[type="text"],
-    .leaflet-control-search.search-exp input[type="search"] {
-        width: 100%;
-        box-sizing: border-box;
-        border-radius: 6px;
-        padding: 6px 8px;
-        border: 1px solid rgba(0,0,0,0.12);
-    }
+/* Unified controls block: make the search input and radius card look like a single stacked block */
+.leaflet-control-search.search-exp,
+.proximity-controls {
+position: fixed !important; /* fixed so both follow viewport */
+left: 50px; /* align to left */
+transform: none;
+width: 340px; /* slightly wider */
+z-index: 9999 !important;
+background: #ffffff;
+border-radius: 8px;
+box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+border: 1px solid rgba(0,0,0,0.08);
+padding: 6px;
+box-sizing: border-box;
+}
 
-    .proximity-controls {
-        top: 580px !important; /* increased gap below search */
-        padding: 12px 14px;
-    }
+.leaflet-control-search.search-exp {
+top: 320px !important; /* search sits below navigation buttons */
+}
 
-    @media (max-width: 768px) {
-        .leaflet-control-search.search-exp,
-        .proximity-controls {
-            left: auto;
-            transform: none;
-            right: 8px;
-            width: 92%;
-            max-width: 420px;
-        }
-        .leaflet-control-search.search-exp { top: 68px !important; }
-        .proximity-controls { top: calc(68px + 44px + 8px) !important; }
-    }
-        .search-controls {
-            display: none;
-            margin-top: 10px;
-        }
- 
-        .radius-circle {
-            opacity: 0.3;
-        }
- 
-        .result-marker {
-            background: #007bff;
-            color: white;
-            border-radius: 50%;
-            width: 28px;
-            height: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            border: 2px solid white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
-            font-size: 12px;
-        }
- 
-        .search-marker {
-            background: #dc3545;
-            color: white;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            border: 3px solid white;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.4);
-        }
- 
-        .list-group-item {
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
- 
-        .list-group-item:hover {
-            background-color: #f8f9fa;
-        }
- 
-        .distance-badge {
-            background: #e9ecef;
-            padding: 2px 6px;
-            border-radius: 12px;
-            font-size: 11px;
-            color: #495057;
-        }
+.leaflet-control-search.search-exp .search-input,
+.leaflet-control-search.search-exp input[type="text"],
+.leaflet-control-search.search-exp input[type="search"] {
+width: 100%;
+box-sizing: border-box;
+border-radius: 6px;
+padding: 6px 8px;
+border: 1px solid rgba(0,0,0,0.12);
+}
+
+.proximity-controls {
+top: 580px !important; /* increased gap below search */
+padding: 12px 14px;
+}
+
+@media (max-width: 768px) {
+.leaflet-control-search.search-exp,
+.proximity-controls {
+    left: auto;
+    transform: none;
+    right: 8px;
+    width: 92%;
+    max-width: 420px;
+}
+.leaflet-control-search.search-exp { top: 68px !important; }
+.proximity-controls { top: calc(68px + 44px + 8px) !important; }
+}
+.search-controls {
+    display: none;
+    margin-top: 10px;
+}
+
+.radius-circle {
+    opacity: 0.3;
+}
+
+.result-marker {
+    background: #007bff;
+    color: white;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    font-size: 12px;
+}
+
+.search-marker {
+    background: #dc3545;
+    color: white;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    border: 3px solid white;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+}
+
+.list-group-item {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.list-group-item:hover {
+    background-color: #f8f9fa;
+}
+
+.distance-badge {
+    background: #e9ecef;
+    padding: 2px 6px;
+    border-radius: 12px;
+    font-size: 11px;
+    color: #495057;
+}
+
+

@@ -30,7 +30,7 @@ function initializeUIControls() {
                 const item = document.createElement('div');
                 item.className = "list-group-item list-group-item-action mb-2 shadow-sm rounded border-0 d-flex align-items-center";
                 item.style.borderLeft = "5px solid var(--brand-primary)";
-                
+               
                 // Generate a consistent image for the town based on its name
                 const thumbUrl = `https://loremflickr.com/100/100/ireland,town/all?lock=${city.name.length}`;
 

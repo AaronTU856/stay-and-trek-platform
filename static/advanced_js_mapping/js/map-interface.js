@@ -38,6 +38,14 @@ window.AdvancedMapping = (function() {
                 maxZoom: 20
             }).addTo(map);
 
+            // Smoothly fly in to Ireland after 1 second
+            setTimeout(() => {
+                map.flyTo([53.35, -7.8], 7, {
+                    duration: 2.5,
+                    easeLinearity: 0.1
+                });
+            }, 1000);
+
             // Expose map globally for other modules that expect it
             window.map = map;
 
@@ -119,6 +127,49 @@ window.AdvancedMapping = (function() {
 
             // Initialize drawing controls
             initializeDrawingControls();
+
+
+            // Add Legend Control
+            const legend = L.control({ position: 'bottomleft' });
+
+            legend.onAdd = function() {
+                const div = L.DomUtil.create('div', 'map-legend');
+                
+                // Inline Styles to guarantee visibility
+                div.style.backgroundColor = 'white';
+                div.style.padding = '10px';
+                div.style.border = '2px solid #2E8B57';
+                div.style.borderRadius = '8px';
+                div.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+                div.style.fontSize = '12px';
+                div.style.lineHeight = '1.5';
+                div.style.minWidth = '140px';
+
+                div.style.pointerEvents = 'auto';
+
+                div.innerHTML = `
+                    <div style="font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid #eee; color: #23624A;">MAP KEY</div>
+                    <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                        <span style="width: 12px; height: 12px; background: #2E8B57; display: inline-block; margin-right: 8px; border-radius: 2px;"></span>
+                        <span>Trekking Hub</span>
+                    </div>
+                    <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                        <span style="width: 12px; height: 12px; background: rgba(46, 139, 87, 0.3); border: 2px solid #2E8B57; display: inline-block; margin-right: 8px; border-radius: 2px;"></span>
+                        <span>Search Area</span>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <span style="width: 12px; height: 12px; background: #ff5722; display: inline-block; margin-right: 8px; border-radius: 50%;"></span>
+                        <span>Your Location</span>
+                    </div>
+                `;
+                return div;
+            };
+
+            L.control.scale({ imperial: false, position: 'bottomright' }).addTo(map);
+
+            legend.addTo(map);
+
+
 
             // Add a small helper control to finish a polygon drawing if the draw:created
             // event does not fire in some environments. This control finds the last
@@ -563,7 +614,7 @@ window.AdvancedMapping = (function() {
 
     function createCityPopupContent(city) {
         const imageUrl = `https://loremflickr.com/300/150/ireland,town/all?lock=${city.id || 1}`;
-        
+
         return `
             <div class="city-popup" style="width: 200px;">
                 <img src="${imageUrl}" class="img-fluid rounded mb-2" alt="${city.name}">
