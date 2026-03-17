@@ -72,36 +72,45 @@
 
     <!-- QUICK INSIGHTS -->
     <div class="row mt-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3>Quick Insights</h3>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="alert alert-info">
-                                <h5>Trail Overview</h5>
-                                <p>There are {{ trail_stats.total|intcomma }} trails with an average distance of {{ trail_stats.avg_distance|floatformat:2 }} km.</p>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="alert alert-success">
-                                <h5>Difficulty Breakdown</h5>
-                                <p>{{ trail_stats.easy_count|intcomma }} easy, {{ trail_stats.moderate_count|intcomma }} moderate, {{ trail_stats.hard_count|intcomma }} hard trails.</p>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="alert alert-warning">
-                                <h5>Town Summary</h5>
-                                <p>Across {{ town_stats.total|intcomma }} towns, there are {{ avg_trails_per_town|floatformat:2 }} trails per town on average.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <div class="col-md-4">
+        <div class="alert alert-info">
+            <h5>Trail Overview</h5>
+            <p>There are {{ trail_stats.total_trails|intcomma }} trails with an average distance of {{ trail_stats.avg_distance|floatformat:2 }} km.</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="alert alert-success">
+            <h5>Difficulty Breakdown</h5>
+            <p>{{ trail_stats.easy_count }} easy, {{ trail_stats.moderate_count }} moderate, {{ trail_stats.hard_count }} hard trails.</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="alert alert-warning">
+            <h5>Stay & Trek Hubs</h5>
+            <p>Explore {{ total_towns }} towns with {{ acc_stats.total_accommodations }} available accommodations.</p>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><h3>Difficulty Mix</h3></div>
+            <div class="card-body">
+                <canvas id="difficultyChart"></canvas>
             </div>
         </div>
     </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><h3>Top Trail Counties</h3></div>
+            <div class="card-body">
+                <canvas id="countyChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
 
     <div class="mt-4">
         <a href="{% url 'dashboard_index' %}" class="btn btn-primary">Back to Dashboard</a>
