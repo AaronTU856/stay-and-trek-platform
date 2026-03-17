@@ -28,14 +28,21 @@ function initializeUIControls() {
 
             cities.forEach(city => {
                 const item = document.createElement('div');
+                const maxPop = Math.max(...cities.map(c => c.population));
+                const percentage = (city.population / maxPop) * 100;
+                
                 item.className = "list-group-item list-group-item-action mb-2 shadow-sm rounded border-0";
                 item.style.borderLeft = "5px solid var(--brand-primary, #2E8B57)";
+
                 item.innerHTML = `
-                    <div class="d-flex justify-content-between align-items-center">
-                        <strong>${city.name}</strong>
-                        <span class="badge bg-success">📍 View</span>
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <strong style="color: var(--brand-dark)">${city.name}</strong>
+                        <span class="badge bg-light text-primary border">Ranked Hub</span>
                     </div>
-                    <small>Pop: ${city.population.toLocaleString()}</small>
+                    <div class="progress" style="height: 6px; background-color: #eee;">
+                        <div class="progress-bar" style="width: ${percentage}%; background-color: var(--brand-primary);"></div>
+                    </div>
+                    <small class="text-muted mt-1 d-block">Weight: ${city.population.toLocaleString()} trekkers potential</small>
                 `;
                 item.onclick = () => {
                     window.map.flyTo([city.latitude, city.longitude], 14);

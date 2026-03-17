@@ -41,7 +41,7 @@ async function performSpatialSearch(polygonGeometry) {
             }
         }
 
-        // 2. TRIGGER THE NEW UI 
+        // 2. TRIGGER THE UI 
         if (window.UIControls && typeof window.UIControls.updateResultsUI === 'function') {
             window.UIControls.updateResultsUI(cities, data.results.analysis);
         }

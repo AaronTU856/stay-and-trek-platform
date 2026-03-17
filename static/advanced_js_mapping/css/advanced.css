@@ -178,3 +178,13 @@ body {
   background-color: var(--brand-primary) !important;
 }
 
+#citiesList .list-group-item {
+    transition: all 0.2s ease-in-out;
+    background: #fff;
+}
+#citiesList .list-group-item:hover {
+    background: var(--brand-light);
+    transform: scale(1.02);
+    z-index: 10;
+}
+

@@ -29,7 +29,7 @@ window.AdvancedMapping = (function() {
     function initializeMap(containerId) {
         try {
             // Create map instance
-            map = L.map(containerId).setView([53.3498, -6.2603], 6); // Centered on Ireland
+            map = L.map(containerId).setView([53.3598, -7.7603], 7.4); // Centered on Ireland
 
             // Add base tile layer
            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
@@ -562,15 +562,20 @@ window.AdvancedMapping = (function() {
     }
 
     function createCityPopupContent(city) {
+        const imageUrl = `https://loremflickr.com/300/150/ireland,town/all?lock=${city.id || 1}`;
+        
         return `
-            <div class="city-popup">
-                <h6>${city.name}</h6>
-                <p><strong>Country:</strong> ${city.country}</p>
-                <p><strong>Population:</strong> ${city.population?.toLocaleString() || 'N/A'}</p>
-                <p><strong>Type:</strong> ${city.city_type || 'N/A'}</p>
-                ${city.gdp_per_capita ? `<p><strong>GDP per Capita:</strong> ${city.gdp_per_capita}</p>` : ''}
+            <div class="city-popup" style="width: 200px;">
+                <img src="${imageUrl}" class="img-fluid rounded mb-2" alt="${city.name}">
+                <h6 class="fw-bold mb-1">${city.name}</h6>
+                <div class="small text-muted mb-2">
+                    <i class="bi bi-people"></i> Pop: ${city.population?.toLocaleString() || 'N/A'}
+                </div>
+                <a href="/towns/${city.id}" class="btn btn-sm btn-map-primary w-100" style="color:white; font-size:12px;">
+                    View Trekking Routes
+                </a>
             </div>
-        `;
+    `;
     }
 
     /**
