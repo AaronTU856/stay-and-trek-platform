@@ -28,24 +28,36 @@ function initializeUIControls() {
 
             cities.forEach(city => {
                 const item = document.createElement('div');
-                const maxPop = Math.max(...cities.map(c => c.population));
-                const percentage = (city.population / maxPop) * 100;
+                item.className = "list-group-item list-group-item-action mb-2 shadow-sm rounded border-0 d-flex align-items-center";
+                item.style.borderLeft = "5px solid var(--brand-primary)";
                 
-                item.className = "list-group-item list-group-item-action mb-2 shadow-sm rounded border-0";
-                item.style.borderLeft = "5px solid var(--brand-primary, #2E8B57)";
+                // Generate a consistent image for the town based on its name
+                const thumbUrl = `https://loremflickr.com/100/100/ireland,town/all?lock=${city.name.length}`;
 
                 item.innerHTML = `
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <strong style="color: var(--brand-dark)">${city.name}</strong>
-                        <span class="badge bg-light text-primary border">Ranked Hub</span>
+                    <img src="${thumbUrl}" class="rounded-circle me-3" style="width: 50px; height: 50px; object-fit: cover; border: 2px solid var(--brand-light);">
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <strong style="color: var(--brand-dark)">${city.name}</strong>
+                            <span class="badge" style="background-color: var(--accent); color: #000;">📍 View</span>
+                        </div>
+                        <small class="text-muted">Pop: ${city.population.toLocaleString()}</small>
                     </div>
-                    <div class="progress" style="height: 6px; background-color: #eee;">
-                        <div class="progress-bar" style="width: ${percentage}%; background-color: var(--brand-primary);"></div>
-                    </div>
-                    <small class="text-muted mt-1 d-block">Weight: ${city.population.toLocaleString()} trekkers potential</small>
                 `;
+
                 item.onclick = () => {
                     window.map.flyTo([city.latitude, city.longitude], 14);
+                    // This opens the popup on the map which will also have an image
+                    L.popup()
+                        .setLatLng([city.latitude, city.longitude])
+                        .setContent(`
+                            <div class="text-center">
+                                <img src="${thumbUrl}" class="rounded mb-2" style="width:100%; height:100px; object-fit:cover;">
+                                <h6 class="fw-bold">${city.name}</h6>
+                                <p class="small mb-0">Great base for trekking!</p>
+                            </div>
+                        `)
+                        .openOn(window.map);
                 };
                 list.appendChild(item);
             });
