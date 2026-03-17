@@ -12,10 +12,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // ✅ Initialize map
     const map = L.map('map').setView([53.4, -8.2], 7);
 
-    // 🗺️ Base tile layer
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '&copy; OpenStreetMap contributors'
+    // 🗺️ Base tile layer - Updated to CartoDB to fix 403 Access Blocked
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 20
     }).addTo(map);
 
     // 🟩 Custom icons

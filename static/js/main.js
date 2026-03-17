@@ -18,10 +18,11 @@ function initializeMap() {
         // Create map instance centered on Ireland
         map = L.map('map').setView([54.0, -8.0], 7);
         
-        // Add OpenStreetMap tile layer
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            maxZoom: 18,
+        // Changed tile provider to CartoDB Voyager (more reliable for web apps)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20,
             minZoom: 2
         }).addTo(map);
         
@@ -31,16 +32,13 @@ function initializeMap() {
             imperial: false
         }).addTo(map);
         
-        console.log('Map initialized successfully');
+        console.log('Map initialized successfully with CartoDB tiles');
         
     } catch (error) {
         console.error('Failed to initialize map:', error);
         showAlert('danger', 'Failed to initialize map. Please refresh the page.');
     }
 }
-
-
-  
 
 /**
  * Set up event listeners for user interactions
