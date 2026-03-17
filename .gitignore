@@ -25,6 +25,7 @@ webmapping_env/
 .DS_Store
 *.swp
 *.bak
+data/
 
 # --- Mobile App (Expo / React Native) ---
 stay-and-trek-mobile/node_modules/
