@@ -1,22 +1,39 @@
 {% extends 'advanced_js_mapping/base.html' %}
 {% load static %}
 
-{% block title %}Interactive Polygon Map{% endblock %}
+{% block title %}Townland Explorer{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4" style="background: linear-gradient(180deg, var(--brand-light), #ffffff); min-height: 100vh;">
-    <div class="row mb-4">
+    <div class="row mb-2">
         <div class="col-12 px-4">
-            <h2 class="fw-bold" style="color: var(--brand-dark);">Stay & Trek <span class="fw-light text-muted">| Spatial Town Explorer</span></h2>
+            <h2 class="fw-bold" style="color: var(--brand-dark);">Stay & Trek <span class="fw-light text-muted">| Irish Townland Explorer</span></h2>
             <hr class="mt-2" style="width: 50px; height: 3px; background: var(--brand-primary); opacity: 1;">
         </div>
     </div>
 
+    <div class="d-flex justify-content-center align-items-center gap-2 mb-3">
+        <span class="badge bg-success" style="width: 8px; height: 8px; border-radius: 50%; animation: pulse 2s infinite;"></span>
+        <small class="text-uppercase fw-bold text-muted" style="font-size: 10px; letter-spacing: 1px;">Spatial Engine Ready</small>
+    </div>
+
+    <style>
+    @keyframes pulse {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(46, 139, 87, 0.7); }
+        70% { transform: scale(1); box-shadow: 0 0 0 5px rgba(46, 139, 87, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(46, 139, 87, 0); }
+    }
+    </style>
+
     <div class="row g-4 px-2">
         <div class="col-lg-8">
             <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 15px;">
-                <div class="card-header bg-white py-3 border-bottom-0">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom-0">
                     <h6 class="mb-0 fw-bold"><i class="bi bi-map me-2"></i> Ireland Region Analysis</h6>
+                    <span class="badge rounded-pill bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2" style="font-size: 0.7rem;">
+                        <span class="spinner-grow spinner-grow-sm me-1" role="status" aria-hidden="true" style="width: 8px; height: 8px;"></span>
+                        LIVE SPATIAL ENGINE
+                    </span>
                 </div>
                 <div class="card-body p-0">
                     <div id="map" style="height: 750px;"></div>
@@ -30,25 +47,58 @@
                     <h6 class="mb-0 fw-bold"><i class="bi bi-bar-chart me-2"></i> Data Insights</h6>
                 </div>
                 <div class="card-body">
-                    <div id="searchStatus" class="p-3 rounded mb-3" style="background: #f8fdfa; border: 1px dashed var(--brand-primary);">
-                        <div class="d-flex gap-2">
-                            <i class="bi bi-info-circle-fill text-success"></i>
-                            <p class="small mb-0">
-                                <strong>Instructions:</strong> Use the polygon tools on the top-right of the map to draw a shape. Once finished, click the <strong>checkmark</strong> to see trekking hubs and population data within that area.
-                            </p>
+                    <div id="welcomeState" class="text-center py-4">
+                        <div class="mb-4">
+                            <img src="https://raw.githubusercontent.com/undraw-ic/undraw-illustrations/main/svg/undraw_outdoor_adventure_re_26f1.svg" 
+                                 alt="Hiking Adventure" 
+                                 style="width: 220px; max-width: 100%; height: auto; opacity: 0.9; filter: drop-shadow(0 5px 15px rgba(46, 139, 87, 0.1));">
+                        </div>
+                        <h5 class="fw-bold" style="color: var(--brand-dark);">Townland Explorer</h5>
+                        <p class="text-muted small px-3">Draw on the map to begin your analysis.</p>
+
+                        <strong>Instructions:</strong> Use the polygon or square tool in the map toolbar to draw a shape. Towns and their population within your polygon will appear here. Once you complete your shape click "Finish". Select "New Search" to start over. 
+                        
+                        <div class="row g-2 mt-4 px-3">
+                            <div class="col-4">
+                                <div class="text-center p-2 rounded" style="background-color: #e8f5e9; border: 1px solid #c8e6c9;">
+                                    <i class="bi bi-people-fill text-success"></i>
+                                    <div style="font-size: 9px;" class="fw-bold text-uppercase mt-1">Pop. Data</div>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="text-center p-2 rounded" style="background-color: #f1f8e9; border: 1px solid #dcedc8;">
+                                    <i class="bi bi-tree-fill text-success"></i>
+                                    <div style="font-size: 9px;" class="fw-bold text-uppercase mt-1">Terrain</div>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="text-center p-2 rounded" style="background-color: #e0f2f1; border: 1px solid #b2dfdb;">
+                                    <i class="bi bi-geo-alt-fill text-success"></i>
+                                    <div style="font-size: 9px;" class="fw-bold text-uppercase mt-1">Hubs</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
+                    <div id="loadingIndicator" style="display: none;" class="text-center py-5">
+                        <div class="spinner-border text-success" role="status"></div>
+                        <p class="mt-2 text-muted fw-bold">Querying Spatial Databases...</p>
+                    </div>
+
                     <div id="analysisSummary" style="display: none;">
+                        <div id="searchStatus" class="p-2 rounded mb-3 small" style="background: #e9f7ef; border-left: 4px solid #2E8B57;">
+                            <strong>Analysis Complete:</strong> Region data loaded.
+                        </div>
+                        
                         <div class="row g-2 mb-4">
                             <div class="col-6">
-                                <div class="p-3 rounded text-center h-100" style="background: var(--brand-light); border: 1px solid var(--border);">
+                                <div class="p-3 rounded text-center h-100" style="background: #f0f9f4; border: 1px solid #e2eee7;">
                                     <div class="h3 mb-0 fw-bold text-success" id="totalCities">0</div>
-                                    <small class="text-muted text-uppercase fw-bold" style="font-size: 10px;">Towns</small>
+                                    <small class="text-muted text-uppercase fw-bold" style="font-size: 10px;">Townlands</small>
                                 </div>
                             </div>
                             <div class="col-6">
-                                <div class="p-3 rounded text-center h-100" style="background: var(--brand-light); border: 1px solid var(--border);">
+                                <div class="p-3 rounded text-center h-100" style="background: #f0f9f4; border: 1px solid #e2eee7;">
                                     <div class="h3 mb-0 fw-bold text-success" id="totalPopulation">0</div>
                                     <small class="text-muted text-uppercase fw-bold" style="font-size: 10px;">Population</small>
                                 </div>
@@ -60,31 +110,22 @@
                             <small class="text-muted">Density: <span id="populationDensity" class="fw-bold text-dark">0</span>/km²</small>
                         </div>
 
-                        <button id="newSearchBtn" class="btn w-100 mb-4" style="background: var(--brand-primary); color: white; border-radius: 8px;" onclick="location.reload()">
-                            <i class="bi bi-arrow-clockwise"></i> Clear & New Search
+                        <div id="citiesContainer">
+                            <h6 class="fw-bold mb-3" style="font-size: 14px;">Identified Hubs</h6>
+                            <div id="citiesList" class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;"></div>
+                        </div>
+
+                        <button class="btn btn-outline-success w-100 mt-4" onclick="location.reload()">
+                            <i class="bi bi-arrow-clockwise"></i> New Search
                         </button>
                     </div>
+                </div> 
+            </div> 
+        </div> 
+    </div> 
+</div> 
 
-                    <div id="citiesContainer" style="display: none;">
-                        <h6 class="fw-bold mb-3" style="font-size: 14px;">Identified Trekking Hubs</h6>
-                        <div id="citiesList" class="list-group list-group-flush shadow-none" style="max-height: 400px; overflow-y: auto;">
-                            </div>
-                    </div>
-
-                    <div id="loadingIndicator" style="display: none;" class="text-center py-5">
-                        <div class="spinner-border text-success" role="status"></div>
-                        <p class="mt-2 text-muted">Calculating spatial data...</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}
-
-
-
-
 
 {% block extra_js %}
 <!-- Using local Leaflet Draw already loaded in base.html -->
@@ -153,5 +194,24 @@
             console.error('Map initialization error:', error);
         }
     });
+
+    // Global function to show/hide loading indicator during spatial search
+    window.AdvancedMapping.showLoading = function(show) {
+        const loader = document.getElementById('loadingIndicator');
+        const welcome = document.getElementById('welcomeState');
+        const summary = document.getElementById('analysisSummary');
+        
+        if (show) {
+            // When searching starts
+            if(welcome) welcome.style.display = 'none';
+            if(summary) summary.style.display = 'none';
+            if(loader) loader.style.display = 'block';
+        } else {
+            // When data returns
+            if(loader) loader.style.display = 'none';
+            if(summary) summary.style.display = 'block'; // THIS MAKES THE DATA APPEAR
+        }
+    };
+
 </script>
 {% endblock %}
