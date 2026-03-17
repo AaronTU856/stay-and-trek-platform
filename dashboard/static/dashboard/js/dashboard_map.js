@@ -20,17 +20,33 @@ document.addEventListener("DOMContentLoaded", () => {
     }).addTo(map);
 
     // 🟩 Custom icons
-    const trailIcon = L.icon({
-        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
-        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-        iconSize: [25, 41],
-        iconAnchor: [12, 41]
-    });
+    const trailIcons = {
+        easy: L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [20, 30], iconAnchor: [12, 41]
+        }),
+        moderate: L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [20, 30], iconAnchor: [12, 41]
+        }),
+        hard: L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [20, 30], iconAnchor: [12, 41]
+        }),
+        unknown: L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-grey.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [20, 30], iconAnchor: [12, 41]
+        })
+    };
 
     const townIcon = L.icon({
         iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
         shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-        iconSize: [25, 41],
+        iconSize: [15, 20],
         iconAnchor: [12, 41]
     });
 
@@ -64,12 +80,42 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (trailsClusterLayer) map.removeLayer(trailsClusterLayer);
 
                 trailsLayer = L.geoJSON(data, {
-                    style: (feature) => ({
-                        color: '#2ecc71',
-                        weight: 3,
-                        opacity: 0.9
-                    }),
-                    pointToLayer: (feature, latlng) => L.marker(latlng, { icon: trailIcon }),
+                    
+                    style: (feature) => {
+                        const difficulty = (feature.properties.difficulty || "").toLowerCase();
+                        let trailColor = '#28a745'; // Default Green
+                        if (difficulty === 'moderate') trailColor = '#fd7e14'; 
+                        if (difficulty === 'hard') trailColor = '#dc3545';
+                        
+                        return { color: trailColor, weight: 4, opacity: 0.9 };
+                    },
+
+                    // This part handles the Pins (Markers)
+                    pointToLayer: (feature, latlng) => {
+                            const difficulty = (feature.properties.difficulty || "").toLowerCase();
+                            
+                            // Define the Traffic Light colors for the dots
+                            let dotColor;
+                            if (difficulty === 'easy') {
+                                dotColor = '#28a745'; // Green
+                            } else if (difficulty === 'moderate') {
+                                dotColor = '#fd7e14'; // Orange
+                            } else if (difficulty === 'hard') {
+                                dotColor = '#dc3545'; // Red
+                            } else {
+                                dotColor = '#6c757d'; // Grey for unknown
+                            }
+
+                            // Return a CircleMarker instead of a standard Marker
+                            return L.circleMarker(latlng, {
+                                radius: 6,               // Size of the dot
+                                fillColor: dotColor,     // The "Traffic Light" color
+                                color: "#ffffff",        // White border (makes it pop)
+                                weight: 2,               // Border thickness
+                                opacity: 1,
+                                fillOpacity: 0.9         // Slight transparency
+                            });
+                    },
                     onEachFeature: (feature, layer) => {
                         const p = feature.properties;
                         layer.bindPopup(`
@@ -204,7 +250,7 @@ document.getElementById('clear-filters').addEventListener('click', () => {
             });
     }
 
-    
+
     // ✅ Toggles
     const showTrails = document.getElementById('show-trails');
     const showTowns = document.getElementById('show-towns');
