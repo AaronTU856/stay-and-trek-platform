@@ -4,233 +4,266 @@
 
 {% block extra_css %}
 <style>
-    #map { height: 600px; }
-    .control-panel {
-        background: white;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        margin-bottom: 20px;
-    }
-    .filter-section {
-        border: 1px solid #dee2e6;
-        border-radius: 5px;
-        padding: 15px;
-        margin-bottom: 15px;
-    }
-    .layer-toggle {
-        margin: 5px 0;
-    }
-    .stats-card {
-        background: linear-gradient(135deg, #2E8B57 0%, #1e6f42 100%);
-        color: white;
-        padding: 20px;
-        border-radius: 10px;
-        margin-bottom: 15px;
-    }
-    .export-btn {
-        margin: 5px;
-    }
-    .loading {
-        display: none;
-        text-align: center;
-        padding: 20px;
-    }
-    .feature-info {
-        position: absolute;
-        bottom: 10px;
-        left: 10px;
-        background: rgba(255,255,255,0.9);
-        padding: 10px;
-        border-radius: 5px;
-        display: none;
-        max-width: 300px;
-    }
+/* --- Dashboard Control Panel --- */
+.control-panel {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 15px;
+    border-top: 4px solid #FFD700; /* Gold Top Border */
+    /* Cleaned up the green glow shadow */
+    box-shadow: 0 10px 30px rgba(48, 116, 45, 0.15);
+    height: fit-content;
+}
+
+.control-panel h5 {
+    color: #466f7a; 
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+}
+
+/* --- Stats Cards (The Top Overview) --- */
+.stats-card {
+    background: #30742d !important; /* Forest Green */
+    color: #FFD700 !important; /* Gold Text */
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    border-left: 4px solid #FFD700;
+}
+
+.stats-card h6 {
+    margin-bottom: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.stats-card span {
+    font-size: 1.2rem;
+    font-weight: 800;
+}
+
+/* --- Filter Sections --- */
+.filter-section {
+    border: 1px solid #edf2f7;
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.filter-section h6 {
+    color: #0D1B1F;
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* --- Map & Results --- */
+#map { 
+    height: 650px; 
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+/* Bottom Metric Cards (Results Summary) */
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(48, 116, 45, 0.1); /* Subtle Green Shadow */
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+}
+
+/* Specific result colors */
+#trails-count { color: #2E8B57 !important; font-weight: 800; }  
+#towns-count { color: #0D1B1F !important; font-weight: 800; }   
+#total-population { color: #B8860B !important; font-weight: 800; } 
+
+/* --- Action Buttons --- */
+#apply-filters {
+    background: #30742d !important; 
+    border: 2px solid #FFD700 !important;
+    color: #FFD700 !important;
+    font-weight: 700;
+    padding: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+#apply-filters:hover {
+    background-color: #FFD700 !important;
+    color: #30742d !important;
+    border-color: #30742d !important;
+}
+
+#clear-filters {
+    font-size: 0.85rem;
+    border-radius: 8px;
+}
+
+.layer-toggle label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+}
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-3">
-        <div class="row">
-            <!-- Control Panel -->
-            <div class="col-md-3">
-                <div class="control-panel">
-                    <h5>📊 Data Overview</h5>
-                    <div class="stats-card">
-                        <h6>Total Trails: <span id="total-trails">{{ total_trails }}</span></h6>
-                        <h6>Total Towns: <span id="total-towns">{{ total_towns }}</span></h6>
-                    </div>
+    <div class="row">
+        <div class="col-md-3">
+            <div class="control-panel">
+                <h5>📊 Data Overview</h5>
+                <div class="stats-card">
+                    <h6>Total Trails: <span id="total-trails">{{ total_trails }}</span></h6>
+                    <h6>Total Towns: <span id="total-towns">{{ total_towns }}</span></h6>
+                </div>
 
-                    <!-- Layer Controls -->
-                    <div class="filter-section">
-                        <h6>🗺️ Map Layers</h6>
-                        <div class="layer-toggle">
-                            <input type="checkbox" id="show-trails" checked>
-                            <label for="show-trails">Show Trails</label>
-                        </div>
-                        <div class="layer-toggle">
-                            <input type="checkbox" id="show-towns" checked>
-                            <label for="show-towns">Show Towns</label>
-                        </div>
-                        <div class="layer-toggle">
-                            <input type="checkbox" id="cluster-trails">
-                            <label for="cluster-trails">Cluster Trails</label>
-                        </div>
+                <div class="filter-section">
+                    <h6>🗺️ Map Layers</h6>
+                    <div class="layer-toggle mb-1">
+                        <input type="checkbox" id="show-trails" checked>
+                        <label for="show-trails">Show Trails</label>
                     </div>
-
-                    <!-- Trail Filters -->
-                    <div class="filter-section">
-                        <h6>👥 Trail Filters</h6>
-                        <div class="mb-2">
-                            <label class="form-label">Trail Length</label>
-                            <div class="row">
-                                <div class="col-6">
-                                    <input type="number" id="trail-length-min" class="form-control form-control-sm" 
-                                           placeholder="Min" value="0">
-                                </div>
-                                <div class="col-6">
-                                    <input type="number" id="trail-length-max" class="form-control form-control-sm" 
-                                           placeholder="Max">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mb-2">
-                            <label class="form-label">Trail Difficulty</label>
-                            <select id="trail-difficulty-min" class="form-select form-select-sm">
-                              <option value="">All Difficulties</option>
-                              <option value="easy">Easy</option>
-                              <option value="moderate">Moderate</option>
-                              <option value="hard">Hard</option>
-                            </select>
-                          </div>
+                    <div class="layer-toggle mb-1">
+                        <input type="checkbox" id="show-towns" checked>
+                        <label for="show-towns">Show Towns</label>
                     </div>
+                    <div class="layer-toggle mb-1">
+                        <input type="checkbox" id="cluster-trails">
+                        <label for="cluster-trails">Cluster Trails</label>
+                    </div>
+                </div>
 
-                    <!-- Town Filters -->
-                    <div class="filter-section">
-                        <h6>📏 Town Filters</h6>
-                      
-                        <!-- Town Population -->
-                        <div class="mb-3">
-                          <label class="form-label fw-semibold">Population Range</label>
-                          <div class="row g-2">
+                <div class="filter-section">
+                    <h6>👥 Trail Filters</h6>
+                    <div class="mb-2">
+                        <label class="form-label small fw-bold">Trail Length (km)</label>
+                        <div class="row g-2">
                             <div class="col-6">
-                              <input
-                                type="number"
-                                id="town-pop-min"
-                                class="form-control form-control-sm"
-                                placeholder="Min"
-                                min="0"
-                              >
+                                <input type="number" id="trail-length-min" class="form-control form-control-sm" placeholder="Min" value="0">
                             </div>
                             <div class="col-6">
-                              <input
-                                type="number"
-                                id="town-pop-max"
-                                class="form-control form-control-sm"
-                                placeholder="Max"
-                                min="0"
-                              >
+                                <input type="number" id="trail-length-max" class="form-control form-control-sm" placeholder="Max">
                             </div>
-                          </div>
                         </div>
-                      
-                        <!-- Town Type -->
-                        <div class="mb-2">
-                          <label class="form-label">Town Type</label>
-                          <select id="town-type-filter" class="form-select form-select-sm">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small fw-bold">Difficulty</label>
+                        <select id="trail-difficulty-min" class="form-select form-select-sm">
+                          <option value="">All Difficulties</option>
+                          <option value="easy">Easy</option>
+                          <option value="moderate">Moderate</option>
+                          <option value="hard">Hard</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="filter-section">
+                    <h6>📏 Town Filters</h6>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Population Range</label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <input type="number" id="town-pop-min" class="form-control form-control-sm" placeholder="Min" min="0">
+                            </div>
+                            <div class="col-6">
+                                <input type="number" id="town-pop-max" class="form-control form-control-sm" placeholder="Max" min="0">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small fw-bold">Town Type</label>
+                        <select id="town-type-filter" class="form-select form-select-sm">
                             <option value="">All Types</option>
                             <option value="Historic">Historic</option>
                             <option value="Village">Village</option>
                             <option value="Urban">Urban</option>
-                          </select>
-                        </div>
-                      </div>
+                        </select>
+                    </div>
+                </div>
 
-
-                    
-                    <!-- 🏛️ Category Filters -->
-                    <div class="filter-section">
-                        <h6>🏛️ Category Filters</h6>
-                    
-                        <div class="mb-2">
-                        <label class="form-label">County</label>
+                <div class="filter-section">
+                    <h6>🏛️ Category Filters</h6>
+                    <div class="mb-2">
+                        <label class="form-label small fw-bold">County</label>
                         <select id="country-filter" class="form-select form-select-sm">
                             <option value="">All Counties</option>
                             {% for country in countries %}
                             <option value="{{ country }}">{{ country }}</option>
                             {% endfor %}
                         </select>
-                        </div>
-                    
-                        <div class="mb-2">
-                            <label class="form-label">Trail Type</label>
-                            <select id="trail-type-filter" class="form-select form-select-sm">
-                              <option value="">All Types</option>
-                              <option value="Walking Trail">Walking Trail</option>
-                              <option value="Road Cycling Trail">Road Cycling Trail</option>
-                              <option value="Off Road Cycling Trail">Off Road Cycling Trail</option>
-                              <option value="Blueway">Blueway</option>
-                            </select>
-                          </div>
-                          
                     </div>
-
-                    <!-- Action Buttons -->
-                    <div class="d-grid gap-2">
-                        <button id="apply-filters" class="btn btn-primary">Apply Filters</button>
-                        <button id="clear-filters" class="btn btn-outline-secondary">Clear All</button>
+                    <div class="mb-2">
+                        <label class="form-label small fw-bold">Trail Type</label>
+                        <select id="trail-type-filter" class="form-select form-select-sm">
+                          <option value="">All Types</option>
+                          <option value="Walking Trail">Walking Trail</option>
+                          <option value="Road Cycling Trail">Road Cycling Trail</option>
+                          <option value="Off Road Cycling Trail">Off Road Cycling Trail</option>
+                          <option value="Blueway">Blueway</option>
+                        </select>
                     </div>
+                </div>
 
-                    <!-- Export Options -->
-                    <div class="filter-section">
-                        <h6>📥 Export Data</h6>
-                        <button id="export-trails" class="btn btn-outline-success export-btn">Trails GeoJSON</button>
-                        <button id="export-towns" class="btn btn-outline-success export-btn">Towns GeoJSON</button>
-                        <button id="export-statistics" class="btn btn-outline-info export-btn">Statistics</button>
+                <div class="d-grid gap-2">
+                    <button id="apply-filters" class="btn">Apply Filters</button>
+                    <button id="clear-filters" class="btn btn-outline-secondary">Clear All</button>
+                </div>
+
+                <div class="filter-section mt-3 border-0 bg-transparent px-0">
+                    <h6 class="text-muted" style="font-size: 0.7rem;">📥 Export Options</h6>
+                    <div class="d-flex flex-wrap gap-1">
+                        <button id="export-trails" class="btn btn-sm btn-outline-success">Trails</button>
+                        <button id="export-towns" class="btn btn-sm btn-outline-success">Towns</button>
+                        <button id="export-statistics" class="btn btn-sm btn-outline-info">Stats</button>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Map Container -->
-            <div class="col-md-9">
-                <div class="position-relative">
-                    <div id="map"></div>
-                    <div class="loading" id="loading">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                        <p>Loading data...</p>
-                    </div>
-                    <div class="feature-info" id="feature-info">
-                        <!-- Feature details will be displayed here -->
-                    </div>
+        <div class="col-md-9">
+            <div class="position-relative">
+                <div id="map"></div>
+                <div class="loading" id="loading">
+                    <div class="spinner-border text-success" role="status"></div>
+                    <p class="mt-2 fw-bold">Analyzing Spatial Data...</p>
                 </div>
+            </div>
 
-                <!-- Results Summary -->
-                <div class="mt-3">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="card">
-                                <div class="card-body text-center">
-                                    <h5 class="card-title">Trails Displayed</h5>
-                                    <h3 class="text-primary" id="trails-count">0</h3>
-                                </div>
+            <div class="mt-3">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <h6 class="card-title text-muted text-uppercase small fw-bold">Trails Displayed</h6>
+                                <h3 id="trails-count">0</h3>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="card">
-                                <div class="card-body text-center">
-                                    <h5 class="card-title">Towns Displayed</h5>
-                                    <h3 class="text-success" id="towns-count">0</h3>
-                                </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <h6 class="card-title text-muted text-uppercase small fw-bold">Towns Displayed</h6>
+                                <h3 id="towns-count">0</h3>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="card">
-                                <div class="card-body text-center">
-                                    <h5 class="card-title">Total Population</h5>
-                                    <h3 class="text-info" id="total-population">0</h3>
-                                </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <h6 class="card-title text-muted text-uppercase small fw-bold">Total Population</h6>
+                                <h3 id="total-population">0</h3>
                             </div>
                         </div>
                     </div>
@@ -238,13 +271,9 @@
             </div>
         </div>
     </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
     <script src="{% static 'dashboard/js/dashboard_map.js' %}"></script>
 {% endblock %}
-
-
-
-
-   

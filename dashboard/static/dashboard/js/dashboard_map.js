@@ -41,40 +41,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
     
     function loadTrails(filters = {}) {
+        const loader = document.getElementById('loading');
+        if (loader) loader.style.display = 'block'; // Start the spinner
+
         let url = '/api/trails/geojson/';
         const params = new URLSearchParams(filters);
-
-        params.set('limit', '10000'); // Ensure we get all trails for mapping
+        
+        params.set('limit', '10000'); 
         for (const [key, val] of params.entries()) {
-            if (!val) params.delete(key); // remove empty
+            if (!val) params.delete(key); 
         }
         const qs = params.toString();
         if (qs) url += '?' + qs;
         console.log("🔗 Fetching trails:", url);
-    
+
         fetch(url)
             .then(res => res.json())
             .then(data => {
                 console.log("📦 Trails loaded:", data.features?.length || 0);
 
-    
-                // Remove previous layers
                 if (trailsLayer) map.removeLayer(trailsLayer);
                 if (trailsClusterLayer) map.removeLayer(trailsClusterLayer);
-    
-                // Base trails layer
+
                 trailsLayer = L.geoJSON(data, {
                     style: (feature) => ({
-                        color: '#2ecc71',   // bright green for trails
+                        color: '#2ecc71',
                         weight: 3,
                         opacity: 0.9
                     }),
                     pointToLayer: (feature, latlng) => L.marker(latlng, { icon: trailIcon }),
                     onEachFeature: (feature, layer) => {
                         const p = feature.properties;
-                        
-                
-                        // Bind popup for both line and point trails
                         layer.bindPopup(`
                             <b>${p.trail_name || 'Unknown Trail'}</b><br>
                             <b>County:</b> ${p.county || "Unknown"}<br>
@@ -84,12 +81,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 }).addTo(map);
 
-
-                // Cluster version
                 trailsClusterLayer = L.markerClusterGroup();
                 trailsClusterLayer.addLayer(trailsLayer);
-    
-                // Default show normal trails
+
                 const townsCount = townsLayer ? townsLayer.getLayers().length : 0;
                 const trailsCount = data.features?.length || 0;
                 const currentPop = parseInt(
@@ -97,9 +91,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 ) || 0;
                 
                 updateDashboardSummary(trailsCount, townsCount, currentPop);
-        })
-        .catch(err => console.error('❌ Error loading trails:', err));
-}
+
+                // STOP THE SPINNER HERE 
+                if (loader) loader.style.display = 'none';
+            })
+            .catch(err => {
+                console.error('❌ Error loading trails:', err);
+                //  STOP THE SPINNER 
+                if (loader) loader.style.display = 'none';
+            });
+    }
+
 
 // Apply filters when the user clicks
 document.getElementById('apply-filters').addEventListener('click', () => {
@@ -159,6 +161,9 @@ document.getElementById('clear-filters').addEventListener('click', () => {
 
     // ✅ Load Towns
     function loadTowns(filters = {}) {
+        const loader = document.getElementById('loading');
+        if (loader) loader.style.display = 'block';
+
         let url = `/api/trails/towns/geojson/`;
         const params = new URLSearchParams(filters).toString();
         if (params) url += '?' + params;
@@ -190,9 +195,15 @@ document.getElementById('clear-filters').addEventListener('click', () => {
                 const townsCount = data.features ? data.features.length : 0;
                 const totalPop = data.features.reduce((sum, f) => sum + (f.properties.population || 0), 0);
                 updateDashboardSummary(trailsCount, townsCount, totalPop);
+
+                if (loader) loader.style.display = 'none';
             })
-            .catch(err => console.error('❌ Error loading towns:', err));
+            .catch(err => {
+                console.error('❌ Error loading towns:', err);
+                if (loader) loader.style.display = 'none';
+            });
     }
+
     
     // ✅ Toggles
     const showTrails = document.getElementById('show-trails');
