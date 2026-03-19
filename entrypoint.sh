@@ -3,16 +3,14 @@ set -e
 
 echo "Starting Stay and Trek service..."
 
-# 1. Collect static files
-echo "Collecting static files..."
+# 1. Collect static files (optional here, since Dockerfile already does it)
 python manage.py collectstatic --noinput
 
-# 2. Start Gunicorn in the BACKGROUND (&) on port 8000
-# Notice we changed 8080 to 8000 here
-echo "Starting Gunicorn on port 8000..."
-gunicorn --bind 0.0.0.0:8000 --workers 4 webmapping_project.wsgi:application &
+# 2. Run migrations (Essential for your database updates)
+python manage.py migrate --noinput
 
-# 3. Start Nginx in the FOREGROUND
-# Nginx will listen on 8080 (as defined in your nginx.conf)
-echo "Starting Nginx on port 8080..."
-nginx -g "daemon off;"
+# 3. Start Gunicorn ON THE CORRECT PORT
+# We use $PORT so Google Cloud can tell Django where to listen.
+echo "Starting Gunicorn on port $PORT..."
+exec gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 8 --timeout 0 webmapping_project.wsgi:application
+
