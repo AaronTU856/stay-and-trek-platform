@@ -1,0 +1,24 @@
+cat <<EOF > .gcloudignore
+# Folders to ignore
+.git/
+.venv/
+node_modules/
+stay-and-trek-mobile/
+__pycache__/
+staticfiles/
+_REFERENCE_NOTES/
+
+# Large Data Files (Keep these local)
+*.sql
+*.dump
+*.zip
+*.log
+
+# System files
+.DS_Store
+.idea/
+.vscode/
+
+# Build artifacts
+*.pyc
+EOF

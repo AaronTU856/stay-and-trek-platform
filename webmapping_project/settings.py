@@ -43,6 +43,8 @@ if platform.system() == "Darwin":
     GEOS_LIBRARY_PATH = "/opt/homebrew/opt/geos/lib/libgeos_c.dylib"
     os.environ["PROJ_LIB"] = "/opt/homebrew/opt/proj/share/proj"
 else:
+    GDAL_LIBRARY_PATH = '/usr/lib/libgdal.so'
+    GEOS_LIBRARY_PATH = '/usr/lib/libgeos_c.so'
     # Linux (Docker/production) - rely on system libraries
     os.environ["PROJ_LIB"] = "/usr/share/proj"
     # Django will find these automatically
@@ -63,11 +65,20 @@ DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 'yes', 'on')
 
 ALLOWED_HOSTS = [
     '*', 
-    'localhost', 
-    '127.0.0.1', 
-    'stay-and-trek.com', 
-    '.run.app' # This allows all Google Cloud subdomains
+    'localhost',
+    '127.0.0.1',
+    '0.0.0.0', # Common for Docker internal routing
+    'stay-and-trek-service-642845720185.europe-west1.run.app',
+    '.run.app', # Permits all Google Cloud Run subdomains
 ]
+
+# Optional: Add the Cloud Run Service URL from environment variables automatically
+if os.getenv('K_SERVICE'):
+    # This dynamically adds the URL Google gives you in production
+    CURRENT_HOST = os.getenv('CLOUDRUN_SERVICE_URL', '').replace('https://', '').replace('http://', '')
+    if CURRENT_HOST:
+        ALLOWED_HOSTS.append(CURRENT_HOST)
+
 
 
 # Application definition
@@ -336,7 +347,16 @@ LOGIN_REDIRECT_URL = 'advanced_js_mapping:index'
 LOGOUT_REDIRECT_URL = 'authentication:home'
 
 
+# Fix for Google Cloud Run HTTPS Proxy
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_PORT = True
 
+# Only redirect to HTTPS in production (when not in DEBUG mode)
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
 
 
 

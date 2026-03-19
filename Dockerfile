@@ -1,14 +1,18 @@
 # 1. Use an official Python image
 FROM python:3.11-slim
 
-# 2. Install Nginx + Geospatial dependencies
+# 2. Install Geospatial dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    nginx \
+    binutils \
     gdal-bin \
     libgdal-dev \
     libgeos-dev \
     libproj-dev \
     && rm -rf /var/lib/apt/lists/*
+
+# Fix: Find where the libraries are actually installed and link them to /usr/lib/
+RUN ln -s $(find /usr/lib -name "libgdal.so*" | head -n 1) /usr/lib/libgdal.so || true && \
+    ln -s $(find /usr/lib -name "libgeos_c.so*" | head -n 1) /usr/lib/libgeos_c.so || true
 
 # 3. Set working directory
 WORKDIR /app
