@@ -108,3 +108,24 @@ if settings.DEBUG:
         re_path(r'^static/(?P<path>.*)$', static_files_view),
         re_path(r'^media/(?P<path>.*)$', static_serve, {'document_root': str(settings.BASE_DIR / 'media')}),
     ]
+ # --- EMERGENCY SUPERUSER (BACKGROUND VERSION) ---
+from django.contrib.auth import get_user_model
+import threading
+import logging
+
+def create_emergency_admin():
+    try:
+        User = get_user_model()
+        if not User.objects.filter(username='admin').exists():
+            User.objects.create_superuser(
+                username='admin',
+                email='admin@example.com',
+                password='Clara2026'
+            )
+            print("✅ Successfully created superuser: admin")
+    except Exception as e:
+        print(f"⚠️ Superuser check skipped: {e}")
+
+# This 'threading' bit is the fix. It lets the website start 
+# while the database check runs in the background.
+threading.Thread(target=create_emergency_admin, daemon=True).start()

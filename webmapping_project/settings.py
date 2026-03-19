@@ -55,7 +55,7 @@ else:
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-this-is-a-temporary-key-12345')
 OPENWEATHERMAP_API_KEY = os.getenv('OPENWEATHERMAP_API_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -185,11 +185,11 @@ else:
         DATABASES = {
             'default': {
                 'ENGINE': 'django.contrib.gis.db.backends.postgis',
-                'NAME': os.getenv('NEW_DB_NAME'),
-                'USER': os.getenv('NEW_DB_USER'),
-                'PASSWORD': os.getenv('NEW_DB_PASSWORD'),
-                'HOST': os.getenv('NEW_DB_HOST'),
-                'PORT': os.getenv('NEW_DB_PORT'),
+                'NAME': os.getenv('NEW_DB_NAME', 'stay_and_trek'),
+                'USER': os.getenv('NEW_DB_USER', 'postgres'),
+                'PASSWORD': os.getenv('NEW_DB_PASSWORD', 'Clara2026'),
+                'HOST': os.getenv('NEW_DB_HOST', '/cloudsql/long-octane-477515-k6:europe-west1:stay-trek-db'),
+                'PORT': os.getenv('NEW_DB_PORT', ''), # Unix socket doesn't need a port
             }
         }
     else:
