@@ -260,10 +260,19 @@ function loadRivers() {
   let nextUrl = "/api/trails/boundaries/?boundary_type=river&limit=500";  // Larger page size for faster loading
   let pageCount = 0;
   const maxPages = 6; // Load ~3000 rivers (6 pages of 500 each)
+
+
   function addRiverToMap(feature) {
     try {
-      const coords = feature.geometry.coordinates;
+      //const coords = feature.geometry.coordinates;
+
+      const geo = feature.geometry || feature.geom;
+      const coords = geo ? geo.coordinates : null;
+      
+      if (!coords) return;
+      
       const latlngs = coords.map(c => [c[1], c[0]]);
+
       const polyline = L.polyline(latlngs, { color: '#1e90ff', weight: 3, opacity: 0.8 }).addTo(window.trailsMap);
       
       // Extract boundary id and name
@@ -413,7 +422,18 @@ function loadRivers() {
             continue;
           }
 
-          const coords = river.geom.coordinates; // GeoJSON format: [lon, lat]
+         // const coords = river.geom.coordinates; // GeoJSON format: [lon, lat]
+
+         // Section to handle both 'geom' and 'geometry' fields for compatibility
+          const geometry = river.geom || river.geometry; // Checks both 'geom' and 'geometry'
+          const coords = geometry ? geometry.coordinates : null;
+
+          if (!coords) {
+              console.warn(`⚠️ River ${river.name} has no coordinates in geom or geometry`);
+              skippedCount++;
+              continue;
+          }
+
           // Convert to Leaflet format [lat, lon]
           const latlngs = coords.map(c => [c[1], c[0]]);
           

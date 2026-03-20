@@ -357,6 +357,12 @@ if not DEBUG:
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+    
+import os
+
+# These are the standard paths for the libraries we installed in your Dockerfile
+GDAL_LIBRARY_PATH = '/usr/lib/libgdal.so'
+GEOS_LIBRARY_PATH = '/usr/lib/libgeos_c.so'
 
 
 
