@@ -405,176 +405,135 @@ function loadRivers() {
     let batchIndex = 0;
     let firstRiverCoords = null;
 
-     // Function to render a single batch
+  // Function to render a single batch
     function renderBatch() {
       if (!window.trailsMap._riversLayer) {
-    window.trailsMap._riversLayer = L.featureGroup();
-    window.trailsMap._riversLayer.addTo(window.trailsMap);
-  }
+        window.trailsMap._riversLayer = L.featureGroup();
+        window.trailsMap._riversLayer.addTo(window.trailsMap);
+      }
+      
       const start = batchIndex * batchSize;
       const end = Math.min(start + batchSize, rivers.length);
       
       for (let i = start; i < end; i++) {
         const river = rivers[i];
         try {
-          if (!river.geom || river.geom.type !== "LineString") { // Skip non-LineString geometries
+          const geo = river.geom || river.geometry;
+
+          if (!geo || (geo.type !== "LineString" && geo.type !== "MultiLineString")) { 
             skippedCount++;
             continue;
           }
 
-         // const coords = river.geom.coordinates; // GeoJSON format: [lon, lat]
-
-         // Section to handle both 'geom' and 'geometry' fields for compatibility
-          const geometry = river.geom || river.geometry; // Checks both 'geom' and 'geometry'
-          const coords = geometry ? geometry.coordinates : null;
-
-          if (!coords) {
-              console.warn(`⚠️ River ${river.name} has no coordinates in geom or geometry`);
+          const coords = geo.coordinates;
+          if (!coords || coords.length === 0) {
               skippedCount++;
               continue;
           }
 
-          // Convert to Leaflet format [lat, lon]
-          const latlngs = coords.map(c => [c[1], c[0]]);
+          // FIX: Handle both LineString and MultiLineString for latlngs and start markers
+          let latlngs;
+          let startLng, startLat;
+
+          if (geo.type === "MultiLineString") {
+              latlngs = coords[0].map(c => [parseFloat(c[1]), parseFloat(c[0])]);
+              [startLng, startLat] = coords[0][0]; 
+          } else {
+              latlngs = coords.map(c => [parseFloat(c[1]), parseFloat(c[0])]);
+              [startLng, startLat] = coords[0];
+          }
           
-          if (latlngs.length < 2) {
-            console.warn(`⚠️ River ${river.name} has ${latlngs.length} coordinates`);
+          if (latlngs.length < 2 || isNaN(parseFloat(startLat))) {
             skippedCount++;
             continue;
           }
 
-          // Store first river's coords for debugging
-          if (renderedCount === 0 && !firstRiverCoords) {
-            firstRiverCoords = latlngs.slice(0, 3);
-            console.log(`📍 First river: ${river.name}`);
-            console.log(`   Raw API coords (first 3): ${JSON.stringify(coords.slice(0, 3))}`);
-            console.log(`   Converted latlngs (first 3): ${JSON.stringify(latlngs.slice(0, 3))}`);
-          }
-
-          // Use addRiverToMap to get popup with buttons
           const polyline = L.polyline(latlngs, {
             color: "#1e90ff",
             weight: 3,
             opacity: 0.8,
           });
-        if(river.name && coords.length > 0) {
-          const [startLng, startLat] = coords[0];
-          const startMarker = L.circleMarker([startLat, startLng], {
-            radius: 6,
-            fillColor: "#4A90E2",
-            color:"#fff",
-            weight: 2,
-            opacity: 0.8,
-            fillOpacity: 0.8,
-          });
-         
-          // Build feature object that matches what addRiverToMap expects
-          const feature = {
-            properties: {
-              id: river.id || river.pk,
-              name: river.name
-            },
-            geometry: {
-              coordinates: latlngs
-            }
-          };
-          
-          // Extract and create popup manually here
-          const boundaryId = river.id || river.pk;
-          const name = river.name;
-          
-          const popupDiv = document.createElement('div');
-          popupDiv.style.fontFamily = 'Arial, sans-serif';
-          popupDiv.style.padding = '10px';
-          popupDiv.style.minWidth = '240px';
-          
-          const titleDiv = document.createElement('strong');
-          titleDiv.textContent = name;
-          titleDiv.style.fontSize = '14px';
-          titleDiv.style.display = 'block';
-          titleDiv.style.marginBottom = '10px';
-          popupDiv.appendChild(titleDiv);
-          
-            // Button 1: Crossing trails
-          const btn1 = document.createElement('button');
-          btn1.textContent = 'Show trails crossing';
-          btn1.style.width = '100%';
-          btn1.style.padding = '8px';
-          btn1.style.marginBottom = '6px';
-          btn1.style.background = '#4CAF50';
-          btn1.style.color = 'white';
-          btn1.style.border = 'none';
-          btn1.style.borderRadius = '4px';
-          btn1.style.cursor = 'pointer';
-          btn1.style.fontSize = '12px';
-          btn1.onclick = (e) => {
-            console.log('Button 1 clicked, boundaryId:', boundaryId);
-            console.log('window.poiMap exists:', !!window.poiMap);
-            console.log('window.poiMap:', window.poiMap);
-            if (window.poiMap && typeof window.poiMap.loadTrailsCrossingBoundary === 'function') {
-              console.log('Calling loadTrailsCrossingBoundary');
-              window.poiMap.loadTrailsCrossingBoundary(boundaryId, name);
-            } else {
-              console.warn('Function not available');
-            }
-          };
-          popupDiv.appendChild(btn1);
-          // Button 2: Nearby trails
-          const btn2 = document.createElement('button');
-          btn2.textContent = 'Show nearby trails (10km)';
-          btn2.style.width = '100%';
-          btn2.style.padding = '8px';
-          btn2.style.background = '#2196F3';
-          btn2.style.color = 'white';
-          btn2.style.border = 'none';
-          btn2.style.borderRadius = '4px';
-          btn2.style.cursor = 'pointer';
-          btn2.style.fontSize = '12px';
-          btn2.onclick = (e) => {
-            console.log('Button 2 clicked, boundaryId:', boundaryId);  // Nearby trails
-            console.log('window.poiMap exists:', !!window.poiMap);
-            if (window.poiMap && typeof window.poiMap.loadTrailsNearBoundary === 'function') {
-              console.log('Calling loadTrailsNearBoundary');
-              window.poiMap.loadTrailsNearBoundary(boundaryId, 10000);
-            } else {
-              console.warn('Function not available');
-            }
-          };
-          popupDiv.appendChild(btn2);
 
-      
+          if(river.name) {
+            const startMarker = L.circleMarker([parseFloat(startLat), parseFloat(startLng)], {
+              radius: 6,
+              fillColor: "#4A90E2",
+              color:"#fff",
+              weight: 2,
+              opacity: 0.8,
+              fillOpacity: 0.8,
+            });
           
+            const boundaryId = river.id || river.pk;
+            const name = river.name;
+            
+            const popupDiv = document.createElement('div');
+            popupDiv.style.fontFamily = 'Arial, sans-serif';
+            popupDiv.style.padding = '10px';
+            popupDiv.style.minWidth = '240px';
+            
+            const titleDiv = document.createElement('strong');
+            titleDiv.textContent = name;
+            titleDiv.style.fontSize = '14px';
+            titleDiv.style.display = 'block';
+            titleDiv.style.marginBottom = '10px';
+            popupDiv.appendChild(titleDiv);
+            
+            const btn1 = document.createElement('button');
+            btn1.textContent = 'Show trails crossing';
+            btn1.style.width = '100%';
+            btn1.style.padding = '8px';
+            btn1.style.marginBottom = '6px';
+            btn1.style.background = '#4CAF50';
+            btn1.style.color = 'white';
+            btn1.style.border = 'none';
+            btn1.style.borderRadius = '4px';
+            btn1.style.cursor = 'pointer';
+            btn1.style.fontSize = '12px';
+            btn1.onclick = (e) => {
+              e.stopPropagation();
+              if (window.poiMap && typeof window.poiMap.loadTrailsCrossingBoundary === 'function') {
+                window.poiMap.loadTrailsCrossingBoundary(boundaryId, name);
+              }
+            };
+            popupDiv.appendChild(btn1);
 
-          // Bind popup to polyline
-          polyline.bindPopup(popupDiv, { maxWidth: 280, maxHeight: 200 });
-          polyline.addTo(window.trailsMap._riversLayer);
-          startMarker.bindPopup(popupDiv, { maxWidth: 280, maxHeight: 200 });
-          startMarker.addTo(window.trailsMap._riversLayer);
-          renderedCount++;
-        }
-          // Log first polyline details
-          if (i === start && renderedCount === 1) {
-            console.log(`  ✅ First polyline added to map`);
-            console.log(`     Polyline bounds:`, polyline.getBounds());
+            const btn2 = document.createElement('button');
+            btn2.textContent = 'Show nearby trails (10km)';
+            btn2.style.width = '100%';
+            btn2.style.padding = '8px';
+            btn2.style.background = '#2196F3';
+            btn2.style.color = 'white';
+            btn2.style.border = 'none';
+            btn2.style.borderRadius = '4px';
+            btn2.style.cursor = 'pointer';
+            btn2.style.fontSize = '12px';
+            btn2.onclick = (e) => {
+              e.stopPropagation();
+              if (window.poiMap && typeof window.poiMap.loadTrailsNearBoundary === 'function') {
+                window.poiMap.loadTrailsNearBoundary(boundaryId, 10000);
+              }
+            };
+            popupDiv.appendChild(btn2);
+
+            polyline.bindPopup(popupDiv, { maxWidth: 280, maxHeight: 200 });
+            startMarker.bindPopup(popupDiv, { maxWidth: 280, maxHeight: 200 });
+            
+            polyline.addTo(window.trailsMap._riversLayer);
+            startMarker.addTo(window.trailsMap._riversLayer);
+            renderedCount++;
           }
         } catch (err) {
           console.warn(`⚠️ Error rendering ${river.name}: ${err.message}`);
-          console.error(err);
           skippedCount++;
         }
       }
-    
-      // Log batch completion
-      console.log(`  ✓ Batch ${batchIndex + 1}: Rendered ${end - start} rivers (total: ${renderedCount})`);
-      batchIndex++;
 
-      // Continue next batch if there are more
-      if (end < rivers.length) {
-        setTimeout(renderBatch, 50); // 50ms delay between batches
+      batchIndex++;
+      if (start + batchSize < rivers.length) {
+        setTimeout(renderBatch, 50);
       } else {
         console.log(`✅ Finished rendering! Total: ${renderedCount} rivers | Skipped: ${skippedCount}`);
-        console.log(`   Map bounds:`, window.trailsMap.getBounds());
-        console.log(`   Map center:`, window.trailsMap.getCenter());
       }
     }
 
@@ -583,6 +542,7 @@ function loadRivers() {
 
   fetchPage(nextUrl);
 }
+
 
 /**
  * Load trails that start near a boundary (river)

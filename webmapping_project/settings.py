@@ -156,6 +156,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'webmapping_project.wsgi.application'
 
+
 # Use in-memory DB only for tests
 if "test" in sys.argv:
     print("🔹 Using in-memory Spatialite (tests)")
@@ -169,7 +170,6 @@ if "test" in sys.argv:
 elif os.getenv("CI"):
     print("🔹 Using SpatiaLite (SQLite GIS) for CI build")
     os.environ["SPATIALITE_LIBRARY_PATH"] = "mod_spatialite"
-
     DATABASES = {
         "default": {
             "ENGINE": "django.contrib.gis.db.backends.spatialite",
@@ -178,51 +178,45 @@ elif os.getenv("CI"):
     }
 else:
     # Detect which database to use: local PostGIS or Cloud SQL
-    # environment variables should already be loaded above if python-dotenv is present
-
-    if os.getenv("ACTIVE_DB") == "new":
-        print("🔹 Using Cloud SQL (PostgreSQL 17)")
+    # We check K_SERVICE (Google) or ACTIVE_DB to ensure we hit the right block
+    if os.getenv("K_SERVICE") or os.getenv("ACTIVE_DB") == "new":
+        print("🚀 Using Cloud SQL (Production)")
         DATABASES = {
             'default': {
                 'ENGINE': 'django.contrib.gis.db.backends.postgis',
-                'NAME': os.getenv('NEW_DB_NAME', 'stay_and_trek'),
-                'USER': os.getenv('NEW_DB_USER', 'postgres'),
-                'PASSWORD': os.getenv('NEW_DB_PASSWORD', 'Clara2026'),
-                'HOST': os.getenv('NEW_DB_HOST', '/cloudsql/long-octane-477515-k6:europe-west1:stay-trek-db'),
-                'PORT': os.getenv('NEW_DB_PORT', ''), # Unix socket doesn't need a port
+                'NAME': 'stay_and_trek',
+                'USER': 'postgres',
+                'PASSWORD': 'Clara2026',
+                'HOST': '/cloudsql/long-octane-477515-k6:europe-west1:stay-trek-db',
+                'PORT': '', 
+            }
+        }
+    elif os.getenv('DATABASE_URL'):
+        # Docker environment
+        print("🐳 Using Docker PostGIS (Local)")
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.contrib.gis.db.backends.postgis',
+                'NAME':'stayandtrek',
+                'USER': os.getenv('POSTGRES_USER', 'postgres'),
+                'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'postgres'),
+                'HOST': os.getenv('DB_HOST', 'db'),
+                'PORT': os.getenv('DB_PORT', '5432'),
             }
         }
     else:
-        print("🔹 Using local PostGIS (default)")
-        
-        
-        # Check if running in Docker (env vars set by docker-compose)
-        if os.getenv('DATABASE_URL'):
-        
-            # Docker environment - use docker-compose variables
-            DATABASES = {
-                'default': {
-                    'ENGINE': 'django.contrib.gis.db.backends.postgis',
-                    'NAME':'stayandtrek',
-                    #'NAME': os.getenv('POSTGRES_DB', 'trails_db'),
-                    'USER': os.getenv('POSTGRES_USER', 'postgres'),
-                    'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'postgres'),
-                    'HOST': os.getenv('DB_HOST', 'db'),  # Docker service name
-                    'PORT': os.getenv('DB_PORT', '5432'),
-                }
+        # Local development (macOS)
+        print("💻 Using Localhost PostGIS (macOS)")
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.contrib.gis.db.backends.postgis',
+                'NAME': 'trails_db',
+                'USER': 'aaronbaggot',
+                'PASSWORD': '',
+                'HOST': 'localhost',
+                'PORT': '5432',
             }
-        else:
-            # Local development (macOS)
-            DATABASES = {
-                'default': {
-                    'ENGINE': 'django.contrib.gis.db.backends.postgis',
-                    'NAME': 'trails_db',
-                    'USER': 'aaronbaggot',
-                    'PASSWORD': '',
-                    'HOST': 'localhost',
-                    'PORT': '5432',
-                }
-            }
+        }
 
 
 # Database
