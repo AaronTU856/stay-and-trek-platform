@@ -68,6 +68,8 @@ ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
     '0.0.0.0', # Common for Docker internal routing
+    'stay-and-trek.com', 
+    'www.stay-and-trek.com',
     'stay-and-trek-service-642845720185.europe-west1.run.app',
     '.run.app', # Permits all Google Cloud Run subdomains
 ]
@@ -79,7 +81,10 @@ if os.getenv('K_SERVICE'):
     if CURRENT_HOST:
         ALLOWED_HOSTS.append(CURRENT_HOST)
 
-
+CSRF_TRUSTED_ORIGINS = [
+    'https://stay-and-trek.com',
+    'https://www.stay-and-trek.com'
+]
 
 # Application definition
 

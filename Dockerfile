@@ -42,3 +42,4 @@ EXPOSE 8080
 # 9. Start the service directly with Gunicorn
 # This bypasses any script delays and talks to Port 8080 immediately
 CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--timeout", "120", "webmapping_project.wsgi:application"]
+
