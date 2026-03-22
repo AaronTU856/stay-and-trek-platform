@@ -6,6 +6,9 @@
 {% block extra_css %}
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="{% static 'trails_api/css/leaflet-search.min.css' %}">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <meta name="csrf-token" content="{{ csrf_token }}">  
   
   <style>
     /* Map page specific layout - works with inherited body */
@@ -574,6 +577,7 @@ body.high-contrast-mode footer {
 
 {% block content %}
 
+  {% csrf_token %}
   <!-- ✅ Map Container with Sidebar -->
   <div class="main-container">
     <!-- Left Sidebar -->
