@@ -766,7 +766,7 @@ function addSearchControls() {
     propertyName: "title",
     initial: false,
     casesensitive: false,
-    textPlaceholder: "Search trail…",
+    textPlaceholder: "Search trails by name (e.g Clara Esker)...",
     marker: false,
     position: "topleft",
     collapsed: false,

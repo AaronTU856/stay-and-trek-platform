@@ -74,13 +74,13 @@ export default function TrailsScreen() {
 
       <TextInput
         style={styles.searchInput}
-        placeholder="Search trails..."
+        placeholder="Search trail"
         value={searchQuery}
         onChangeText={setSearchQuery}
         autoCapitalize="none"
         autoCorrect={false}
         clearButtonMode="while-editing"
-        accessibilityLabel="Search trails"    
+        accessibilityLabel="Search trail"    
       />
 
 
