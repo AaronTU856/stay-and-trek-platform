@@ -84,6 +84,7 @@ if os.getenv('K_SERVICE'):
 CSRF_TRUSTED_ORIGINS = [
     'https://stay-and-trek.com',
     'https://www.stay-and-trek.com'
+    'https://*.run.app',
 ]
 
 # Application definition

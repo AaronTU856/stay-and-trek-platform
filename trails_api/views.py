@@ -995,6 +995,8 @@ def accommodations_by_county(request):
         "total_counties": county_stats.count(),
         "total_accommodations": accommodations.count()
     })
+ 
+ 
     
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -1097,129 +1099,83 @@ def get_transport_route(start_coords, end_coords):
     from django.db import connection
 
     features = []
-    
     start_lng, start_lat = start_coords
     end_lng, end_lat = end_coords
 
     with connection.cursor() as cursor:
-
         logger.warning(f"DEBUG coords: {start_lng},{start_lat} -> {end_lng},{end_lat}")
 
         # Find nearest routable nodes
         start_node = get_road_node_for_point(cursor, start_lng, start_lat)
-        logger.warning(f"DEBUG start_node: {start_node}")
-
         end_node = get_road_node_for_point(cursor, end_lng, end_lat)
-        logger.warning(f"DEBUG end_node: {end_node}")
 
         if start_node is None or end_node is None:
             logger.warning("[ROUTE DEBUG] No start/end node found.")
             return {"status": "no_route_found"}
 
-        # Get snapped start vertex
-        cursor.execute("""
-            SELECT ST_AsGeoJSON(ST_Transform(the_geom, 4326))
-            FROM routing_ways_vertices_pgr
-            WHERE id = %s;
-        """, [start_node])
+        # Get snapped start/end vertices
+        cursor.execute("SELECT ST_AsGeoJSON(ST_Transform(the_geom, 4326)) FROM routing_ways_vertices_pgr WHERE id = %s;", [start_node])
         start_geom_row = cursor.fetchone()
-
-        # Get snapped end vertex
-        cursor.execute("""
-            SELECT ST_AsGeoJSON(ST_Transform(the_geom, 4326))
-            FROM routing_ways_vertices_pgr
-            WHERE id = %s;
-        """, [end_node])
+        cursor.execute("SELECT ST_AsGeoJSON(ST_Transform(the_geom, 4326)) FROM routing_ways_vertices_pgr WHERE id = %s;", [end_node])
         end_geom_row = cursor.fetchone()
 
         # Connector: original start - snapped road node
         if start_geom_row:
             start_vertex_coords = json.loads(start_geom_row[0])["coordinates"]
-
             features.append({
                 "type": "Feature",
                 "properties": {"segment": "connector_start"},
-                "geometry": {
-                    "type": "LineString",
-                    "coordinates": [
-                        [start_lng, start_lat],
-                        start_vertex_coords
-                    ]
-                }
+                "geometry": {"type": "LineString", "coordinates": [[start_lng, start_lat], start_vertex_coords]}
             })
 
-       # Main road route using pgRouting
+       # --- Main road route using pgRouting (Optimized for 1.4M Rows) ---
         try:
-            logger.warning(f"[ROUTE DEBUG] start_node={start_node}, end_node={end_node}")
-            
-            # Use ST_Collect to ensure get a result even if segments don't touch perfectly
+            # FIX: We add a WHERE clause inside the pgr_dijkstra inner SQL.
+            # ST_Expand creates a 5km "box" around your start/end points. 
+            # This prevents the 504 Timeout on Cloud SQL.
             cursor.execute("""
-                SELECT ST_AsGeoJSON(
-                    ST_Transform(
-                        ST_Collect(r.geom), 
-                        4326
-                    )
-                )
+                SELECT ST_AsGeoJSON(ST_Transform(ST_Collect(r.geom), 4326))
                 FROM pgr_dijkstra(
-                    'SELECT id, source, target, cost, reverse_cost FROM routing_ways',
+                    'SELECT id, source, target, cost, reverse_cost FROM routing_ways 
+                     WHERE geom && ST_Expand(ST_Envelope(ST_Collect(
+                        ST_Transform(ST_SetSRID(ST_Point(%s,%s),4326), 3857),
+                        ST_Transform(ST_SetSRID(ST_Point(%s,%s),4326), 3857)
+                     )), 5000)', 
                     %s, %s, true
                 ) d
                 JOIN routing_ways r ON d.edge = r.id
                 WHERE d.edge <> -1;
-            """, [start_node, end_node])
+            """, [start_lng, start_lat, end_lng, end_lat, start_node, end_node])
             
-            # Fetch exactly once
             row = cursor.fetchone()
-            logger.warning(f"[ROUTE DEBUG] Data found: {row is not None and row[0] is not None}")
-
         except Exception as e:
             logging.error(f"ROUTING SQL ERROR: {e}")
             return {"status": "error", "message": str(e)}
 
-        # This log if the DB returned the geometry
-        logging.warning(f"[ROUTE DEBUG] merged route found: {row is not None}")
-
         if row and row[0]:
-            try:
-                merged_geom = json.loads(row[0])
-
-                features.append({
-                    "type": "Feature",
-                    "properties": {"segment": "road_route"},
-                    "geometry": merged_geom
-                })
-            except Exception as e:
-                logging.error(f"GeoJSON decode error: {e}")
-                return {"status": "error", "message": "GeoJSON decode error"}
+            features.append({
+                "type": "Feature",
+                "properties": {"segment": "road_route"},
+                "geometry": json.loads(row[0])
+            })
         else:
-            logging.error("[ROUTE DEBUG] No route found by pgr_dijkstra.")
-            # If this triggers, it means the two nodes aren't connected
             return {"status": "no_route_found", "error": "No route found"}
 
         # Connector: snapped road node -> original end
         if end_geom_row:
             end_vertex_coords = json.loads(end_geom_row[0])["coordinates"]
-
             features.append({
                 "type": "Feature",
                 "properties": {"segment": "connector_end"},
-                "geometry": {
-                    "type": "LineString",
-                    "coordinates": [
-                        end_vertex_coords,
-                        [end_lng, end_lat]
-                    ]
-                }
+                "geometry": {"type": "LineString", "coordinates": [end_vertex_coords, [end_lng, end_lat]]}
             })
-        print(f"DEBUG: Sending {len(features)} features with status success_v2")
-        return {
-            "status": "success_v2",
-                "type": "FeatureCollection",
-                "features": features
-            
-        }
-        
-@csrf_exempt
+
+        return {"status": "success_v2", "type": "FeatureCollection", "features": features}
+
+
+
+
+
 @api_view(['POST'])
 @authentication_classes([])
 @permission_classes([AllowAny])
@@ -1351,6 +1307,8 @@ class NearbyAccommodationView(generics.ListAPIView):
             
         return Accommodation.objects.none()
     
+
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def accommodations_near_town(request):
