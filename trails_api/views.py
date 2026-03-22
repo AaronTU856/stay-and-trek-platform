@@ -1140,7 +1140,7 @@ def get_transport_route(start_coords, end_coords):
                      WHERE geom && ST_Expand(ST_Envelope(ST_Collect(
                         ST_Transform(ST_SetSRID(ST_Point(%s,%s),4326), 3857),
                         ST_Transform(ST_SetSRID(ST_Point(%s,%s),4326), 3857)
-                     )), 20000)', 
+                     )), 50000)', 
                     %s, %s, true
                 ) d
                 JOIN routing_ways r ON d.edge = r.id
