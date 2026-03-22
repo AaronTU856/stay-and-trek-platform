@@ -632,13 +632,15 @@ body.high-contrast-mode footer {
       <div class="card">
         <div class="card-header">🌊 Rivers</div>
         <div class="card-body">     
-          <p style="font-size: 12px;">
-            2,758 rivers across Ireland. Click any river to:
-          </p>
-          <ul style="font-size: 11px; margin: 8px 0;">
-            <li>Show trails crossing</li>
-            <li>Show nearby trails (10km)</li>
-          </ul>
+          <medium class="text-muted d-block mt-2">
+            <strong>Instructions:</strong>
+              <ol class="mb-0 ps-3">
+                <li>Click <em>Load Rivers</em> to display rivers on the map.</li>
+                <li>Select a river to highlight intersecting trails (shown in red).</li>
+                <li>Choose <em>Show nearby trails (10km)</em> to display trails within a 10km radius of the selected river.</li>
+                <li>Click <em>Clear Rivers</em> to remove all river data from the map.</li>
+              </ol>
+          </medium>
           <button id="load-rivers-btn" class="btn btn-success w-100">
             Load Rivers
           </button>
