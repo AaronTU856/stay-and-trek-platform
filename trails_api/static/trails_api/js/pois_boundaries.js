@@ -596,11 +596,12 @@ function loadTrailsNearBoundary(boundaryId, radiusMeters = 200) {
         const county = t.county || 'Unknown';
         // Create circle marker with yellow/orange color for visibility
         const marker = L.circleMarker([lat, lng], {
-          radius: 8,
-          color: '#FF9F1C',
-          fillColor: '#FFCC00',
+          radius: 9,
+          color: '#f6960efa',
+          fillColor: '#f7d758',
           fillOpacity: 0.9,
           weight: 3,
+          className: 'blinking-marker'
         }).bindPopup(`<b>${trailName}</b><br/>📍 ${county}`);
         
         marker.addTo(window.nearestTrailsLayer);
