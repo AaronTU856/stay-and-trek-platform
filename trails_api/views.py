@@ -1051,6 +1051,12 @@ BBOX_BUFFER_DEG = 2
 import logging
 logger = logging.getLogger(__name__)
 
+ROUTE_SEARCH_TIME_LIMIT_SECONDS = 3.0
+ROUTE_INITIAL_RADIUS_METERS = 50000
+ROUTE_RADIUS_MULTIPLIER = 1.75
+ROUTE_MAX_RADIUS_METERS = 600000
+ROUTE_MAX_SINGLE_QUERY_MS = 1200
+
 def build_road_inner_sql(cursor, start_coords, end_coords, road_filter, bbox_buffer_deg=BBOX_BUFFER_DEG):
 
     if not road_filter:
@@ -1093,6 +1099,98 @@ def get_road_node_for_point(cursor, lng, lat):
     return row[0] if row else None
 
 
+def find_route_with_expanding_radius(
+    cursor,
+    start_lng,
+    start_lat,
+    end_lng,
+    end_lat,
+    start_node,
+    end_node,
+    max_total_seconds=ROUTE_SEARCH_TIME_LIMIT_SECONDS,
+    initial_radius=ROUTE_INITIAL_RADIUS_METERS,
+    radius_multiplier=ROUTE_RADIUS_MULTIPLIER,
+    max_radius=ROUTE_MAX_RADIUS_METERS,
+    max_single_query_ms=ROUTE_MAX_SINGLE_QUERY_MS,
+):
+    import time
+    from django.db import transaction
+
+    started = time.monotonic()
+    radius = int(initial_radius)
+    attempt = 0
+    last_error = None
+
+    while radius <= int(max_radius):
+        elapsed = time.monotonic() - started
+        remaining_ms = int((max_total_seconds - elapsed) * 1000)
+
+        if remaining_ms <= 0:
+            break
+
+        statement_timeout_ms = min(int(max_single_query_ms), remaining_ms)
+        if statement_timeout_ms <= 0:
+            break
+
+        attempt += 1
+
+        try:
+            with transaction.atomic():
+                cursor.execute("SET LOCAL statement_timeout = %s;", [statement_timeout_ms])
+                cursor.execute("""
+                    SELECT ST_AsGeoJSON(ST_Transform(ST_Collect(r.geom), 4326))
+                    FROM pgr_dijkstra(
+                        'SELECT id, source, target, cost, reverse_cost FROM routing_ways
+                         WHERE geom && ST_Expand(ST_Envelope(ST_Collect(
+                            ST_Transform(ST_SetSRID(ST_Point(%s,%s),4326), 3857),
+                            ST_Transform(ST_SetSRID(ST_Point(%s,%s),4326), 3857)
+                         )), %s)',
+                        %s, %s, true
+                    ) d
+                    JOIN routing_ways r ON d.edge = r.id
+                    WHERE d.edge <> -1;
+                """, [
+                    start_lng,
+                    start_lat,
+                    end_lng,
+                    end_lat,
+                    radius,
+                    start_node,
+                    end_node,
+                ])
+                row = cursor.fetchone()
+
+            if row and row[0]:
+                return {
+                    "ok": True,
+                    "geojson": row[0],
+                    "radius_used": radius,
+                    "attempts": attempt,
+                    "elapsed_seconds": round(time.monotonic() - started, 3),
+                }
+        except Exception as e:
+            last_error = str(e)
+            logger.warning(
+                "[ROUTING RETRY] attempt=%s radius=%s timeout_ms=%s error=%s",
+                attempt,
+                radius,
+                statement_timeout_ms,
+                last_error,
+            )
+
+        next_radius = int(radius * radius_multiplier)
+        radius = next_radius if next_radius > radius else radius + 50000
+
+    return {
+        "ok": False,
+        "geojson": None,
+        "radius_used": radius,
+        "attempts": attempt,
+        "elapsed_seconds": round(time.monotonic() - started, 3),
+        "error": last_error or "No route found before time limit was reached",
+    }
+
+
 def get_transport_route(start_coords, end_coords):
     import logging
     import json
@@ -1130,36 +1228,35 @@ def get_transport_route(start_coords, end_coords):
 
        # --- Main road route using pgRouting (Optimized for 1.4M Rows) ---
         try:
-            # FIX: We add a WHERE clause inside the pgr_dijkstra inner SQL.
-            # ST_Expand creates a 5km "box" around your start/end points. 
-            # This prevents the 504 Timeout on Cloud SQL.
-            cursor.execute("""
-                SELECT ST_AsGeoJSON(ST_Transform(ST_Collect(r.geom), 4326))
-                FROM pgr_dijkstra(
-                    'SELECT id, source, target, cost, reverse_cost FROM routing_ways 
-                     WHERE geom && ST_Expand(ST_Envelope(ST_Collect(
-                        ST_Transform(ST_SetSRID(ST_Point(%s,%s),4326), 3857),
-                        ST_Transform(ST_SetSRID(ST_Point(%s,%s),4326), 3857)
-                     )), 50000)', 
-                    %s, %s, true
-                ) d
-                JOIN routing_ways r ON d.edge = r.id
-                WHERE d.edge <> -1;
-            """, [start_lng, start_lat, end_lng, end_lat, start_node, end_node])
-            
-            row = cursor.fetchone()
+            route_result = find_route_with_expanding_radius(
+                cursor,
+                start_lng,
+                start_lat,
+                end_lng,
+                end_lat,
+                start_node,
+                end_node,
+            )
         except Exception as e:
             logging.error(f"ROUTING SQL ERROR: {e}")
             return {"status": "error", "message": str(e)}
 
-        if row and row[0]:
+        if route_result["ok"]:
             features.append({
                 "type": "Feature",
-                "properties": {"segment": "road_route"},
-                "geometry": json.loads(row[0])
+                "properties": {
+                    "segment": "road_route",
+                    "radius_used": route_result["radius_used"],
+                    "attempts": route_result["attempts"],
+                },
+                "geometry": json.loads(route_result["geojson"])
             })
         else:
-            return {"status": "no_route_found", "error": "No route found"}
+            return {
+                "status": "no_route_found",
+                "error": route_result["error"],
+                "routing_debug": route_result,
+            }
 
         # Connector: snapped road node -> original end
         if end_geom_row:
