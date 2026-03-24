@@ -148,7 +148,7 @@
     </div>
 
     <div class="row g-3">
-        {% for accommodation in accommodations %}
+        {% for accommodation in page_obj %}
         <div class="col-12 col-md-6 col-lg-4">
             <div class="card accommodation-card" {% if accommodation.latitude and accommodation.longitude %}data-lat="{{ accommodation.latitude }}" data-lng="{{ accommodation.longitude }}"{% endif %}>
                 <img src="{{ accommodation.image_url }}" alt="{{ accommodation.name }}">
@@ -183,6 +183,28 @@
         </div>
         {% endfor %}
     </div>
+
+    {% if page_obj.paginator.num_pages > 1 %}
+    <nav aria-label="Accommodation pagination" class="mt-4">
+        <ul class="pagination justify-content-center flex-wrap gap-2">
+            <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+                <a class="page-link" href="?page=1{% if selected_county %}&county={{ selected_county|urlencode }}{% endif %}">First</a>
+            </li>
+            <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+                <a class="page-link" href="?page={% if page_obj.has_previous %}{{ page_obj.previous_page_number }}{% else %}1{% endif %}{% if selected_county %}&county={{ selected_county|urlencode }}{% endif %}">Previous</a>
+            </li>
+            <li class="page-item disabled">
+                <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            </li>
+            <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+                <a class="page-link" href="?page={% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}{{ page_obj.paginator.num_pages }}{% endif %}{% if selected_county %}&county={{ selected_county|urlencode }}{% endif %}">Next</a>
+            </li>
+            <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if selected_county %}&county={{ selected_county|urlencode }}{% endif %}">Last</a>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
 </div>
 {% endblock %}
 

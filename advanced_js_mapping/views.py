@@ -7,6 +7,7 @@ from django.contrib.gis.geos import GEOSGeometry, Polygon
 from django.contrib.gis.measure import Distance
 from django.db.models import Count, Avg, Sum
 from django.utils import timezone
+from django.core.paginator import Paginator
 import json
 import time
 import logging
@@ -322,8 +323,12 @@ def index_view(request):
     if selected_county:
         accommodations_qs = accommodations_qs.filter(nearby_trails__county__iexact=selected_county).distinct()
 
+    paginator = Paginator(accommodations_qs, 24)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     accommodations = []
-    for index, accommodation in enumerate(accommodations_qs):
+    for index, accommodation in enumerate(page_obj.object_list):
         try:
             linked_trail = next(
                 (t for t in accommodation.nearby_trails.all() if t.county and t.county.strip()),
@@ -383,11 +388,14 @@ def index_view(request):
 
     context = {
         'accommodations': accommodations,
+        'page_obj': page_obj,
         'county_options': county_options,
         'selected_county': selected_county,
-        'accommodation_count': len(accommodations),
+        'accommodation_count': paginator.count,
         'current_page': 'accommodations',
     }
+
+    page_obj.object_list = accommodations
 
     return render(request, 'advanced_js_mapping/index.html', context)
 
