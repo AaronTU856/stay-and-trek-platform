@@ -3,6 +3,14 @@
 
 function initializeUIControls() {
     console.log("UI Controls initialized and attached to window.");
+
+    const townImagePool = [
+        '/static/images/irish_town.jpg',
+        '/static/images/towns.jpg',
+        '/static/images/road.jpg',
+        '/static/images/hiking.jpeg',
+        '/static/images/hike_2.jpg'
+    ];
     
     window.UIControls = {
         clearResults: function() {
@@ -41,8 +49,9 @@ function initializeUIControls() {
                 item.className = "list-group-item list-group-item-action mb-2 shadow-sm rounded border-0 d-flex align-items-center";
                 item.style.borderLeft = "5px solid var(--brand-primary)";
                
-                // Generate a consistent image for the town based on its name
-                const thumbUrl = `https://loremflickr.com/100/100/ireland,town/all?lock=${city.name.length}`;
+                // Use a deterministic local image so result thumbnails always load.
+                const imageIndex = Math.abs((city.id || city.name.length) % townImagePool.length);
+                const thumbUrl = townImagePool[imageIndex];
 
                 item.innerHTML = `
                     <img src="${thumbUrl}" class="rounded-circle me-3" style="width: 50px; height: 50px; object-fit: cover; border: 2px solid var(--brand-light);">
