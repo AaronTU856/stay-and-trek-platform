@@ -150,16 +150,18 @@ window.AdvancedMapping = (function() {
                 div.innerHTML = `
                     <div style="font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid #eee; color: #23624A;">MAP KEY</div>
                     <div style="display: flex; align-items: center; margin-bottom: 4px;">
-                        <span style="width: 12px; height: 12px; background: #2E8B57; display: inline-block; margin-right: 8px; border-radius: 2px;"></span>
-                        <span>Trekking Hub</span>
+                        <span style="position: relative; width: 14px; height: 14px; background: #3f88c5; border-radius: 50%; display: inline-block; margin-right: 8px; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);">
+                            <span style="position: absolute; top: 50%; left: 50%; width: 5px; height: 5px; background: #fff; border-radius: 50%; transform: translate(-50%, -50%);"></span>
+                        </span>
+                        <span>Towns with Population Data</span>
                     </div>
                     <div style="display: flex; align-items: center; margin-bottom: 4px;">
-                        <span style="width: 12px; height: 12px; background: rgba(46, 139, 87, 0.3); border: 2px solid #2E8B57; display: inline-block; margin-right: 8px; border-radius: 2px;"></span>
-                        <span>Search Area</span>
+                        <span style="width: 18px; height: 0; border-top: 3px dashed #2E8B57; display: inline-block; margin-right: 8px;"></span>
+                        <span>Polygon Search</span>
                     </div>
                     <div style="display: flex; align-items: center;">
-                        <span style="width: 12px; height: 12px; background: #ff5722; display: inline-block; margin-right: 8px; border-radius: 50%;"></span>
-                        <span>Your Location</span>
+                        <span style="display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 20px; margin-right: 8px; color: #dc3545; font-size: 18px; line-height: 1;">📍</span>
+                        <span>Town Location</span>
                     </div>
                 `;
                 return div;

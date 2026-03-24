@@ -9,6 +9,8 @@ function initializeUIControls() {
             document.getElementById('citiesList').innerHTML = '';
             document.getElementById('analysisSummary').style.display = 'none';
             document.getElementById('citiesContainer').style.display = 'none';
+            document.getElementById('polygonArea').textContent = '0';
+            document.getElementById('populationDensity').textContent = '0';
         },
 
         updateResultsUI: function(cities, analysis) {
@@ -25,6 +27,14 @@ function initializeUIControls() {
             // Update stats
             document.getElementById('totalCities').textContent = analysis.total_cities || cities.length;
             document.getElementById('totalPopulation').textContent = (analysis.total_population || 0).toLocaleString();
+            document.getElementById('polygonArea').textContent = Number(analysis.polygon_area_km2 || 0).toLocaleString(undefined, {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2
+            });
+            document.getElementById('populationDensity').textContent = Number(analysis.population_density || 0).toLocaleString(undefined, {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2
+            });
 
             cities.forEach(city => {
                 const item = document.createElement('div');
