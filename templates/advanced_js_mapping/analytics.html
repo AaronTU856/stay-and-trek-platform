@@ -1,169 +1,243 @@
-
 {% extends 'advanced_js_mapping/base.html' %}
-<!-- Analytics dashboard template for advanced_js_mapping app -->
-{% load static %}
 {% load humanize %}
 
-{% block title %}Analytics Dashboard{% endblock %}
+{% block title %}Town Analytics{% endblock %}
+
+{% block extra_css %}
+<style>
+    .analytics-shell {
+        background: linear-gradient(180deg, var(--brand-light), #ffffff);
+        min-height: 100vh;
+    }
+
+    .analytics-card,
+    .dashboard-metric-card {
+        border: none;
+        border-radius: 14px;
+        box-shadow: 0 4px 15px rgba(48, 116, 45, 0.1);
+    }
+
+    .dashboard-metric-card {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .dashboard-metric-card::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, rgba(255,255,255,0.7), rgba(255,255,255,0.18));
+        pointer-events: none;
+    }
+
+    .dashboard-metric-card .card-body {
+        position: relative;
+        z-index: 1;
+    }
+
+    .metric-trails {
+        background: linear-gradient(135deg, #eef8f1, #dff1e5);
+    }
+
+    .metric-towns {
+        background: linear-gradient(135deg, #eef5f7, #dcebef);
+    }
+
+    .metric-population {
+        background: linear-gradient(135deg, #fff8e8, #f6ebc7);
+    }
+
+    .metric-routing {
+        background: linear-gradient(135deg, #eef3ff, #dbe4ff);
+    }
+
+    .metric-access {
+        background: linear-gradient(135deg, #e8fff6, #d4f5e9);
+    }
+
+    .metric-value {
+        font-size: 2rem;
+        font-weight: 800;
+        line-height: 1.1;
+    }
+
+    .metric-label {
+        color: #5f6c72;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .insight-box {
+        border-radius: 12px;
+        padding: 1rem;
+        background: #f6fbf8;
+        border-left: 4px solid #2E8B57;
+    }
+
+    .section-note {
+        color: #6c757d;
+        font-size: 0.95rem;
+    }
+
+    .table-responsive {
+        border-radius: 12px;
+    }
+
+    .table thead th {
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #60717a;
+    }
+
+    canvas {
+        max-width: 100%;
+    }
+
+    .chart-wrap {
+        position: relative;
+        min-height: 320px;
+    }
+
+    @media (max-width: 768px) {
+        .analytics-shell {
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+        }
+
+        .metric-value {
+            font-size: 1.65rem;
+        }
+
+        .chart-wrap {
+            min-height: 240px;
+        }
+
+        .analytics-card .card-body,
+        .dashboard-metric-card .card-body {
+            padding: 1rem;
+        }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
+<div class="container-fluid analytics-shell py-4">
+    <div class="row g-3 mb-2">
         <div class="col-12">
-            <h1 class="mb-4">
-                <i class="fas fa-chart-bar me-2"></i>
-                Analytics Dashboard
-            </h1>
+            <h2 class="fw-bold mb-1" style="color: var(--brand-dark);">Town Analytics</h2>
+            <p class="section-note mb-0">A lightweight geospatial summary of town population, trail access, and routing-readiness across the Stay & Trek system.</p>
         </div>
     </div>
 
-    <!-- Summary Cards -->
-    <div class="row mb-4">
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card text-white bg-primary">
+    <div class="row g-3 mb-1">
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card dashboard-metric-card metric-towns h-100">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h5 class="card-title">Total Towns</h5>
-                            <h2>{{ total_cities|default:0 }}</h2>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-city fa-2x"></i>
-                        </div>
-                    </div>
+                    <div class="metric-label">Total Towns</div>
+                    <div class="metric-value" style="color: #23624A;">{{ total_towns|intcomma }}</div>
+                    <div class="small text-muted">Mapped towns with usable spatial location data.</div>
                 </div>
             </div>
         </div>
-        
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card text-white bg-success">
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card dashboard-metric-card metric-population h-100">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h5 class="card-title">Countries</h5>
-                            <h2>{{ total_countries|default:0 }}</h2>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-globe fa-2x"></i>
-                        </div>
-                    </div>
+                    <div class="metric-label">Avg Population per Town</div>
+                    <div class="metric-value" style="color: #B8860B;">{{ avg_population_per_town|floatformat:0|intcomma }}</div>
+                    <div class="small text-muted">Average population across the current town dataset.</div>
                 </div>
             </div>
         </div>
-        
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card text-white bg-info">
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card dashboard-metric-card metric-access h-100">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h5 class="card-title">Total Population</h5>
-                            <h2>{{ total_population|intcomma|default:"0" }}</h2>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-users fa-2x"></i>
-                        </div>
-                    </div>
+                    <div class="metric-label">Avg Trails per Town</div>
+                    <div class="metric-value" style="color: #2E8B57;">{{ avg_trails_per_town }}</div>
+                    <div class="small text-muted">Nearby trails counted within {{ nearby_threshold_km }} km of each town.</div>
                 </div>
             </div>
         </div>
-        
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card text-white bg-warning">
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card dashboard-metric-card metric-routing h-100">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h5 class="card-title">Recent Searches</h5>
-                            <h2>{{ recent_analyses|default:0 }}</h2>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-search fa-2x"></i>
-                        </div>
-                    </div>
+                    <div class="metric-label">Avg Distance to Nearest Trail</div>
+                    <div class="metric-value" style="color: #3558a8;">{{ avg_distance_to_nearest_trail }}</div>
+                    <div class="small text-muted">Measured in km from each town to its nearest mapped trail start.</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Charts Row -->
-    <div class="row mb-4">
-        <div class="col-lg-6 mb-3">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-flag me-2"></i>
-                    Towns by County
-                    </h5>
+    <div class="row g-3 my-1">
+        <div class="col-12 col-lg-6">
+            <div class="card analytics-card h-100">
+                <div class="card-header bg-white border-0 pt-4 px-4">
+                    <h5 class="mb-1 fw-bold">Trails per Town</h5>
+                    <p class="section-note mb-0">Top towns by nearby trail availability. This is useful for showing settlement-level accessibility.</p>
                 </div>
-                <div class="card-body">
-                    <canvas id="countriesChart" width="400" height="300"></canvas>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-lg-6 mb-3">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-chart-pie me-2"></i>
-                        Town Types Distribution
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="cityTypesChart" width="400" height="300"></canvas>
+                <div class="card-body pt-2 px-4">
+                    {% if top_towns_by_access %}
+                    <div class="chart-wrap">
+                        <canvas id="trailsPerTownChart"></canvas>
+                    </div>
+                    {% else %}
+                    <div class="text-muted text-center py-5">No data available</div>
+                    {% endif %}
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- Population Analysis -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-chart-line me-2"></i>
-                        Population Distribution
-                    </h5>
+        <div class="col-12 col-lg-6">
+            <div class="card analytics-card h-100">
+                <div class="card-header bg-white border-0 pt-4 px-4">
+                    <h5 class="mb-1 fw-bold">Population vs Trails</h5>
+                    <p class="section-note mb-0">A simple academic view of whether larger towns tend to have better trail access.</p>
                 </div>
-                <div class="card-body">
-                    <canvas id="populationChart" width="400" height="200"></canvas>
+                <div class="card-body pt-2 px-4">
+                    {% if total_towns %}
+                    <div class="chart-wrap">
+                        <canvas id="populationTrailsChart"></canvas>
+                    </div>
+                    {% else %}
+                    <div class="text-muted text-center py-5">No data available</div>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Data Tables -->
-    <div class="row">
-        <div class="col-lg-6 mb-3">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-crown me-2"></i>
-                        Top Towns by Population
-                    </h5>
+    <div class="row g-3 mt-1">
+        <div class="col-12 col-lg-6">
+            <div class="card analytics-card h-100">
+                <div class="card-header bg-white border-0 pt-4 px-4">
+                    <h5 class="mb-1 fw-bold">Top Towns by Trail Access</h5>
+                    <p class="section-note mb-0">Combines nearby trail counts with access distance to highlight the strongest town-trail hubs.</p>
                 </div>
-                <div class="card-body">
+                <div class="card-body px-4 pt-2">
                     <div class="table-responsive">
-                        <table class="table table-sm">
+                        <table class="table align-middle mb-0">
                             <thead>
                                 <tr>
-                                    <th>Rank</th>
                                     <th>Town</th>
-                                    <th>Country</th>
-                                    <th>Population</th>
+                                    <th>Trail Count</th>
+                                    <th>Avg Distance</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for city in top_cities_by_population %}
+                                {% for town in top_towns_by_access %}
                                 <tr>
-                                    <td>{{ forloop.counter }}</td>
-                                    <td>{{ city.name }}</td>
-                                    <td>{{ city.country }}</td>
-                                    <td>{{ city.population|intcomma }}</td>
+                                    <td>
+                                        <div class="fw-bold">{{ town.name }}</div>
+                                        <div class="small text-muted">{{ town.population|intcomma }} people</div>
+                                    </td>
+                                    <td class="fw-bold text-success">{{ town.trail_count }}</td>
+                                    <td>{{ town.average_access_distance_km }} km</td>
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="4" class="text-center text-muted">No data available</td>
+                                    <td colspan="3" class="text-center text-muted py-4">No data available</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -172,71 +246,51 @@
                 </div>
             </div>
         </div>
-        
-        <div class="col-lg-6 mb-3">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-dollar-sign me-2"></i>
-                        Highest GDP per Capita
-                    </h5>
+        <div class="col-12 col-lg-6">
+            <div class="card analytics-card h-100">
+                <div class="card-header bg-white border-0 pt-4 px-4">
+                    <h5 class="mb-1 fw-bold">Routing Availability</h5>
+                    <p class="section-note mb-0">A simple proxy for pgRouting readiness, based on whether a town has at least one nearby trail candidate.</p>
                 </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Rank</th>
-                                    <th>Town</th>
-                                    <th>Country</th>
-                                    <th>GDP/Capita</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for city in top_cities_by_gdp %}
-                                <tr>
-                                    <td>{{ forloop.counter }}</td>
-                                    <td>{{ city.name }}</td>
-                                    <td>{{ city.country }}</td>
-                                    <td>${{ city.gdp_per_capita|intcomma }}</td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="4" class="text-center text-muted">No data available</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                <div class="card-body px-4 pt-2 d-flex flex-column gap-3">
+                    <div class="insight-box">
+                        <div class="metric-label">Towns Connected to a Trail</div>
+                        <div class="metric-value" style="color: #3558a8;">{{ routing_ready_percent }}%</div>
+                        <div class="small text-muted">{{ routing_ready_count }} of {{ total_towns }} towns have at least one trail within {{ nearby_threshold_km }} km.</div>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Quick Actions -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-tools me-2"></i>
-                        Quick Actions
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="btn-group" role="group">
-                        <a href="{% url 'advanced_js_mapping:map' %}" class="btn btn-primary">
-                            <i class="fas fa-map me-1"></i>
-                            Interactive Map
-                        </a>
-                        <a href="#" class="btn btn-outline-info" target="_blank">
-                            <i class="fas fa-code me-1"></i>
-                            Towns API
-                        </a>
-                        <button class="btn btn-outline-success" onclick="refreshData()">
-                            <i class="fas fa-sync me-1"></i>
-                            Refresh Data
-                        </button>
+                    <div class="insight-box" style="background: #fffdf2; border-left-color: #d4a017;">
+                        <div class="metric-label">Recent Spatial Analysis Activity</div>
+                        <div class="metric-value" style="color: #b8860b;">{{ recent_analyses }}</div>
+                        <div class="small text-muted">Polygon analyses recorded in the last 7 days, demonstrating active use of the town analysis workflow.</div>
+                    </div>
+                    <div class="card dashboard-metric-card metric-access">
+                        <div class="card-body">
+                            <div class="metric-label">Town Type Access Summary</div>
+                            {% if type_access_summary %}
+                            <div class="table-responsive mt-2">
+                                <table class="table table-sm mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Type</th>
+                                            <th>Towns</th>
+                                            <th>Avg Trails</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in type_access_summary %}
+                                        <tr>
+                                            <td>{{ item.label }}</td>
+                                            <td>{{ item.count }}</td>
+                                            <td>{{ item.avg_trails }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="small text-muted mt-2">No data available</div>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -246,14 +300,83 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-// Initialize charts when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    if (typeof initializeCharts === 'function') initializeCharts();
-});
+document.addEventListener('DOMContentLoaded', function () {
+    const trailsCtx = document.getElementById('trailsPerTownChart');
+    if (trailsCtx) {
+        new Chart(trailsCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ trails_per_town_labels|safe }},
+                datasets: [{
+                    label: 'Nearby Trails',
+                    data: {{ trails_per_town_data|safe }},
+                    backgroundColor: '#2E8B57',
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { precision: 0 }
+                    }
+                }
+            }
+        });
+    }
 
-function refreshData() {
-    window.location.reload();
-}
+    const populationCtx = document.getElementById('populationTrailsChart');
+    if (populationCtx) {
+        new Chart(populationCtx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Population vs Nearby Trails',
+                    data: {{ population_vs_trails|safe }},
+                    backgroundColor: 'rgba(53, 88, 168, 0.7)',
+                    borderColor: '#3558a8'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const point = context.raw || {};
+                                const label = point.label ? point.label + ': ' : '';
+                                return label + point.x.toLocaleString() + ' people, ' + point.y + ' nearby trails';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Population'
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { precision: 0 },
+                        title: {
+                            display: true,
+                            text: 'Nearby Trails'
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
 </script>
 {% endblock %}

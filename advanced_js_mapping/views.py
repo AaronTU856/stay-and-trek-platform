@@ -11,9 +11,10 @@ import json
 import time
 import logging
 from .models import PolygonAnalysis, SearchSession
-from trails_api.models import Town
+from trails_api.models import Town, Trail
 from django.contrib.auth.decorators import login_required
 from django.contrib.gis.geos import Point
+import math
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -293,104 +294,120 @@ def map_view(request):
 
 def analytics_view(request):
     """Analytics dashboard adapted for Town data."""
-    from django.db.models import Count, Avg, Sum
-    import json
+    towns = list(Town.objects.exclude(location__isnull=True).only('id', 'name', 'population', 'country', 'town_type', 'location'))
+    trails = list(Trail.objects.exclude(start_point__isnull=True).only('id', 'trail_name', 'start_point'))
 
-    # Basic statistics
-    total_cities = Town.objects.count()
-    total_countries = Town.objects.values('country').distinct().count() if hasattr(Town, 'country') else 1
-    total_population = Town.objects.aggregate(Sum('population'))['population__sum'] or 0
+    def haversine_km(lat1, lon1, lat2, lon2):
+        radius_km = 6371.0
+        dlat = math.radians(lat2 - lat1)
+        dlon = math.radians(lon2 - lon1)
+        a = (
+            math.sin(dlat / 2) ** 2
+            + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2) ** 2
+        )
+        return radius_km * (2 * math.atan2(math.sqrt(a), math.sqrt(1 - a)))
 
-    # Analysis statistics (from PolygonAnalysis model)
-    total_analyses = PolygonAnalysis.objects.count()
+    nearby_threshold_km = 15
+    town_access_data = []
+
+    for town in towns:
+        if not town.location:
+            continue
+
+        distances = []
+        for trail in trails:
+            if not trail.start_point:
+                continue
+            distances.append(
+                haversine_km(
+                    town.location.y,
+                    town.location.x,
+                    trail.start_point.y,
+                    trail.start_point.x,
+                )
+            )
+
+        if not distances:
+            continue
+
+        nearby_distances = [distance for distance in distances if distance <= nearby_threshold_km]
+        nearest_distance = min(distances)
+        average_access_distance = (
+            sum(nearby_distances) / len(nearby_distances) if nearby_distances else nearest_distance
+        )
+
+        town_access_data.append({
+            'name': town.name,
+            'population': town.population or 0,
+            'country': town.country or 'Ireland',
+            'town_type': town.town_type or 'town',
+            'trail_count': len(nearby_distances),
+            'nearest_distance_km': round(nearest_distance, 2),
+            'average_access_distance_km': round(average_access_distance, 2),
+            'routing_ready': len(nearby_distances) > 0,
+        })
+
+    total_towns = len(town_access_data)
+    total_population = sum(town['population'] for town in town_access_data)
+    avg_population_per_town = round(total_population / total_towns, 1) if total_towns else 0
+    avg_trails_per_town = round(
+        sum(town['trail_count'] for town in town_access_data) / total_towns, 1
+    ) if total_towns else 0
+    avg_distance_to_nearest_trail = round(
+        sum(town['nearest_distance_km'] for town in town_access_data) / total_towns, 2
+    ) if total_towns else 0
+
+    routing_ready_count = sum(1 for town in town_access_data if town['routing_ready'])
+    routing_ready_percent = round((routing_ready_count / total_towns) * 100, 1) if total_towns else 0
+
+    top_towns_by_access = sorted(
+        town_access_data,
+        key=lambda town: (-town['trail_count'], town['nearest_distance_km'], -town['population'])
+    )[:8]
+
+    trails_per_town_chart = top_towns_by_access[:6]
+    population_vs_trails = [
+        {'x': town['population'], 'y': town['trail_count'], 'label': town['name']}
+        for town in town_access_data
+        if town['population'] is not None
+    ]
+
+    type_counts = {}
+    for town in town_access_data:
+        label = (town['town_type'] or 'town').title()
+        type_counts[label] = type_counts.get(label, 0) + 1
+
+    type_access_summary = [
+        {
+            'label': label,
+            'count': count,
+            'avg_trails': round(
+                sum(town['trail_count'] for town in town_access_data if (town['town_type'] or 'town').title() == label) / count,
+                1
+            ) if count else 0
+        }
+        for label, count in sorted(type_counts.items(), key=lambda item: item[1], reverse=True)
+    ]
+
     recent_analyses = PolygonAnalysis.objects.filter(
         analysis_timestamp__gte=timezone.now() - timezone.timedelta(days=7)
     ).count()
 
-    avg_cities_per_search = PolygonAnalysis.objects.aggregate(
-        Avg('cities_count')
-    )['cities_count__avg'] or 0
-
-    avg_query_time = PolygonAnalysis.objects.aggregate(
-        Avg('query_duration_ms')
-    )['query_duration_ms__avg'] or 0
-
-    # Top cities by population
-    top_cities_qs = Town.objects.order_by('-population')[:10]
-    top_cities_by_population = [
-        {
-            'id': t.id,
-            'name': getattr(t, 'name', ''),
-            'country': getattr(t, 'country', '') or '',
-            'population': t.population or 0,
-        }
-        for t in top_cities_qs
-    ]
-
-    # GDP data likely not available on Town; provide empty list if absent
-    if hasattr(Town, 'gdp_per_capita'):
-        top_cities_by_gdp_qs = Town.objects.exclude(gdp_per_capita__isnull=True).order_by('-gdp_per_capita')[:10]
-        top_cities_by_gdp = [
-            {'id': t.id, 'name': t.name, 'country': getattr(t, 'country', '') or '', 'gdp_per_capita': t.gdp_per_capita}
-            for t in top_cities_by_gdp_qs
-        ]
-    else:
-        top_cities_by_gdp = []
-
-    # City types distribution (if town_type exists)
-    if hasattr(Town, 'town_type'):
-        types_qs = Town.objects.values('town_type').annotate(count=Count('id')).order_by('-count')
-        type_labels = [t['town_type'] or 'Unknown' for t in types_qs]
-        type_data = [t['count'] for t in types_qs]
-    else:
-        type_labels = []
-        type_data = []
-
-    # Countries chart data (top 10)
-    if hasattr(Town, 'country'):
-        popular_countries = Town.objects.values('country').annotate(
-            city_count=Count('id')
-        ).order_by('-city_count')[:10]
-    else:
-        popular_countries = []
-
-    countries_labels = json.dumps([country['country'] or 'Unknown' for country in popular_countries])
-    countries_data = json.dumps([country['city_count'] for country in popular_countries])
-
-    # Population distribution buckets
-    buckets = [
-        ('<1k', 0, 999),
-        ('1k-5k', 1000, 4999),
-        ('5k-20k', 5000, 19999),
-        ('20k+', 20000, None),
-    ]
-    pop_dist = []
-    for label, low, high in buckets:
-        if high is None:
-            cnt = Town.objects.filter(population__gte=low).count()
-        else:
-            cnt = Town.objects.filter(population__gte=low, population__lte=high).count()
-        pop_dist.append({'label': label, 'count': cnt})
-
-    # Recent analyses list for table (keep as provided by model)
-    recent_analyses_list = PolygonAnalysis.objects.order_by('-analysis_timestamp')[:10]
-
     context = {
-        'total_cities': total_cities,
-        'total_countries': total_countries,
+        'total_towns': total_towns,
         'total_population': total_population,
-        'total_analyses': total_analyses,
+        'avg_population_per_town': avg_population_per_town,
+        'avg_trails_per_town': avg_trails_per_town,
+        'avg_distance_to_nearest_trail': avg_distance_to_nearest_trail,
+        'routing_ready_count': routing_ready_count,
+        'routing_ready_percent': routing_ready_percent,
         'recent_analyses': recent_analyses,
-        'avg_cities_per_search': round(avg_cities_per_search, 1),
-        'avg_query_time': round(avg_query_time, 1),
-        'countries_labels': countries_labels,
-        'countries_data': countries_data,
-        'recent_analyses_list': recent_analyses_list,
-        'top_cities_by_population': top_cities_by_population,
-        'top_cities_by_gdp': top_cities_by_gdp,
-        'city_type_labels': json.dumps(type_labels),
-        'city_type_data': json.dumps(type_data),
-        'population_distribution': json.dumps(pop_dist),
+        'nearby_threshold_km': nearby_threshold_km,
+        'top_towns_by_access': top_towns_by_access,
+        'type_access_summary': type_access_summary,
+        'trails_per_town_labels': json.dumps([town['name'] for town in trails_per_town_chart]),
+        'trails_per_town_data': json.dumps([town['trail_count'] for town in trails_per_town_chart]),
+        'population_vs_trails': json.dumps(population_vs_trails),
         'current_page': 'analytics',
     }
 
