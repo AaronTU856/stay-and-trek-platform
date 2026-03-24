@@ -1,11 +1,49 @@
 {% extends "admin/base.html" %}
 {% load static %}
 
-{% block title %}Stay and Trek Admin{% endblock %}
+{% block title %}Stay & Trek Admin{% endblock %}
 
 {% block extrastyle %}
   {{ block.super }}
   <style>
+    #header {
+      background: #244b57;
+      color: #ffffff;
+      padding: 14px 20px;
+    }
+    #header a:link,
+    #header a:visited {
+      color: #ffffff;
+    }
+    #branding h1,
+    #branding h1 a:link,
+    #branding h1 a:visited {
+      color: #ffffff;
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+    .admin-brand-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .admin-home-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      background: #2E8B57;
+      color: #ffffff !important;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    .admin-home-link:hover {
+      background: #246d45;
+    }
     /* Professionalizing the Admin Quick-Nav */
     .quick-nav {
       display: flex;
@@ -44,7 +82,15 @@
 {% endblock %}
 
 {% block header %}
-  {{ block.super }} {# Keeps the original Admin 'Logged in' links #}
+  <div id="header">
+    <div id="branding" class="admin-brand-row">
+      <h1><a href="/admin/">Stay & Trek Admin</a></h1>
+      <a href="/" class="admin-home-link">🏠 Home</a>
+    </div>
+    {% block usertools %}
+      {{ block.super }}
+    {% endblock %}
+  </div>
   
   <div class="quick-nav">
     <a href="/" class="home">🏠 Home</a>

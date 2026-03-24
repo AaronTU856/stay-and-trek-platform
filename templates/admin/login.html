@@ -3,17 +3,76 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% trans 'Log in' %} | Django site admin</title>
+    <title>{% trans 'Log in' %} | Stay & Trek Admin</title>
     <link rel="stylesheet" type="text/css" href="{% static "admin/css/base.css" %}">
     <link rel="stylesheet" type="text/css" href="{% static "admin/css/login.css" %}">
-    <meta name="theme-color" content="#417690">
+    <meta name="theme-color" content="#d9e1d9">
+    <style>
+        body.login {
+            min-height: 100vh;
+            margin: 0;
+            background: #d5ddd2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+        #container {
+            width: 100%;
+            max-width: 460px;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
+            overflow: hidden;
+        }
+        #header {
+            background: #2f6fbd;
+            color: #ffffff;
+            padding: 18px 22px;
+        }
+        #branding {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        #branding h1 {
+            margin: 0;
+            color: #ffffff;
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+        #content-main {
+            padding: 24px;
+        }
+        #content-main h1 {
+            margin-bottom: 18px;
+            font-size: 1.5rem;
+            text-align: center;
+        }
+        .admin-home-link {
+            padding: 7px 14px;
+            background: #2E8B57;
+            color: #fff !important;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        #footer {
+            text-align: center;
+            padding: 16px 24px 20px;
+            color: #6c757d;
+        }
+    </style>
 </head>
 <body class="login">
     <div id="container">
         <div id="header">
-            <div id="branding" style="display: flex; justify-content: space-between; align-items: center;">
-                <h1>{% trans 'Django administration' %}</h1>
-                <a href="/" style="padding: 8px 16px; background: #2E8B57; color: #fff; border-radius: 4px; text-decoration: none; font-size: 14px; margin-right: 12px;">🏠 Home</a>
+            <div id="branding">
+                <h1>Stay & Trek Admin</h1>
+                <a href="/" class="admin-home-link">🏠 Home</a>
             </div>
         </div>
         <div id="content-main">
@@ -28,7 +87,7 @@
             <form method="post" id="login-form">
                 {% csrf_token %}
                 <fieldset class="module aligned">
-                    <h1>{% trans 'Log in' %}</h1>
+                    <h1>Stay & Trek Admin Login</h1>
                     <div class="form-row">
                         {{ form.username.label_tag }}
                         {{ form.username }}
