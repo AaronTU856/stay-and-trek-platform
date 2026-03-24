@@ -116,14 +116,14 @@
 
     @media (max-width: 720px) {
       .home-shell {
-        padding: 20px;
+        padding: 20px 12px;
       }
     }
   </style>
 {% endblock %}
 
 {% block content %}
-  <main class="home-shell">
+  <div class="home-shell">
     <section class="home-hero-video">
       <video
         muted
@@ -142,7 +142,7 @@
           Discover hiking in Ireland with Stay and Trek. Plan scenic routes, find local stays,
           and explore the countryside with interactive maps built for real adventures.
         </p>
-        <div class="home-hero-actions">
+        <div class="home-hero-actions flex-column flex-sm-row align-items-stretch align-items-sm-center">
           <button class="home-audio-btn" id="home-audio-toggle">Play</button>
 
           <div class="home-audio-controls">
@@ -245,13 +245,5 @@
 
     <img src="{% static 'images/hike_2.jpg' %}" alt="Hiking in Ireland" class="home-hero" loading="lazy">
 
-    {% comment %} <p>Quick links to main pages:</p>
-    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px">
-      <a href="{% url 'trails:map' %}" style="padding:12px 18px;background:#2E8B57;color:#fff;border-radius:8px;text-decoration:none;">🥾 Trails in Ireland</a>
-      <a href="/dashboard/" style="padding:12px 18px;background:#8B4513;color:#fff;border-radius:8px;text-decoration:none;">📊 Dashboard</a>
-      <a href="{% url 'advanced_js_mapping:map' %}" style="padding:12px 18px;background:#2E27F5;color:#fff;border-radius:8px;text-decoration:none;">🗺️ Interactive Map</a>
-      <a href="{% url 'advanced_js_mapping:index' %}" style="padding:12px 18px;background:#F5273F;color:#fff;border-radius:8px;text-decoration:none;">🏨 Accommodations</a>
-      <a href="{% url 'advanced_js_mapping:analytics' %}" style="padding:12px 18px;background:#FFB86B;color:#111;border-radius:8px;text-decoration:none;">📈 Analytics</a>
-    </div> {% endcomment %}
-  </main>
+  </div>
 {% endblock %}
