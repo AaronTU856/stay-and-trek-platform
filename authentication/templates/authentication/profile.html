@@ -52,6 +52,15 @@
             <p class="mb-0">Manage your account information</p>
         </div>
         <div class="auth-body">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
             <div class="row g-4">
                 <div class="col-12 col-md-6">
                     <h5 class="profile-section-title mb-3">Account Information</h5>
@@ -90,6 +99,17 @@
                                 Never
                             {% endif %}
                         </p>
+                    </div>
+
+                    <div class="profile-detail mt-3">
+                        <label class="form-label fw-bold mb-2">Update Email</label>
+                        <form method="post" action="{% url 'authentication:profile' %}">
+                            {% csrf_token %}
+                            <div class="input-group">
+                                <input type="email" name="email" class="form-control" value="{{ user.email }}" placeholder="Enter your email">
+                                <button type="submit" class="btn btn-primary">Save</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
                 <div class="col-12 col-md-6">

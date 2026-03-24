@@ -62,6 +62,11 @@ def custom_logout_view(request):
 @login_required
 def profile_view(request):
     """User profile view showing user information."""
+    if request.method == 'POST':
+        request.user.email = (request.POST.get('email') or '').strip()
+        request.user.save(update_fields=['email'])
+        messages.success(request, 'Your email has been updated.')
+
     return render(request, 'authentication/profile.html', {'user': request.user})
 
 # Authentication home page view
