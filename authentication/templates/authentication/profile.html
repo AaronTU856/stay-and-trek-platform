@@ -2,103 +2,126 @@
 
 {% block title %}Profile - Web Mapping Project{% endblock %}
 
+{% block extra_css %}
+{{ block.super }}
+<style>
+    .profile-shell {
+        width: 100%;
+        max-width: 960px;
+    }
+
+    .profile-section-title {
+        color: #6c757d;
+        font-size: 0.95rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+
+    .profile-detail {
+        padding: 0.85rem 1rem;
+        border-radius: 10px;
+        background: #f8faf9;
+        border: 1px solid #ecf1ee;
+    }
+
+    .profile-actions .btn {
+        min-height: 44px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="dashboard-card">
-                <div class="dashboard-header">
-                    <h2><i class="fas fa-user me-3"></i>User Profile</h2>
-                    <p class="mb-0">Manage your account information</p>
+<div class="auth-container">
+    <div class="auth-card profile-shell">
+        <div class="auth-header">
+            <i class="fas fa-user-circle"></i>
+            <h2>User Profile</h2>
+            <p class="mb-0">Manage your account information</p>
+        </div>
+        <div class="auth-body">
+            <div class="row g-4">
+                <div class="col-12 col-md-6">
+                    <h5 class="profile-section-title mb-3">Account Information</h5>
+                    <div class="profile-detail mb-3">
+                        <label class="form-label fw-bold mb-1">Username</label>
+                        <p class="text-muted mb-0">{{ user.username }}</p>
+                    </div>
+
+                    <div class="profile-detail mb-3">
+                        <label class="form-label fw-bold mb-1">Email</label>
+                        <p class="text-muted mb-0">{{ user.email|default:"Not provided" }}</p>
+                    </div>
+
+                    <div class="profile-detail mb-3">
+                        <label class="form-label fw-bold mb-1">Full Name</label>
+                        <p class="text-muted mb-0">
+                            {% if user.first_name or user.last_name %}
+                                {{ user.first_name }} {{ user.last_name }}
+                            {% else %}
+                                Not provided
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <div class="profile-detail mb-3">
+                        <label class="form-label fw-bold mb-1">Date Joined</label>
+                        <p class="text-muted mb-0">{{ user.date_joined|date:"F d, Y" }}</p>
+                    </div>
+
+                    <div class="profile-detail">
+                        <label class="form-label fw-bold mb-1">Last Login</label>
+                        <p class="text-muted mb-0">
+                            {% if user.last_login %}
+                                {{ user.last_login|date:"F d, Y g:i A" }}
+                            {% else %}
+                                Never
+                            {% endif %}
+                        </p>
+                    </div>
                 </div>
-                <div class="p-4">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h5 class="text-muted mb-3">Account Information</h5>
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Username:</label>
-                                <p class="text-muted">{{ user.username }}</p>
-                            </div>
+                <div class="col-12 col-md-6">
+                    <h5 class="profile-section-title mb-3">Account Status</h5>
+                    <div class="profile-detail mb-3">
+                        <span class="badge bg-success fs-6">
+                            <i class="fas fa-check-circle me-1"></i>Active Account
+                        </span>
+                    </div>
 
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Email:</label>
-                                <p class="text-muted">{{ user.email|default:"Not provided" }}</p>
-                            </div>
+                    {% if user.is_staff %}
+                    <div class="profile-detail mb-3">
+                        <span class="badge bg-warning fs-6">
+                            <i class="fas fa-cog me-1"></i>Staff Member
+                        </span>
+                    </div>
+                    {% endif %}
 
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Full Name:</label>
-                                <p class="text-muted">
-                                    {% if user.first_name or user.last_name %}
-                                        {{ user.first_name }} {{ user.last_name }}
-                                    {% else %}
-                                        Not provided
-                                    {% endif %}
-                                </p>
-                            </div>
+                    {% if user.is_superuser %}
+                    <div class="profile-detail mb-3">
+                        <span class="badge bg-danger fs-6">
+                            <i class="fas fa-crown me-1"></i>Administrator
+                        </span>
+                    </div>
+                    {% endif %}
 
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Date Joined:</label>
-                                <p class="text-muted">{{ user.date_joined|date:"F d, Y" }}</p>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Last Login:</label>
-                                <p class="text-muted">
-                                    {% if user.last_login %}
-                                        {{ user.last_login|date:"F d, Y g:i A" }}
-                                    {% else %}
-                                        Never
-                                    {% endif %}
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <h5 class="text-muted mb-3">Account Status</h5>
-                            <div class="mb-3">
-                                <span class="badge bg-success fs-6">
-                                    <i class="fas fa-check-circle me-1"></i>Active Account
-                                </span>
-                            </div>
-
+                    <div class="mt-4 profile-actions">
+                        <h5 class="profile-section-title mb-3">Quick Actions</h5>
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'advanced_js_mapping:map' %}" class="btn btn-outline-primary">
+                                <i class="fas fa-map me-2"></i>Open Maps
+                            </a>
                             {% if user.is_staff %}
-                            <div class="mb-3">
-                                <span class="badge bg-warning fs-6">
-                                    <i class="fas fa-cog me-1"></i>Staff Member
-                                </span>
-                            </div>
+                            <a href="/admin/" class="btn btn-outline-warning">
+                                <i class="fas fa-cog me-2"></i>Admin Panel
+                            </a>
                             {% endif %}
-
-                            {% if user.is_superuser %}
-                            <div class="mb-3">
-                                <span class="badge bg-danger fs-6">
-                                    <i class="fas fa-crown me-1"></i>Administrator
-                                </span>
-                            </div>
-                            {% endif %}
-
-                            <div class="mt-4">
-                                <h5 class="text-muted mb-3">Quick Actions</h5>
-                                <div class="d-grid gap-2">
-                                    <a href="/advanced-js-mapping/" class="btn btn-outline-primary">
-                                        <i class="fas fa-map me-2"></i>Open Maps
-                                    </a>
-                                    {% if user.is_staff %}
-                                    <a href="/admin/" class="btn btn-outline-warning">
-                                        <i class="fas fa-cog me-2"></i>Admin Panel
-                                    </a>
-                                    {% endif %}
-                                    <a href="{% url 'authentication:logout' %}" class="btn btn-outline-danger">
-                                        <i class="fas fa-sign-out-alt me-2"></i>Logout
-                                    </a>
-                                </div>
-                            </div>
+                            <a href="{% url 'authentication:logout' %}" class="btn btn-outline-danger">
+                                <i class="fas fa-sign-out-alt me-2"></i>Logout
+                            </a>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 {% endblock %}
-
