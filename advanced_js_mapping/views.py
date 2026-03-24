@@ -324,7 +324,11 @@ def index_view(request):
 
     accommodations = []
     for index, accommodation in enumerate(accommodations_qs):
-        linked_trail = accommodation.nearby_trails.exclude(county__exact='').first()
+        try:
+            linked_trail = accommodation.nearby_trails.exclude(county__exact='').first()
+        except Exception as exc:
+            print(f"Accommodation linked trail lookup failed for ID {accommodation.id}: {exc}")
+            linked_trail = None
         county = linked_trail.county if linked_trail and linked_trail.county else 'Ireland'
         source_label = accommodation.get_source_display()
         description = description_templates[(accommodation.id or index) % len(description_templates)].format(
