@@ -25,6 +25,18 @@
         border: 1px solid #ecf1ee;
     }
 
+    .profile-detail .form-label {
+        color: #6c757d;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .profile-value {
+        color: #1f2d3d;
+        font-weight: 600;
+    }
+
     .profile-actions .btn {
         min-height: 44px;
     }
@@ -45,17 +57,17 @@
                     <h5 class="profile-section-title mb-3">Account Information</h5>
                     <div class="profile-detail mb-3">
                         <label class="form-label fw-bold mb-1">Username</label>
-                        <p class="text-muted mb-0">{{ user.username }}</p>
+                        <p class="profile-value mb-0">{{ user.username }}</p>
                     </div>
 
                     <div class="profile-detail mb-3">
                         <label class="form-label fw-bold mb-1">Email</label>
-                        <p class="text-muted mb-0">{{ user.email|default:"Not provided" }}</p>
+                        <p class="profile-value mb-0">{{ user.email|default:"Not provided" }}</p>
                     </div>
 
                     <div class="profile-detail mb-3">
                         <label class="form-label fw-bold mb-1">Full Name</label>
-                        <p class="text-muted mb-0">
+                        <p class="profile-value mb-0">
                             {% if user.first_name or user.last_name %}
                                 {{ user.first_name }} {{ user.last_name }}
                             {% else %}
@@ -66,12 +78,12 @@
 
                     <div class="profile-detail mb-3">
                         <label class="form-label fw-bold mb-1">Date Joined</label>
-                        <p class="text-muted mb-0">{{ user.date_joined|date:"F d, Y" }}</p>
+                        <p class="profile-value mb-0">{{ user.date_joined|date:"F d, Y" }}</p>
                     </div>
 
                     <div class="profile-detail">
                         <label class="form-label fw-bold mb-1">Last Login</label>
-                        <p class="text-muted mb-0">
+                        <p class="profile-value mb-0">
                             {% if user.last_login %}
                                 {{ user.last_login|date:"F d, Y g:i A" }}
                             {% else %}
