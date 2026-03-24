@@ -11,7 +11,7 @@ import json
 import time
 import logging
 from .models import PolygonAnalysis, SearchSession
-from trails_api.models import Town, Trail
+from trails_api.models import Town, Trail, Accommodation
 from django.contrib.auth.decorators import login_required
 from django.contrib.gis.geos import Point
 import math
@@ -272,15 +272,103 @@ def polygon_search(request):
         }, status=500)
 
 def index_view(request):
-    """Main page with application overview"""
-    # Use Town model for counts to reflect existing project data
-    total_cities = Town.objects.count()
-    total_countries = Town.objects.values('country').distinct().count() if hasattr(Town, 'country') else 1
+    """Accommodation browsing page with simple county filtering."""
+    selected_county = (request.GET.get('county') or '').strip()
+    fallback_images = [
+        '/static/images/accommodation.jpeg',
+        '/static/images/accommodation_1.jpg',
+        '/static/images/accommodation_2.jpg',
+        '/static/images/accommodation_3.jpg',
+        '/static/images/accommodation_4.jpg',
+        '/static/images/accommodation_5.jpg',
+        '/static/images/accommodation_6.jpg',
+        '/static/images/accommodation_7.jpg',
+        '/static/images/hiking.jpeg',
+        '/static/images/hike_2.jpg',
+        '/static/images/irish_town.jpg',
+        '/static/images/towns.jpg',
+        '/static/images/road.jpg',
+    ]
+    description_templates = [
+        "{name} offers a welcoming {source} base for walkers exploring the trails and village stops around {county}.",
+        "A relaxed stay option in {county}, {name} works well for short breaks and trail-focused weekends.",
+        "{name} is positioned as a practical Stay & Trek base, giving visitors easy access to routes near {county}.",
+        "Ideal for hikers planning a multi-stop trip, {name} provides a comfortable {source} stay close to the outdoor network in {county}.",
+        "For visitors combining town stays with trail days, {name} presents a simple and reliable base in {county}.",
+    ]
+    badge_options = [
+        'Near Trails',
+        'Popular Stay',
+        'Quiet Location',
+        'Weekend Base',
+        'Trailside Option',
+    ]
+    source_price_bases = {
+        'airbnb': 118,
+        'booking': 132,
+        'trivago': 126,
+        'manual': 109,
+    }
+
+    accommodations_qs = Accommodation.objects.prefetch_related('nearby_trails').all()
+    county_options = list(
+        Accommodation.objects.filter(nearby_trails__county__isnull=False)
+        .exclude(nearby_trails__county__exact='')
+        .values_list('nearby_trails__county', flat=True)
+        .distinct()
+        .order_by('nearby_trails__county')
+    )
+
+    if selected_county:
+        accommodations_qs = accommodations_qs.filter(nearby_trails__county__iexact=selected_county).distinct()
+
+    accommodations = []
+    for index, accommodation in enumerate(accommodations_qs):
+        linked_trail = accommodation.nearby_trails.exclude(county__exact='').first()
+        county = linked_trail.county if linked_trail and linked_trail.county else 'Ireland'
+        source_label = accommodation.get_source_display()
+        description = description_templates[(accommodation.id or index) % len(description_templates)].format(
+            name=accommodation.name,
+            county=county,
+            source=source_label.lower(),
+        )
+        image_url = accommodation.image_url or ''
+
+        if image_url and ('localhost' in image_url or '127.0.0.1' in image_url):
+            image_url = ''
+
+        if not image_url:
+            image_seed = (accommodation.id or 0) * 7 + (index * 3)
+            image_url = fallback_images[image_seed % len(fallback_images)]
+
+        if accommodation.price_per_night:
+            price_label = f"EUR {float(accommodation.price_per_night):.0f}/night"
+        else:
+            estimated_price = source_price_bases.get(accommodation.source, 115) + (((accommodation.id or index) % 4) * 9)
+            price_label = f"From EUR {estimated_price} estimated"
+
+        county_label = county if county == 'Ireland' else f"{county}, Ireland"
+
+        accommodations.append({
+            'id': accommodation.id,
+            'name': accommodation.name,
+            'county': county,
+            'county_label': county_label,
+            'description': description,
+            'price_per_night': accommodation.price_per_night,
+            'price_label': price_label,
+            'rating': accommodation.rating,
+            'url': accommodation.url,
+            'image_url': image_url,
+            'badge': badge_options[(accommodation.id or index) % len(badge_options)],
+        })
 
     context = {
-        'total_cities': total_cities,
-        'total_countries': total_countries,
-        'current_page': 'polygon_search',
+        'accommodations': accommodations,
+        'county_options': county_options,
+        'selected_county': selected_county,
+        'accommodation_count': len(accommodations),
+        'current_page': 'accommodations',
     }
 
     return render(request, 'advanced_js_mapping/index.html', context)

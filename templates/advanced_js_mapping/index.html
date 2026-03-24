@@ -1,27 +1,160 @@
 {% extends 'advanced_js_mapping/base.html' %}
-{% block title %}Accommodations{% endblock %}
 {% load static %}
-{% block content %}
-<div class="container py-4">
-    <h1>Accommodations</h1>
-    <p class="lead">Discover and book the perfect place to stay during your Irish hiking adventure. Browse available accommodations near popular trails and towns.</p>
-    <p>
-        <a class="btn btn-primary" href="#">Browse Accommodations</a>
-        <a class="btn btn-secondary" href="{% url 'advanced_js_mapping:analytics' %}">View Analytics</a>
-    </p>
 
-    <div class="row">
-        <div class="col-md-4 mb-4">
-            <div class="card h-100">
-                <img src="{% static 'images/accommodation.jpeg' %}" class="card-img-top" alt="Cozy Cottage">
+{% block title %}Accommodations{% endblock %}
+
+{% block extra_css %}
+<style>
+    .accommodations-shell {
+        background: linear-gradient(180deg, var(--brand-light), #ffffff);
+        min-height: 100vh;
+    }
+
+    .analytics-card,
+    .accommodation-card {
+        border: none;
+        border-radius: 14px;
+        box-shadow: 0 4px 15px rgba(48, 116, 45, 0.1);
+    }
+
+    .filter-card {
+        background: linear-gradient(135deg, #f6fbf8, #eef7f1);
+    }
+
+    .accommodation-card {
+        overflow: hidden;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        height: 100%;
+    }
+
+    .accommodation-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 22px rgba(0,0,0,0.12);
+    }
+
+    .accommodation-card img {
+        height: 210px;
+        object-fit: cover;
+        width: 100%;
+    }
+
+    .section-note {
+        color: #6c757d;
+        font-size: 0.95rem;
+    }
+
+    .pill-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        border-radius: 999px;
+        padding: 0.4rem 0.8rem;
+        background: #eaf7ef;
+        color: #23624A;
+        font-size: 0.85rem;
+        font-weight: 700;
+    }
+
+    .accommodation-badge {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 0.35rem 0.75rem;
+        background: #eef8f1;
+        color: #23624A;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+
+    .form-select,
+    .btn {
+        min-height: 44px;
+    }
+
+    @media (max-width: 768px) {
+        .accommodations-shell {
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+        }
+
+        .accommodation-card img {
+            height: 190px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid accommodations-shell py-4">
+    <div class="row g-3 mb-2">
+        <div class="col-12">
+            <h2 class="fw-bold mb-1" style="color: var(--brand-dark);">Accommodations</h2>
+            <p class="section-note mb-0">Browse stay options that complement the Stay & Trek trail network, with simple county filtering and a responsive card layout.</p>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-12">
+            <div class="card analytics-card filter-card">
                 <div class="card-body">
-                    <h5 class="card-title">Cozy Cottage</h5>
-                    <p class="card-text">A charming cottage located near the Wicklow Way, perfect for a peaceful retreat.</p>
-                </div>
-                <div class="card-footer">
-                    <a href="#" class="btn btn-primary">Book Now</a>
+                    <form method="get" class="row g-3 align-items-end">
+                        <div class="col-12 col-md-6 col-lg-4">
+                            <label for="county-filter" class="form-label fw-bold">County</label>
+                            <select id="county-filter" name="county" class="form-select">
+                                <option value="">All Counties</option>
+                                {% for county in county_options %}
+                                <option value="{{ county }}" {% if selected_county == county %}selected{% endif %}>{{ county }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-4 d-flex gap-2">
+                            <button type="submit" class="btn btn-success px-4">Filter</button>
+                            <a href="{% url 'advanced_js_mapping:index' %}" class="btn btn-outline-secondary px-4">Reset</a>
+                        </div>
+                        <div class="col-12 col-lg-4 d-flex justify-content-lg-end align-items-center">
+                            <span class="pill-badge">{{ accommodation_count }} accommodation{{ accommodation_count|pluralize }}</span>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
+
+    <div class="row g-3">
+        {% for accommodation in accommodations %}
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card accommodation-card">
+                <img src="{{ accommodation.image_url }}" alt="{{ accommodation.name }}">
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-start gap-3 mb-2">
+                        <h5 class="card-title fw-bold mb-0">{{ accommodation.name }}</h5>
+                        {% if accommodation.rating %}
+                        <span class="badge text-dark" style="background: #fff3cd;">{{ accommodation.rating|floatformat:1 }}★</span>
+                        {% endif %}
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+                        <p class="small text-muted mb-0">{{ accommodation.county_label }}</p>
+                        <span class="accommodation-badge">{{ accommodation.badge }}</span>
+                    </div>
+                    <p class="card-text text-muted flex-grow-1">{{ accommodation.description }}</p>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div>
+                            <div class="fw-bold text-success">{{ accommodation.price_label }}</div>
+                        </div>
+                        <a href="#" class="btn btn-outline-success">View on Map</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="card analytics-card">
+                <div class="card-body text-center py-5 text-muted">
+                    No accommodations found
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
 {% endblock %}
