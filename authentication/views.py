@@ -62,7 +62,7 @@ def custom_logout_view(request):
 @login_required
 def profile_view(request):
     """User profile view showing user information."""
-    return render(request, 'authentication/profile.html')
+    return render(request, 'authentication/profile.html', {'user': request.user})
 
 # Authentication home page view
 def home_view(request):
