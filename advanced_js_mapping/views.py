@@ -361,6 +361,8 @@ def index_view(request):
             'url': accommodation.url,
             'image_url': image_url,
             'badge': badge_options[(accommodation.id or index) % len(badge_options)],
+            'latitude': accommodation.latitude if accommodation.location else None,
+            'longitude': accommodation.longitude if accommodation.location else None,
         })
 
     context = {
