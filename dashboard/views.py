@@ -11,6 +11,7 @@ def index(request):
     context = {
         'total_trails': Trail.objects.count(),
         'total_towns': Town.objects.count(),
+        'countries': Trail.objects.exclude(county__isnull=True).exclude(county__exact='').values_list('county', flat=True).distinct().order_by('county'),
         'regions': Trail.objects.values_list('region', flat=True).distinct().order_by('region'),
         'difficulties': Trail.objects.values_list('difficulty', flat=True).distinct(),
         'trail_types': Trail.objects.values_list('trail_type', flat=True).distinct(),

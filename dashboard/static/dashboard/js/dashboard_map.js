@@ -160,8 +160,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-// Apply filters when the user clicks
-document.getElementById('apply-filters').addEventListener('click', () => {
+function applyFilters() {
     const minLength = document.getElementById('trail-length-min')?.value.trim();
     const maxLength = document.getElementById('trail-length-max')?.value.trim();
     const difficulty = document.getElementById('trail-difficulty-min')?.value.trim().toLowerCase();
@@ -173,28 +172,37 @@ document.getElementById('apply-filters').addEventListener('click', () => {
 
     const filters = {};
 
-    // Add filters only if valid values are provided
     if (minLength && !isNaN(minLength)) filters.min_length = minLength;
     if (maxLength && !isNaN(maxLength)) filters.max_length = maxLength;
-    if (difficulty && ['easy', 'moderate', 'hard'].includes(difficulty))
+    if (difficulty && ['easy', 'moderate', 'hard'].includes(difficulty)) {
         filters.difficulty = difficulty;
-    if (county) filters.county = county;
+    }
+    if (county && county !== "") {
+        filters.county = county;
+    }
     if (townType) filters.town_type = townType;
     if (minTownPop) filters.min_population = minTownPop;
     if (maxTownPop) filters.max_population = maxTownPop;
     if (trailType) filters.trail_type = trailType;
 
-
+    console.log("Selected county:", county);
     console.log("🎯 Applying filters:", filters);
     loadTrails(filters);
     loadTowns(filters);
-});
+}
+
+// Apply filters when the user clicks
+document.getElementById('apply-filters').addEventListener('click', applyFilters);
+
+// Re-apply when county changes so "All Counties" immediately resets the filter
+document.getElementById('country-filter')?.addEventListener('change', applyFilters);
 
 // Clear filters when the user clicks
 document.getElementById('clear-filters').addEventListener('click', () => {
-    document.querySelectorAll('#trail-length-min, #trail-length-max, #trail-difficulty-min, #country-filter')
+    document.querySelectorAll('#trail-length-min, #trail-length-max, #trail-difficulty-min, #country-filter, #town-type-filter, #town-pop-min, #town-pop-max, #trail-type-filter')
         .forEach(el => el.value = '');
     loadTrails({});
+    loadTowns({});
 });
 
     
