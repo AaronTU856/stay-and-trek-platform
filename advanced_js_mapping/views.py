@@ -325,7 +325,10 @@ def index_view(request):
     accommodations = []
     for index, accommodation in enumerate(accommodations_qs):
         try:
-            linked_trail = accommodation.nearby_trails.exclude(county__exact='').first()
+            linked_trail = next(
+                (t for t in accommodation.nearby_trails.all() if t.county and t.county.strip()),
+                None
+            )
         except Exception as exc:
             print(f"Accommodation linked trail lookup failed for ID {accommodation.id}: {exc}")
             linked_trail = None
@@ -336,7 +339,16 @@ def index_view(request):
             county=county,
             source=source_label.lower(),
         )
-        image_url = accommodation.image_url or ''
+        image_url = getattr(accommodation, 'image_url', '') or ''
+
+        if not image_url and hasattr(accommodation, 'image'):
+            try:
+                image = accommodation.image
+                if image and getattr(image, 'name', ''):
+                    image_url = image.url
+            except Exception as exc:
+                print(f"Accommodation image lookup failed for ID {accommodation.id}: {exc}")
+                image_url = ''
 
         if image_url and ('localhost' in image_url or '127.0.0.1' in image_url):
             image_url = ''
