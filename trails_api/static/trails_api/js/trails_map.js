@@ -277,6 +277,11 @@ function displaySearchedTrail(trailId) {
 function initializeMap() {
   console.log("🗺️ Map initializing...");
 
+  const irelandBounds = L.latLngBounds(
+    [50.8, -12.8],
+    [56.3, -4.8]
+  );
+
   // If already created, skip
   if (window.trailsMap instanceof L.Map) {
     console.warn("Map already exists — skipping reinitialization");
@@ -284,7 +289,11 @@ function initializeMap() {
   }
 
   // Create and store globally
-  window.trailsMap = L.map("map").setView([53.5, -7.7], 7);
+  window.trailsMap = L.map("map", {
+    maxBounds: irelandBounds,
+    maxBoundsViscosity: 1.0,
+    minZoom: 7,
+  }).setView([53.5, -7.7], 7);
   console.log(
     " Created trailsMap:",
     window.trailsMap instanceof L.Map,

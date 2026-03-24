@@ -28,8 +28,17 @@ window.AdvancedMapping = (function() {
      */
     function initializeMap(containerId) {
         try {
+            const irelandBounds = L.latLngBounds(
+                [50.8, -12.8],
+                [56.3, -4.8]
+            );
+
             // Create map instance
-            map = L.map(containerId).setView([53.3598, -7.7603], 7.4); // Centered on Ireland
+            map = L.map(containerId, {
+                maxBounds: irelandBounds,
+                maxBoundsViscosity: 1.0,
+                minZoom: 7
+            }).setView([53.3598, -7.7603], 7.4); // Centered on Ireland
 
             // Add base tile layer
            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
