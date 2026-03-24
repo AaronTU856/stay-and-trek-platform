@@ -476,7 +476,7 @@
 
     .sidebar {
         padding: 12px;
-        max-height: 40vh;
+        max-height: none;
         overflow-y: auto;
     }
 
@@ -532,6 +532,11 @@
     .main-container {
         height: calc(100vh - 200px);
         overflow: hidden;
+    }
+
+    .sidebar {
+        height: calc(100vh - 200px);
+        overflow-y: auto;
     }
 
     #map-container,

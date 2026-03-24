@@ -166,6 +166,8 @@ class Trail(models.Model):
     @property
     def duration_hours(self):
         """Estimate hiking duration based on distance and difficulty."""
+        if self.distance_km in (None, ''):
+            return None
         base_speed = {'easy': 4, 'moderate': 3.5, 'hard': 2.5}
         speed = base_speed.get(self.difficulty, 3)
         return round(float(self.distance_km) / speed, 1)
@@ -451,4 +453,3 @@ class Rivers(models.Model):
         if trail.path:
             return trail.path.intersection(self.geom)
         return None
-
