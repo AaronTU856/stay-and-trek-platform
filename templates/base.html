@@ -15,6 +15,22 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
     {% block extra_css %}{% endblock %}
+    <style>
+    .navbar-nav .nav-link.active-nav,
+    .navbar-nav .dropdown-toggle.active-nav {
+        background-color: rgba(46, 139, 87, 0.14) !important;
+        color: #e6ed17 !important;
+        border-radius: 8px;
+        box-shadow: inset 0 -3px 0 #da9018;
+        text-shadow: none !important;
+    }
+
+    .dropdown-menu .dropdown-item.active-page {
+        background-color: #eaf6ef;
+        color: #23624A;
+        font-weight: 700;
+    }
+</style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg sticky-top shadow-sm" style="background-color: white; border-bottom: 3px solid #2E8B57;">
@@ -39,28 +55,76 @@
 
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link px-3 fw-bold text-dark" href="/"><i class="bi bi-house-door"></i> Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link px-3 fw-bold text-dark" href="{% url 'trails:map' %}">Trails & Stays</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link px-3 fw-bold" href="{% url 'advanced_js_mapping:map' %}" style="color: #2E8B57;"> Townland Explorer</a>
-                    </li>
-                    
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle px-3 fw-bold text-dark" href="#" id="analysisDrop" data-bs-toggle="dropdown">
-                            Insights
-                        </a>
-                        <ul class="dropdown-menu shadow border-0 mt-2" style="border-top: 3px solid #2E8B57 !important;">
-                            <li><a class="dropdown-item py-2" href="{% url 'advanced_js_mapping:analytics' %}">📊 Town Analytics</a></li>
-                            <li><a class="dropdown-item py-2" href="/dashboard/">👤 User Dashboard</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item py-2" href="{% url 'advanced_js_mapping:index' %}">🏡 Accommodations</a></li>
-                        </ul>
-                    </li>
-                </ul>
+    <li class="nav-item">
+        <a
+            class="nav-link px-3 fw-bold {% if current_page == 'home' %}active-nav{% else %}text-dark{% endif %}"
+            href="/"
+            {% if current_page == 'home' %}aria-current="page"{% endif %}
+        >
+            <i class="bi bi-house-door"></i> Home
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a
+            class="nav-link px-3 fw-bold {% if current_page == 'trails' %}active-nav{% else %}text-dark{% endif %}"
+            href="{% url 'trails:map' %}"
+            {% if current_page == 'trails' %}aria-current="page"{% endif %}
+        >
+            Trails & Stays
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a
+            class="nav-link px-3 fw-bold {% if current_page == 'interactive_map' %}active-nav{% endif %}"
+            href="{% url 'advanced_js_mapping:map' %}"
+            style="{% if current_page != 'interactive_map' %}color: #2E8B57;{% endif %}"
+            {% if current_page == 'interactive_map' %}aria-current="page"{% endif %}
+        >
+            Townland Explorer
+        </a>
+    </li>
+
+    <li class="nav-item dropdown">
+        <a
+            class="nav-link dropdown-toggle px-3 fw-bold {% if current_page == 'analytics' or current_page == 'dashboard' or current_page == 'accommodations' %}active-nav{% else %}text-dark{% endif %}"
+            href="#"
+            id="analysisDrop"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+        >
+            Insights
+        </a>
+        <ul class="dropdown-menu shadow border-0 mt-2" style="border-top: 3px solid #2E8B57 !important;">
+            <li>
+                <a
+                    class="dropdown-item py-2 {% if current_page == 'analytics' %}active-page{% endif %}"
+                    href="{% url 'advanced_js_mapping:analytics' %}"
+                >
+                    📊 Town Analytics
+                </a>
+            </li>
+            <li>
+                <a
+                    class="dropdown-item py-2 {% if current_page == 'dashboard' %}active-page{% endif %}"
+                    href="/dashboard/"
+                >
+                    👤 User Dashboard
+                </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+                <a
+                    class="dropdown-item py-2 {% if current_page == 'accommodations' %}active-page{% endif %}"
+                    href="{% url 'advanced_js_mapping:index' %}"
+                >
+                    🏡 Accommodations
+                </a>
+            </li>
+        </ul>
+    </li>
+</ul>
 
                 <div class="d-flex align-items-center gap-2">
                     <button id="high-contrast-toggle" class="btn btn-outline-secondary rounded-circle" style="width: 40px; height: 40px; padding: 0;" title="High Contrast Mode">

@@ -156,6 +156,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'webmapping_project.context_processors.navigation_context',
             ],
         },
     },
@@ -365,6 +366,5 @@ import os
 # These are the standard paths for the libraries we installed in your Dockerfile
 GDAL_LIBRARY_PATH = '/usr/lib/libgdal.so'
 GEOS_LIBRARY_PATH = '/usr/lib/libgeos_c.so'
-
 
 

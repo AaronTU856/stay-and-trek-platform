@@ -18,7 +18,7 @@ def navigation_context(request):
     elif path.startswith('/advanced-js-mapping/') and 'analytics' in path:
         current_page = 'analytics'
     elif path.startswith('/advanced-js-mapping'):
-        current_page = 'polygon_search'
+        current_page = 'accommodations'
     elif path.startswith('/admin'):
         current_page = 'admin'
     else:
@@ -47,7 +47,7 @@ def navigation_context(request):
         {
             'name': '🏨 Accommodations',
             'url': 'advanced_js_mapping:index',
-            'id': 'polygon_search',
+            'id': 'accommodations',
             'color': '#F5273F'
         },
         {
