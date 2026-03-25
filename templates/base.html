@@ -14,7 +14,13 @@
     <!-- MarkerCluster CSS for trail clustering -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
-    {% block extra_css %}{% endblock %}
+  
+ 
+
+
+
+{% block extra_css %}{% endblock %}
+    
     <style>
     .navbar-nav .nav-link.active-nav,
     .navbar-nav .dropdown-toggle.active-nav {
@@ -33,6 +39,8 @@
 </style>
 </head>
 <body>
+
+
     <nav class="navbar navbar-expand-lg sticky-top shadow-sm" style="background-color: white; border-bottom: 3px solid #2E8B57;">
         <div class="container-fluid px-4">
             <a class="navbar-brand d-flex align-items-center" href="/">
@@ -177,6 +185,19 @@
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
     <!-- Accessibility Features -->
     <script src="{% static 'js/accessibility-toggle.js' %}"></script>
+
+
+<div class="toast-container position-fixed top-0 start-50 translate-middle-x p-3" style="z-index: 2000;">
+  <div id="routeToast" class="toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div id="routeToastBody" class="toast-body">
+        Route message
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+  </div>
+</div>
+
     {% block extra_js %}{% endblock %}
 </body>
 </html>

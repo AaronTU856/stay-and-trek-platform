@@ -1878,10 +1878,39 @@ function drawRoute(geojson) {
 }
 
 
+// Display a toast notification for routing status
+function showRouteToast(message, type = "success") {
+  const toastEl = document.getElementById("routeToast");
+  const toastBody = document.getElementById("routeToastBody");
 
+toastEl.className = "toast align-items-center border-0";
+
+if (type === "success") {
+  toastEl.style.backgroundColor = "#198754";
+  toastEl.style.color = "#fff";
+} else if (type === "warning") {
+  toastEl.style.backgroundColor = "#ffb703";
+  toastEl.style.color = "#000";
+} else if (type === "danger") {
+  toastEl.style.backgroundColor = "#c1121f";
+  toastEl.style.color = "#fff";
+}
+
+  if (!toastEl || !toastBody) return;
+
+  toastBody.textContent = message;
+  toastEl.className = `toast align-items-center border-0 text-bg-${type}`;
+
+  const toast = new bootstrap.Toast(toastEl, {
+    delay: 5000
+  });
+
+  toast.show();
+}
 
 
 function tryRoute() {
+
   if (!selectedTrail || !selectedAccommodation) return;
 
   routingInProgress = true;
@@ -1916,7 +1945,7 @@ function tryRoute() {
           geojson = data.feature;
       } else if (data.type === "Feature") {
           // If backend is still sending the old 'flat' Feature format
-          // We wrap it in a FeatureCollection so .length exists
+          // Wrap it in a FeatureCollection so .length exists
           geojson = {
               type: "FeatureCollection",
               features: [data]
@@ -1927,14 +1956,22 @@ function tryRoute() {
       // --- SAFETY WRAPPER END ---
 
       if (geojson && geojson.features) {
-          console.log(`🎨 Drawing ${geojson.features.length} segments`);
-          drawRoute(geojson);
+        console.log(`🎨 Drawing ${geojson.features.length} segments`);
+        drawRoute(geojson);
+
+        if (data.status === "fallback") {
+          showRouteToast("Route could not be found. Showing straight-line connection.", "warning");
+        } else {
+          showRouteToast("Shortest road route to your accommodation shown.", "success");
+        }
+
       } else {
           console.warn("⚠️ Data was successful but no geometry found:", data);
       }
 
     } else {
       console.error("❌ Routing error:", data.message || "Unknown");
+      showRouteToast("Route could not be calculated.", "danger");
     }
   })
   .catch(err => console.error("🛑 Fetch error:", err))

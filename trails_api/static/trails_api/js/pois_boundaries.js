@@ -712,7 +712,7 @@ function createPOIControlPanel() {
       });
     });
   } else {
-    // Fallback: create as floating control on map (old style)
+    // Fallback: create as floating control on map
     const controlHTML = `
       <div style="
         background: white;
