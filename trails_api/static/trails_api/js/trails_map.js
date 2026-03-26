@@ -423,23 +423,59 @@ function loadTrails() {
 fetch("/api/trails/towns/geojson/")
   .then((res) => res.json())
   .then((data) => {
-    const townIcon = L.icon({
+    const townIconQuiet = L.icon({
       iconUrl:
-        "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png",
+        "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png",
       shadowUrl:
         "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
-      iconSize: [25, 41],
-      iconAnchor: [12, 41],
-      popupAnchor: [1, -34],
-      shadowSize: [41, 41],
+      iconSize: [20, 33],
+      iconAnchor: [10, 33],
+      popupAnchor: [1, -28],
+      shadowSize: [33, 33],
     });
 
-    L.geoJSON(data, {
-      pointToLayer: (feature, latlng) => L.marker(latlng, { icon: townIcon }),
+    const townIconZoomed = L.icon({
+      iconUrl:
+        "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png",
+      shadowUrl:
+        "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+      iconSize: [24, 39],
+      iconAnchor: [12, 39],
+      popupAnchor: [1, -32],
+      shadowSize: [39, 39],
+    });
+
+    window.townMarkersLayer = L.geoJSON(data, {
+      pointToLayer: (feature, latlng) =>
+        L.marker(latlng, {
+          icon: townIconQuiet,
+          opacity: 0.58
+        }),
       onEachFeature: (feature, layer) => {
+        layer._townActive = false;
+
         layer.bindPopup(
           `<b>${feature.properties.name}</b><br>Click to find nearby trails`
         );
+
+        layer.on("mouseover", () => {
+          layer.setOpacity(0.9);
+        });
+
+        layer.on("mouseout", () => {
+          layer.setOpacity(layer._townActive ? 0.95 : 0.58);
+        });
+
+        layer.on("popupopen", () => {
+          layer._townActive = true;
+          layer.setOpacity(0.95);
+        });
+
+        layer.on("popupclose", () => {
+          layer._townActive = false;
+          layer.setOpacity(0.58);
+        });
+
         layer.on("click", () => {
           const [lng, lat] = feature.geometry.coordinates;
 
@@ -474,6 +510,20 @@ fetch("/api/trails/towns/geojson/")
         });
       },
     }).addTo(window.trailsMap);
+
+    const updateTownMarkerIcons = () => {
+      if (!window.townMarkersLayer) return;
+
+      const zoomedIn = window.trailsMap.getZoom() >= 9;
+      window.townMarkersLayer.eachLayer((layer) => {
+        if (layer && typeof layer.setIcon === "function") {
+          layer.setIcon(zoomedIn ? townIconZoomed : townIconQuiet);
+        }
+      });
+    };
+
+    updateTownMarkerIcons();
+    window.trailsMap.on("zoomend", updateTownMarkerIcons);
   });
 
 /**
