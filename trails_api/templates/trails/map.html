@@ -667,10 +667,9 @@ body.high-contrast-mode footer {
       <div class="card">
         <div class="card-header">♿ Accessibility</div>
         <div class="card-body">
-          <button id="high-contrast-toggle" class="btn btn-warning btn-sm w-100" aria-pressed="false">
-            🎨 Toggle High Contrast
-          </button>
-          <small class="text-muted d-block mt-2">Improves visibility with enhanced colors and borders.</small>
+          <div class="small fw-bold" style="color: #2c3e50;">Use the top navigation toggle</div>
+          <small class="text-muted d-block mt-2">Use High Contrast in the top navigation to improve text, buttons, and map controls for easier viewing.</small>
+          <small class="text-muted d-block mt-2">This setting applies across the whole application.</small>
         </div>
       </div>
       
@@ -816,83 +815,6 @@ body.high-contrast-mode footer {
   <script src="{% static 'trails_api/js/pois_boundaries.js' %}"></script>
 
   <script>
-  /**
-   * High Contrast Mode Toggle
-   * Improves accessibility for users with visual impairments
-   */
-  function initializeHighContrastMode() {
-    const toggle = document.getElementById('high-contrast-toggle');
-    
-    if (!toggle) {
-      console.warn('High contrast toggle button not found');
-      return;
-    }
-
-    // Load saved preference from localStorage
-    const savedPreference = localStorage.getItem('highContrastMode');
-    if (savedPreference === 'true') {
-      enableHighContrast();
-    }
-
-    // Toggle button click handler
-    toggle.addEventListener('click', () => {
-      const isEnabled = document.body.classList.contains('high-contrast-mode');
-      
-      if (isEnabled) {
-        disableHighContrast();
-      } else {
-        enableHighContrast();
-      }
-    });
-  }
-
-  function enableHighContrast() {
-    document.body.classList.add('high-contrast-mode');
-    localStorage.setItem('highContrastMode', 'true');
-    
-    const toggle = document.getElementById('high-contrast-toggle');
-    if (toggle) {
-      toggle.setAttribute('aria-pressed', 'true');
-      toggle.textContent = '🎨 High Contrast: ON';
-    }
-
-    // Announce to screen readers
-    announceToScreenReader('High contrast mode enabled');
-    
-    console.log('✅ High contrast mode enabled');
-  }
-
-  function disableHighContrast() {
-    document.body.classList.remove('high-contrast-mode');
-    localStorage.setItem('highContrastMode', 'false');
-    
-    const toggle = document.getElementById('high-contrast-toggle');
-    if (toggle) {
-      toggle.setAttribute('aria-pressed', 'false');
-      toggle.textContent = '🎨 Toggle High Contrast';
-    }
-
-    // Announce to screen readers
-    announceToScreenReader('High contrast mode disabled');
-    
-    console.log('✅ High contrast mode disabled');
-  }
-
-  function announceToScreenReader(message) {
-    const announcement = document.createElement('div');
-    announcement.setAttribute('role', 'status');
-    announcement.setAttribute('aria-live', 'polite');
-    announcement.setAttribute('aria-atomic', 'true');
-    announcement.textContent = message;
-    announcement.style.position = 'absolute';
-    announcement.style.left = '-9999px';
-    announcement.style.top = '-9999px';
-    document.body.appendChild(announcement);
-    
-    // Remove after announcement is read
-    setTimeout(() => announcement.remove(), 2000);
-  }
-
   function initializeResponsiveSidebarMap() {
     const sidebar = document.getElementById('trailsSidebar');
 
@@ -913,7 +835,6 @@ body.high-contrast-mode footer {
 
   // Initialize when DOM is ready
   document.addEventListener('DOMContentLoaded', () => {
-    initializeHighContrastMode();
     initializeResponsiveSidebarMap();
   });
   </script>
