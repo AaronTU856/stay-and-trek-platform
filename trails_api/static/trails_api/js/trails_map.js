@@ -748,7 +748,11 @@ function displayTrailsOnMap(trails) {
 
         console.log("Selected trail:", selectedTrail)
 
-        alert("Trail selected. Now click an accommodation to generate route")
+        const countEl = document.getElementById("accommodation-count");
+        if (countEl) {
+          countEl.textContent = "Trail selected. Choose an accommodation next.";
+        }
+        showRouteToast("Trail selected. Choose an accommodation next.", "info");
 
        
     })
@@ -1135,14 +1139,14 @@ function setupEventListeners() {
 
         const hasLoadedAccommodations = window.accommodationLayer.getLayers().length > 0;
         if (countEl && !hasLoadedAccommodations) {
-          countEl.textContent = "Use Search This Area to load nearby accommodations for the current map view.";
+          countEl.textContent = "Use Load nearby accommodation to load results for the current map view.";
         }
       } else {
         if (window.trailsMap.hasLayer(window.accommodationLayer)) {
           window.trailsMap.removeLayer(window.accommodationLayer);
         }
         if (countEl) {
-          countEl.textContent = "Accommodation markers are hidden. Turn Show on Map back on to view loaded results.";
+          countEl.textContent = "Accommodation markers are hidden. Turn Show accommodation on map back on to view loaded results.";
         }
       }
     });
@@ -1612,6 +1616,12 @@ function displayNearestTrails(trails) {
         };
         console.log("Selected trail for routing:", selectedTrail);
 
+        const countEl = document.getElementById("accommodation-count");
+        if (countEl) {
+          countEl.textContent = "Trail selected. Choose an accommodation next.";
+        }
+        showRouteToast("Trail selected. Choose an accommodation next.", "info");
+
       });
 
     window.nearestTrailsLayer.addLayer(marker);
@@ -1770,13 +1780,13 @@ function updateAccommodations(searchLat = null, searchLng = null) {
 
   console.log(`🏨 Fetching accommodations for lat=${lat}, lng=${lng}`);
 
-  if (countEl) {
-    countEl.textContent = "Searching the current map area for nearby accommodations...";
-  }
+      if (countEl) {
+        countEl.textContent = "Searching the current map area for nearby accommodations...";
+      }
 
-  if (fetchBtn) {
-    fetchBtn.disabled = true;
-    fetchBtn.textContent = "Searching...";
+      if (fetchBtn) {
+        fetchBtn.disabled = true;
+        fetchBtn.textContent = "Searching...";
   }
   
   fetch(`/api/trails/accommodations/nearby/?lat=${lat}&lng=${lng}&radius=10`)
@@ -1818,6 +1828,9 @@ function updateAccommodations(searchLat = null, searchLng = null) {
               <strong>${props.name || "Accommodation"}</strong><br>
               ${props.price_per_night ? '💰 €' + props.price_per_night + '/night<br>' : ''}
               ${props.rating ? '⭐ ' + props.rating : ''}
+              <div style="margin-top: 8px; color: #6b4a2f; font-weight: 600;">
+                Select this stay to map your route from the chosen trail.
+              </div>
             </div>
         `);
 
@@ -1863,7 +1876,7 @@ function updateAccommodations(searchLat = null, searchLng = null) {
     .finally(() => {
       if (fetchBtn) {
         fetchBtn.disabled = false;
-        fetchBtn.textContent = "Search This Area";
+        fetchBtn.textContent = "Load nearby accommodation";
       }
     });
 }

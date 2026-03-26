@@ -150,21 +150,90 @@
 
     .advanced-tools-toggle {
       min-height: 44px;
-      border: 1px solid #d7c3ff;
-      background: linear-gradient(135deg, #6ec86d 0%, #24c907 55%, #0e3c20 100%);
+      border: 1px solid #7fa187;
+      background: linear-gradient(135deg, #7fa96b 0%, #567b52 55%, #35533c 100%);
       color: #ffffff;
       font-weight: 800;
-      box-shadow: 0 4px 12px rgba(91, 58, 141, 0.10);
+      box-shadow: 0 4px 12px rgba(53, 83, 60, 0.18);
       transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
     }
 
     .advanced-tools-toggle:hover,
     .advanced-tools-toggle:focus {
-      background: linear-gradient(135deg, #62b3c2 0%, #345a89 55%, #2b5ebe 100%);
-      border-color: #2f5713;
+      background: linear-gradient(135deg, #6f9860 0%, #466a48 55%, #2d4734 100%);
+      border-color: #35533c;
       color: #ffffff;
-      box-shadow: 0 10px 22px rgba(124, 58, 237, 0.22);
+      box-shadow: 0 10px 22px rgba(53, 83, 60, 0.24);
       transform: translateY(-1px);
+    }
+
+    .workflow-card {
+      border-color: #d8c982 !important;
+      background: #fffdf3;
+      box-shadow: 0 4px 12px rgba(150, 124, 54, 0.08);
+    }
+
+    .workflow-card .card-header {
+      background: linear-gradient(135deg, #efe1a5 0%, #dccb7a 100%);
+      color: #5d4b16;
+      border-bottom-color: #d8c982;
+    }
+
+    .workflow-card .card-body {
+      background: linear-gradient(180deg, #fffef8 0%, #faf4d9 100%);
+      color: #5b4a1f;
+    }
+
+    .workflow-step {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+
+    .workflow-step:last-child {
+      margin-bottom: 0;
+    }
+
+    .workflow-step-number {
+      flex: 0 0 24px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #6b8752;
+      color: #ffffff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      box-shadow: 0 2px 6px rgba(53, 83, 60, 0.18);
+    }
+
+    .workflow-step-text {
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .trails-card .card-header {
+      background: linear-gradient(135deg, #6c9b5f 0%, #3f6d44 100%);
+      color: #ffffff;
+    }
+
+    .accommodation-card .card-header {
+      background: linear-gradient(135deg, #8f6a43 0%, #6c4c2f 100%);
+      color: #ffffff;
+    }
+
+    .helper-note {
+      background: #fff8db;
+      border: 1px solid #ecd999;
+      border-radius: 8px;
+      color: #695625;
+      padding: 8px 10px;
+      font-size: 11px;
+      line-height: 1.45;
+      margin-bottom: 10px;
     }
 
     .poi-toggle-button {
@@ -173,15 +242,15 @@
     }
 
     .poi-toggle-button.poi-toggle-active {
-      background: linear-gradient(135deg, #f97316 0%, #dc2626 100%);
-      border-color: #c2410c;
+      background: linear-gradient(135deg, #a78256 0%, #7b5a38 100%);
+      border-color: #6f5234;
       color: #ffffff;
-      box-shadow: 0 8px 18px rgba(220, 38, 38, 0.18);
+      box-shadow: 0 8px 18px rgba(111, 82, 52, 0.18);
     }
 
     .poi-toggle-button.poi-toggle-active:hover,
     .poi-toggle-button.poi-toggle-active:focus {
-      background: linear-gradient(135deg, #ea580c 0%, #b91c1c 100%);
+      background: linear-gradient(135deg, #977449 0%, #65482d 100%);
       color: #ffffff;
     }
 
@@ -735,10 +804,32 @@ body.high-contrast-mode footer {
           <small class="text-muted d-block mt-2">This setting applies across the whole application.</small>
         </div>
       </div>
+
+      <div class="card workflow-card">
+        <div class="card-header">🌿 How It Works</div>
+        <div class="card-body">
+          <div class="workflow-step">
+            <span class="workflow-step-number">1</span>
+            <div class="workflow-step-text">Enable search and click a point on the map to find trails nearby.</div>
+          </div>
+          <div class="workflow-step">
+            <span class="workflow-step-number">2</span>
+            <div class="workflow-step-text">Choose a blue numbered trail marker to select the trek you want.</div>
+          </div>
+          <div class="workflow-step">
+            <span class="workflow-step-number">3</span>
+            <div class="workflow-step-text">Load nearby accommodation and pick a stay that suits your route.</div>
+          </div>
+          <div class="workflow-step">
+            <span class="workflow-step-number">4</span>
+            <div class="workflow-step-text">View the road route between the selected trail and accommodation.</div>
+          </div>
+        </div>
+      </div>
       
 
       <!-- Trails within radius -->
-      <div class="card">
+      <div class="card trails-card">
         <div class="card-header">📍 Trails within radius</div>
         <div class="card-body">
           <input id="radius-input" type="number" class="form-control form-control-sm mb-2" value="50" min="1" max="500" placeholder="Radius (m)"/>
@@ -756,14 +847,15 @@ body.high-contrast-mode footer {
       </div>
 
       <!-- Nearby Accommodations -->
-      <div id="accommodation-card" class="card">
-        <div class="card-header" style="background: linear-gradient(135deg, #FF8C00 0%, #e67e22 100%); color: white;">Nearby Accommodations</div>
+      <div id="accommodation-card" class="card accommodation-card">
+        <div class="card-header">Nearby Accommodation</div>
         <div class="card-body">
+          <div class="helper-note">Select a blue numbered trail first, then choose a nearby accommodation to map your road route.</div>
           <div class="form-check form-switch mb-2">
             <input class="form-check-input" type="checkbox" id="toggle-accommodations">
-            <label class="form-check-label" for="toggle-accommodations">Show on Map</label>
+            <label class="form-check-label" for="toggle-accommodations">Show accommodation on map</label>
           </div>
-          <button id="fetch-stays-btn" class="btn btn-sm w-100 accommodation-action-btn">Search This Area</button>
+          <button id="fetch-stays-btn" class="btn btn-sm w-100 accommodation-action-btn">Load nearby accommodation</button>
           <div id="accommodation-count" class="text-muted mt-2" style="font-size: 11px;"></div>
         </div>
       </div>
