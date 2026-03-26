@@ -83,6 +83,76 @@
     .live-engine-badge .spinner-grow {
         animation: pulse 1.8s infinite ease-in-out;
     }
+
+    .workflow-kicker {
+        font-size: 0.72rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+        font-weight: 700;
+    }
+
+    .workflow-step {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        padding: 12px 14px;
+        border-radius: 12px;
+        background: linear-gradient(180deg, #f8fcf9, #eef7f1);
+        border: 1px solid #dbeadf;
+        margin-bottom: 10px;
+    }
+
+    .workflow-step-number {
+        width: 28px;
+        height: 28px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--brand-primary);
+        color: #fff;
+        font-weight: 700;
+        font-size: 0.85rem;
+        flex-shrink: 0;
+    }
+
+    .workflow-step p {
+        margin: 2px 0 0;
+        color: #5c7467;
+        font-size: 0.88rem;
+    }
+
+    .results-state-header {
+        background: linear-gradient(180deg, #f5fbf7, #ebf6ef);
+        border: 1px solid #d8e8de;
+        border-radius: 14px;
+        padding: 16px;
+    }
+
+    .results-empty-state {
+        display: none;
+        border: 1px dashed #cfe0d5;
+        border-radius: 12px;
+        background: #f8fbf9;
+        color: #5c7467;
+    }
+
+    .results-empty-state.is-visible {
+        display: block;
+    }
+
+    #citiesList .list-group-item {
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+        border-radius: 14px !important;
+        margin-bottom: 10px;
+    }
+
+    #citiesList .list-group-item:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 24px rgba(35, 98, 74, 0.08);
+        background: #f6fbf8;
+    }
     
     @media (max-width: 768px) {
         h2 {
@@ -127,15 +197,37 @@
                 <div class="card-body">
                     <div id="welcomeState" class="text-center py-4">
                         <div class="mb-4">
-
                             <img src="{% static 'images/irish_town.jpg' %}" 
                                 alt="Hiking and outdoor exploration illustration"
                                 style="width: 220px; max-width: 100%; height: auto;">
                         </div>
-                        <h5 class="fw-bold" style="color: var(--brand-dark);">Townland Explorer</h5>
-                        <p class="text-muted small px-3">Draw on the map to begin your analysis.</p>
+                        <div class="workflow-kicker mb-2">Workflow Panel</div>
+                        <h5 class="fw-bold mb-2" style="color: var(--brand-dark);">Townland Explorer</h5>
+                        <p class="text-muted small px-3 mb-4">Use the map tools to select an area, finish the shape, and review the towns found inside it.</p>
 
-                        <strong>Instructions:</strong> Use the polygon or square tool in the map toolbar to draw a shape. Towns and their population within your polygon will appear here. Once you complete your shape click "Finish". Select "New Search" to start over. 
+                        <div class="text-start px-2">
+                            <div class="workflow-step">
+                                <span class="workflow-step-number">1</span>
+                                <div>
+                                    <strong style="color: var(--brand-dark);">Choose a shape</strong>
+                                    <p>Select the polygon or rectangle tool from the map toolbar.</p>
+                                </div>
+                            </div>
+                            <div class="workflow-step">
+                                <span class="workflow-step-number">2</span>
+                                <div>
+                                    <strong style="color: var(--brand-dark);">Draw your area</strong>
+                                    <p>Mark the region you want to explore, then press "Finish" to run the search.</p>
+                                </div>
+                            </div>
+                            <div class="workflow-step">
+                                <span class="workflow-step-number">3</span>
+                                <div>
+                                    <strong style="color: var(--brand-dark);">Review the results</strong>
+                                    <p>The panel will switch to a results summary, and each town can be opened on the map.</p>
+                                </div>
+                            </div>
+                        </div>
                         
                         <div class="row g-2 mt-4 px-3">
                             <div class="col-4">
@@ -165,8 +257,10 @@
                     </div>
 
                     <div id="analysisSummary" style="display: none;">
-                        <div id="searchStatus" class="p-2 rounded mb-3 small" style="background: #e9f7ef; border-left: 4px solid #2E8B57;">
-                            <strong>Analysis Complete:</strong> Region data loaded.
+                        <div class="results-state-header mb-3">
+                            <div id="resultsStateEyebrow" class="workflow-kicker mb-2">Results Ready</div>
+                            <h5 id="resultsStateTitle" class="fw-bold mb-2" style="color: var(--brand-dark);">Your selected area has been analysed</h5>
+                            <p id="resultsStateDescription" class="text-muted small mb-0">Towns found within the finished shape will appear below and on the map.</p>
                         </div>
                         
                         <div class="row g-2 mb-4">
@@ -190,11 +284,14 @@
                         </div>
 
                         <div id="citiesContainer">
-                            <h6 class="fw-bold mb-3" style="font-size: 14px;">Identified Hubs</h6>
+                            <h6 class="fw-bold mb-3" style="font-size: 14px;">Towns in This Area</h6>
                             <div id="citiesList" class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;"></div>
+                            <div id="resultsEmptyState" class="results-empty-state mt-3 p-3 small">
+                                No towns were found in this area. Try a larger shape or explore another region of the map.
+                            </div>
                         </div>
 
-                        <button class="btn btn-outline-success w-100 mt-4" onclick="location.reload()">
+                        <button id="newSearchBtn" class="btn btn-outline-success w-100 mt-4" onclick="location.reload()">
                             <i class="bi bi-arrow-clockwise"></i> New Search
                         </button>
                     </div>
@@ -291,21 +388,9 @@
         }
     });
 
-    // Global function to show/hide loading indicator during spatial search
-    window.AdvancedMapping.showLoading = function(show) {
-        const loader = document.getElementById('loadingIndicator');
-        const welcome = document.getElementById('welcomeState');
-        const summary = document.getElementById('analysisSummary');
-        
-        if (show) {
-            // When searching starts
-            if(welcome) welcome.style.display = 'none';
-            if(summary) summary.style.display = 'none';
-            if(loader) loader.style.display = 'block';
-        } else {
-            // When data returns
-            if(loader) loader.style.display = 'none';
-            if(summary) summary.style.display = 'block'; // THIS MAKES THE DATA APPEAR
+    window.AdvancedMapping.showLoading = window.AdvancedMapping.showLoading || function(show) {
+        if (window.UIControls && typeof window.UIControls.setLoadingState === 'function') {
+            window.UIControls.setLoadingState(show);
         }
     };
 

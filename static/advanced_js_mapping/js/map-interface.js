@@ -22,6 +22,88 @@ window.AdvancedMapping = (function() {
     let map = null;
     let drawControl = null;
     let drawnItems = null;
+    let lastToastMessage = '';
+    let lastToastAt = 0;
+
+    const townImagePool = [
+        '/static/images/irish_town.jpg',
+        '/static/images/towns.jpg',
+        '/static/images/road.jpg',
+        '/static/images/hiking.jpeg',
+        '/static/images/hike_2.jpg'
+    ];
+
+    function getTownImage(city) {
+        const seed = city && (city.id || (city.name && city.name.length) || 0);
+        const imageIndex = Math.abs(seed) % townImagePool.length;
+        return townImagePool[imageIndex];
+    }
+    // Utility function to show toast notifications
+    function showToast(message, variant, delay) {
+        const toastEl = document.getElementById('routeToast');
+        const toastBody = document.getElementById('routeToastBody');
+        const now = Date.now();
+        const tone = variant || 'success';
+
+        if (!toastEl || !toastBody || typeof bootstrap === 'undefined' || !bootstrap.Toast) {
+            return;
+        }
+
+        if (message === lastToastMessage && now - lastToastAt < 1500) {
+            return;
+        }
+
+        lastToastMessage = message;
+        lastToastAt = now;
+
+        toastBody.textContent = message;
+        toastEl.className = 'toast align-items-center border-0 text-white';
+
+        if (tone === 'error') {
+            toastEl.classList.add('bg-danger');
+        } else if (tone === 'info') {
+            toastEl.classList.add('bg-dark');
+        } else {
+            toastEl.classList.add('bg-success');
+        }
+
+        bootstrap.Toast.getOrCreateInstance(toastEl, {
+            autohide: true,
+            delay: delay || 2600
+        }).show();
+    }
+
+    function createTownPopupContent(city, imageUrl) {
+        const townImage = imageUrl || getTownImage(city);
+        const population = Number(city && city.population);
+        const populationLabel = Number.isFinite(population) ? population.toLocaleString() : 'N/A';
+        const townName = city && city.name ? city.name : 'Unknown town';
+
+        return `
+            <div class="city-popup" style="width: 220px;">
+                <img src="${townImage}" class="img-fluid rounded mb-3" alt="${townName}" style="width: 100%; height: 110px; object-fit: cover;">
+                <div class="small text-uppercase fw-bold mb-1" style="letter-spacing: 0.08em; color: #2E8B57;">Townland Explorer</div>
+                <h6 class="fw-bold mb-2" style="color: #23624A;">${townName}</h6>
+                <div class="small text-muted mb-1">Population</div>
+                <div class="fw-bold" style="color: #213F35;">${populationLabel}</div>
+            </div>
+        `;
+    }
+
+    function focusTown(city, imageUrl) {
+        if (!map || !city) return;
+
+        const lat = Number(city.latitude);
+        const lng = Number(city.longitude);
+
+        if (!isFinite(lat) || !isFinite(lng)) return;
+
+        map.flyTo([lat, lng], 14);
+        L.popup()
+            .setLatLng([lat, lng])
+            .setContent(createTownPopupContent(city, imageUrl))
+            .openOn(map);
+    }
 
     /**
      * Initialize the interactive map with drawing tools
@@ -110,29 +192,6 @@ window.AdvancedMapping = (function() {
             // Shared state placeholders
             window.currentPolygon = null;
             window.currentResults = null;
-
-            // Lightweight UI helpers used by other modules
-            window.AdvancedMapping = window.AdvancedMapping || {};
-            window.AdvancedMapping.showLoading = function(show) {
-                const el = document.getElementById('loadingIndicator');
-                if (el) el.style.display = show ? 'block' : 'none';
-            };
-            window.AdvancedMapping.showSuccessMessage = function(msg) {
-                const status = document.getElementById('searchStatus');
-                if (status) {
-                    status.textContent = msg;
-                    status.className = 'alert alert-success';
-                    setTimeout(() => { status.textContent = ''; status.className = 'alert alert-info'; }, 4000);
-                }
-            };
-            window.AdvancedMapping.showErrorMessage = function(msg) {
-                const status = document.getElementById('searchStatus');
-                if (status) {
-                    status.textContent = msg;
-                    status.className = 'alert alert-danger';
-                    setTimeout(() => { status.textContent = ''; status.className = 'alert alert-info'; }, 6000);
-                }
-            };
 
             // Initialize drawing controls
             initializeDrawingControls();
@@ -529,7 +588,7 @@ window.AdvancedMapping = (function() {
                 const markerOpts = { cityMarker: true };
                 if (window.resultMarkerIcon) markerOpts.icon = window.resultMarkerIcon;
                 const marker = L.marker([lat, lng], markerOpts);
-                marker.bindPopup(createCityPopupContent(city));
+                marker.bindPopup(createTownPopupContent(city));
                 if (window.citiesLayer) {
                     window.citiesLayer.addLayer(marker);
                 } else {
@@ -552,7 +611,7 @@ window.AdvancedMapping = (function() {
             // Bounds fitting failed silently
         }
 
-        // Fallback: if we had cities but no marker icons were added, use circleMarker
+        // Fallback: if had cities but no marker icons were added, use circleMarker
         try {
             const added = window.citiesLayer ? window.citiesLayer.getLayers().length : 0;
             if (cities.length > 0 && added === 0) {
@@ -566,7 +625,7 @@ window.AdvancedMapping = (function() {
                             color: '#ff5722',
                             fillColor: '#ff8a50',
                             fillOpacity: 0.9
-                        }).bindPopup(createCityPopupContent(city));
+                        }).bindPopup(createTownPopupContent(city));
                         if (window.citiesLayer) window.citiesLayer.addLayer(cm); else cm.addTo(map);
                     } catch (e) {
                         // Fallback marker addition failed silently
@@ -606,12 +665,13 @@ window.AdvancedMapping = (function() {
                         const markerOpts = {};
                         if (window.resultMarkerIcon) markerOpts.icon = window.resultMarkerIcon;
                         const marker = L.marker([lat, lng], markerOpts);
-                        const popup = `
-                            <div class="city-popup">
-                                <strong>${props.name || props.ENGLISH || 'Unknown'}</strong><br/>
-                                <small>Population: ${props.population ? props.population.toLocaleString() : 'N/A'}</small>
-                            </div>`;
-                        marker.bindPopup(popup);
+                        marker.bindPopup(createTownPopupContent({
+                            id: props.id,
+                            name: props.name || props.ENGLISH || 'Unknown',
+                            population: props.population || 0,
+                            latitude: lat,
+                            longitude: lng
+                        }));
                         window.citiesLayer.addLayer(marker);
                     } catch (e) {
                         // Town marker addition failed silently
@@ -621,23 +681,6 @@ window.AdvancedMapping = (function() {
         } catch (err) {
             // Town loading failed silently
         }
-    }
-
-    function createCityPopupContent(city) {
-        const imageUrl = `https://loremflickr.com/300/150/ireland,town/all?lock=${city.id || 1}`;
-
-        return `
-            <div class="city-popup" style="width: 200px;">
-                <img src="${imageUrl}" class="img-fluid rounded mb-2" alt="${city.name}">
-                <h6 class="fw-bold mb-1">${city.name}</h6>
-                <div class="small text-muted mb-2">
-                    <i class="bi bi-people"></i> Pop: ${city.population?.toLocaleString() || 'N/A'}
-                </div>
-                <a href="/towns/${city.id}" class="btn btn-sm btn-map-primary w-100" style="color:white; font-size:12px;">
-                    View Trekking Routes
-                </a>
-            </div>
-    `;
     }
 
     /**
@@ -651,33 +694,28 @@ window.AdvancedMapping = (function() {
     return {
         initializeMap: initializeMap,
         displayCitiesOnMap: displayCitiesOnMap,
-        getMap: getMap
+        getMap: getMap,
+        getTownImage: getTownImage,
+        createTownPopupContent: createTownPopupContent,
+        focusTown: focusTown,
+        showToast: showToast,
+        showLoading: function(show) {
+            if (window.UIControls && typeof window.UIControls.setLoadingState === 'function') {
+                window.UIControls.setLoadingState(show);
+            } else {
+                const el = document.getElementById('loadingIndicator');
+                if (el) el.style.display = show ? 'block' : 'none';
+            }
+
+            if (show) {
+                showToast('Searching your selected area...', 'info', 1800);
+            }
+        },
+        showSuccessMessage: function(msg) {
+            showToast(msg, 'success', 2600);
+        },
+        showErrorMessage: function(msg) {
+            showToast(msg, 'error', 3600);
+        }
     };
 })();
-
-
-// Ensure helper functions exist on the exported AdvancedMapping object
-if (window.AdvancedMapping) {
-    window.AdvancedMapping.showLoading = window.AdvancedMapping.showLoading || function(show) {
-        const el = document.getElementById('loadingIndicator');
-        if (el) el.style.display = show ? 'block' : 'none';
-    };
-
-    window.AdvancedMapping.showSuccessMessage = window.AdvancedMapping.showSuccessMessage || function(msg) {
-        const status = document.getElementById('searchStatus');
-        if (status) {
-            status.textContent = msg;
-            status.className = 'alert alert-success';
-            setTimeout(() => { status.textContent = ''; status.className = 'alert alert-info'; }, 4000);
-        }
-    };
-
-    window.AdvancedMapping.showErrorMessage = window.AdvancedMapping.showErrorMessage || function(msg) {
-        const status = document.getElementById('searchStatus');
-        if (status) {
-            status.textContent = msg;
-            status.className = 'alert alert-danger';
-            setTimeout(() => { status.textContent = ''; status.className = 'alert alert-info'; }, 6000);
-        }
-    };
-}
