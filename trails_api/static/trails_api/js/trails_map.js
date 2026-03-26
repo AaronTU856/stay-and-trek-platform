@@ -310,9 +310,9 @@ function initializeMap() {
   window.hotelIcon = L.divIcon({
     className: "custom-marker",
     html: '<div class="accommodation-map-marker"></div>',
-    iconSize: [18, 18],
-    iconAnchor: [9, 9],
-    popupAnchor: [0, -12],
+    iconSize: [22, 22],
+    iconAnchor: [11, 11],
+    popupAnchor: [0, -14],
   });
 
   // Define layers for the toggle control
@@ -733,7 +733,12 @@ function displayTrailsOnMap(trails) {
         icon: markerIcon,
         title: name,
         county: props.county || "",
-      }).bindPopup(popupHTML);
+      }).bindPopup(popupHTML).bindTooltip(name, {
+        direction: "top",
+        offset: [0, -16],
+        opacity: 0.95,
+        sticky: true
+      });
 
       marker.on("click", async function () {
 
@@ -1605,7 +1610,12 @@ function displayNearestTrails(trails) {
             Distance: ${trail.distance_km || "?"} km<br>
             From Search: ${distanceKm.toFixed(1)} km
             
-        `);
+        `).bindTooltip(name, {
+            direction: "top",
+            offset: [0, -16],
+            opacity: 0.95,
+            sticky: true
+        });
 
         // Routing store selected trail
         marker.on("click", function () {
@@ -1832,7 +1842,12 @@ function updateAccommodations(searchLat = null, searchLng = null) {
                 Select this stay to map your route from the chosen trail.
               </div>
             </div>
-        `);
+        `).bindTooltip(props.name || "Accommodation", {
+            direction: "top",
+            offset: [0, -14],
+            opacity: 0.95,
+            sticky: true
+        });
 
         marker.on("click", function () {
           selectedAccommodation = {
@@ -1973,7 +1988,7 @@ if (type === "success") {
   toastEl.className = `toast align-items-center border-0 text-bg-${type}`;
 
   const toast = new bootstrap.Toast(toastEl, {
-    delay: 5000
+    delay: 9000
   });
 
   toast.show();

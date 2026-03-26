@@ -48,6 +48,9 @@
 
     .sidebar .card-body {
       padding: 12px;
+      font-size: 13px;
+      color: #33413a;
+      line-height: 1.55;
     }
 
     #map-container {
@@ -75,9 +78,9 @@
     }
 
     .sidebar h6 {
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 600;
-      color: #2c3e50;
+      color: #24342c;
       margin: 0 0 10px 0;
     }
 
@@ -102,17 +105,29 @@
     }
 
     .sidebar label {
-      font-size: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #2a392f;
       margin-bottom: 6px;
     }
 
     .sidebar input, .sidebar select {
-      font-size: 12px;
+      font-size: 13px;
+      color: #223127;
     }
 
     .sidebar button {
-      font-size: 12px;
+      font-size: 13px;
       margin-top: 6px;
+    }
+
+    .sidebar small,
+    .sidebar medium,
+    .sidebar li,
+    .sidebar .text-muted,
+    .sidebar p {
+      font-size: 13px !important;
+      color: #46544b !important;
     }
 
     /* Scrollbar styling */
@@ -211,7 +226,7 @@
     }
 
     .workflow-step-text {
-      font-size: 12px;
+      font-size: 13px;
       line-height: 1.45;
     }
 
@@ -231,7 +246,7 @@
       border-radius: 8px;
       color: #695625;
       padding: 8px 10px;
-      font-size: 11px;
+      font-size: 13px;
       line-height: 1.45;
       margin-bottom: 10px;
     }
@@ -270,12 +285,18 @@
     }
 
     .accommodation-map-marker {
-      width: 18px;
-      height: 18px;
+      width: 22px;
+      height: 22px;
       border-radius: 50%;
-      background: radial-gradient(circle at 35% 35%, #d6b286 0%, #8b5e34 68%, #5b3920 100%);
-      border: 2px solid #f7efe4;
-      box-shadow: 0 2px 6px rgba(91, 57, 32, 0.28);
+      background: radial-gradient(circle at 35% 35%, #f2d6aa 0%, #9b6d3e 58%, #5b3920 100%);
+      border: 3px solid #fffaf1;
+      box-shadow: 0 0 0 4px rgba(232, 204, 143, 0.45), 0 6px 14px rgba(91, 57, 32, 0.30);
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .accommodation-map-marker:hover {
+      transform: scale(1.08);
+      box-shadow: 0 0 0 5px rgba(232, 204, 143, 0.55), 0 8px 18px rgba(91, 57, 32, 0.35);
     }
 
     /* Search control positioning - force to topleft beside zoom */
