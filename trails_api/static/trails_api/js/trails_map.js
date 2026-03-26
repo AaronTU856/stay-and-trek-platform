@@ -57,21 +57,9 @@ document.addEventListener("DOMContentLoaded", function () {
   // addSearchControls() will be called automatically when trails finish loading
   loadAllTrailsForSearch();
 
-  if (window.trailsMap) {
-        window.trailsMap.on('moveend', () => {
-
-            if (routingInProgress) return;
-
-            console.log("🔄 Map moved, updating accommodations...");
-            updateAccommodations();
-        });
-        setTimeout(() => {
-          console.log("🚀 Initial accommodation check...");
-          updateAccommodations();
-        }, 500);
-    } else {
-        console.error("❌ trailsMap not found during initialization");
-    }
+  if (!window.trailsMap) {
+    console.error("❌ trailsMap not found during initialization");
+  }
 });
 
  
@@ -1089,19 +1077,24 @@ function setupEventListeners() {
   if (toggleAccommodations) {
     toggleAccommodations.addEventListener("change", function () {
       console.log("Accommodation toggle changed:", this.checked);
+      const countEl = document.getElementById("accommodation-count");
 
       if (this.checked) {
-        // Show accommodations
         if (!window.trailsMap.hasLayer(window.accommodationLayer)) {
           window.trailsMap.addLayer(window.accommodationLayer);
         }
-        updateAccommodations();
+
+        const hasLoadedAccommodations = window.accommodationLayer.getLayers().length > 0;
+        if (countEl && !hasLoadedAccommodations) {
+          countEl.textContent = "Use Search This Area to load nearby accommodations for the current map view.";
+        }
       } else {
-        // Hide accommodations
         if (window.trailsMap.hasLayer(window.accommodationLayer)) {
           window.trailsMap.removeLayer(window.accommodationLayer);
         }
-        window.accommodationLayer.clearLayers();
+        if (countEl) {
+          countEl.textContent = "Accommodation markers are hidden. Turn Show on Map back on to view loaded results.";
+        }
       }
     });
   }
@@ -1109,7 +1102,6 @@ function setupEventListeners() {
   if (fetchStaysBtn) {
     fetchStaysBtn.addEventListener("click", function () {
       console.log("Fetching accommodations for currrent map area...");
-      const center = window.trailsMap.getCenter();
 
       // Ensure checkbox is checked and layerv visible
       if (toggleAccommodations && !toggleAccommodations.checked) {
@@ -1722,10 +1714,21 @@ function updateAccommodations(searchLat = null, searchLng = null) {
 
   const lat = searchLat || window.trailsMap.getCenter().lat;
   const lng = searchLng || window.trailsMap.getCenter().lng;
+  const countEl = document.getElementById("accommodation-count");
+  const fetchBtn = document.getElementById("fetch-stays-btn");
 
   const requestId = ++accommodationRequestId;
 
   console.log(`🏨 Fetching accommodations for lat=${lat}, lng=${lng}`);
+
+  if (countEl) {
+    countEl.textContent = "Searching the current map area for nearby accommodations...";
+  }
+
+  if (fetchBtn) {
+    fetchBtn.disabled = true;
+    fetchBtn.textContent = "Searching...";
+  }
   
   fetch(`/api/trails/accommodations/nearby/?lat=${lat}&lng=${lng}&radius=10`)
     .then(res => {
@@ -1796,16 +1799,22 @@ function updateAccommodations(searchLat = null, searchLng = null) {
           });
         }
 
-        const countEl = document.getElementById("accommodation-count");
         if (countEl) {
-          countEl.textContent = `Found ${features.length} accommodations nearby`;
+          countEl.textContent = features.length > 0
+            ? `Found ${features.length} accommodations nearby`
+            : "No nearby accommodations found in the current map area.";
         }
     })
     .catch(err => {
       console.error("❌ API Error:", err);
-      const countEl = document.getElementById("accommodation-count");
       if (countEl) {
         countEl.textContent = "❌ Error loading accommodations";
+      }
+    })
+    .finally(() => {
+      if (fetchBtn) {
+        fetchBtn.disabled = false;
+        fetchBtn.textContent = "Search This Area";
       }
     });
 }
