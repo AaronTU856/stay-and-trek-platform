@@ -693,21 +693,25 @@ body.high-contrast-mode footer {
         </div>
       </div>
 
+      <!-- Nearby Accommodations -->
+      <div id="accommodation-card" class="card">
+        <div class="card-header" style="background: linear-gradient(135deg, #FF8C00 0%, #e67e22 100%); color: white;">🏨 Nearby Accommodations</div>
+        <div class="card-body">
+          <div class="form-check form-switch mb-2">
+            <input class="form-check-input" type="checkbox" id="toggle-accommodations">
+            <label class="form-check-label" for="toggle-accommodations">Show on Map</label>
+          </div>
+          <button id="fetch-stays-btn" class="btn btn-sm btn-outline-primary w-100">Search This Area</button>
+          <div id="accommodation-count" class="text-muted mt-2" style="font-size: 11px;"></div>
+        </div>
+      </div>
+
       <!-- Points of Interest -->
       <div class="card">
         <div class="card-header">📍 Points of Interest</div>
         <div class="card-body" id="poi-controls">
           <div id="poi-checkboxes"></div>
           <button id="load-all-pois-btn" class="btn btn-sm btn-success w-100 mt-2">Load All POIs</button>
-        </div>
-      </div>
-
-      <!-- Spatial Analysis -->
-      <div class="card">
-        <div class="card-header">📊 Spatial Analysis</div>
-        <div class="card-body">
-          <button id="analysis-btn" class="btn btn-sm btn-success w-100">Generate Report</button>
-          <div id="analysis-results" style="font-size: 11px; margin-top: 8px;"></div>
         </div>
       </div>
 
@@ -733,16 +737,12 @@ body.high-contrast-mode footer {
         </div>
       </div>
 
-      <!-- Nearby Accommodations -->
-      <div id="accommodation-card" class="card">
-        <div class="card-header" style="background: linear-gradient(135deg, #FF8C00 0%, #e67e22 100%); color: white;">🏨 Nearby Accommodations</div>
+      <!-- Spatial Analysis -->
+      <div class="card">
+        <div class="card-header">📊 Spatial Analysis</div>
         <div class="card-body">
-          <div class="form-check form-switch mb-2">
-            <input class="form-check-input" type="checkbox" id="toggle-accommodations">
-            <label class="form-check-label" for="toggle-accommodations">Show on Map</label>
-          </div>
-          <button id="fetch-stays-btn" class="btn btn-sm btn-outline-primary w-100">Search This Area</button>
-          <div id="accommodation-count" class="text-muted mt-2" style="font-size: 11px;"></div>
+          <button id="analysis-btn" class="btn btn-sm btn-success w-100">Generate Report</button>
+          <div id="analysis-results" style="font-size: 11px; margin-top: 8px;"></div>
         </div>
       </div>
 
