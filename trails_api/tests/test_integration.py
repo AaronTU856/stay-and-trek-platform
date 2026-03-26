@@ -37,19 +37,25 @@ class TrailIntegrationTests(TestCase):
             reverse("trails:trail-list-create"),
             payload,
             format="json",
+            secure=True,
         )
 
         self.assertEqual(create_response.status_code, status.HTTP_201_CREATED)
 
         trail = Trail.objects.get(trail_name="Glendalough Valley Loop")
         detail_response = self.client.get(
-            reverse("trails:trail-detail", kwargs={"pk": trail.pk})
+            reverse("trails:trail-detail", kwargs={"pk": trail.pk}),
+            secure=True,
         )
-        geojson_response = self.client.get(reverse("trails:trails_geojson"))
+        geojson_response = self.client.get(
+            reverse("trails:trails_geojson"),
+            secure=True,
+        )
         radius_response = self.client.post(
             reverse("trails:trails-within-radius"),
             {"latitude": 53.010, "longitude": -6.327, "radius_km": 10},
             format="json",
+            secure=True,
         )
 
         self.assertEqual(detail_response.status_code, status.HTTP_200_OK)

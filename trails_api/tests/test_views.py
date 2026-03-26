@@ -38,6 +38,7 @@ class TrailViewTests(TestCase):
             reverse("trails:trails-within-radius"),
             {"latitude": 53.2, "longitude": -6.1, "radius_km": 100},
             format="json",
+            secure=True,
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -49,6 +50,7 @@ class TrailViewTests(TestCase):
             reverse("trails:trails-within-radius"),
             {},
             format="json",
+            secure=True,
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -59,10 +61,12 @@ class TrailViewTests(TestCase):
         )
 
     def test_trail_statistics_endpoint_returns_summary_data(self):
-        response = self.client.get(reverse("trails:trail-statistics"))
+        response = self.client.get(
+            reverse("trails:trail-statistics"),
+            secure=True,
+        )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("total_trails", response.data)
         self.assertIn("average_distance_km", response.data)
         self.assertEqual(response.data["total_trails"], 2)
-

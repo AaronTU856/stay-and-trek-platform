@@ -1,16 +1,25 @@
 #!/usr/bin/env python
-import requests
+"""
+Legacy endpoint probe.
+
+Quarantined from automated discovery because it performs direct HTTP calls to a
+manually running local service and does not use the isolated Django test client.
+"""
+
 import json
 
-# Test the API endpoint
-response = requests.get('http://localhost:8000/api/trails/boundaries/9888/trails-crossing/geojson/')
+import requests
+
+response = requests.get(
+    "http://localhost:8000/api/trails/boundaries/9888/trails-crossing/geojson/"
+)
 print(f"Status: {response.status_code}")
 data = response.json()
 print(f"Response type: {type(data)}")
 
 if isinstance(data, dict):
     print(f"Keys: {list(data.keys())}")
-    if 'features' in data:
+    if "features" in data:
         print(f"Features count: {len(data['features'])}")
     else:
         print(f"Response: {json.dumps(data, indent=2)[:1000]}")

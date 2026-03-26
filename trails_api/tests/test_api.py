@@ -45,13 +45,17 @@ class TrailApiTests(TestCase):
         )
 
     def test_trail_list_endpoint_returns_200(self):
-        response = self.client.get(reverse("trails:trail-list-create"))
+        response = self.client.get(
+            reverse("trails:trail-list-create"),
+            secure=True,
+        )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_trail_detail_endpoint_returns_requested_trail(self):
         response = self.client.get(
-            reverse("trails:trail-detail", kwargs={"pk": self.trail1.pk})
+            reverse("trails:trail-detail", kwargs={"pk": self.trail1.pk}),
+            secure=True,
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -77,13 +81,17 @@ class TrailApiTests(TestCase):
             reverse("trails:trail-list-create"),
             payload,
             format="json",
+            secure=True,
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Trail.objects.count(), 3)
 
     def test_trails_geojson_endpoint_returns_feature_collection(self):
-        response = self.client.get(reverse("trails:trails_geojson"))
+        response = self.client.get(
+            reverse("trails:trails_geojson"),
+            secure=True,
+        )
         payload = response.json()
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -92,7 +100,9 @@ class TrailApiTests(TestCase):
         self.assertGreater(len(payload["features"]), 0)
 
     def test_towns_geojson_endpoint_returns_200(self):
-        response = self.client.get(reverse("trails:towns_geojson"))
+        response = self.client.get(
+            reverse("trails:towns_geojson"),
+            secure=True,
+        )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-
