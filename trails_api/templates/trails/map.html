@@ -167,6 +167,48 @@
       transform: translateY(-1px);
     }
 
+    .poi-toggle-button {
+      font-weight: 700;
+      transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .poi-toggle-button.poi-toggle-active {
+      background: linear-gradient(135deg, #f97316 0%, #dc2626 100%);
+      border-color: #c2410c;
+      color: #ffffff;
+      box-shadow: 0 8px 18px rgba(220, 38, 38, 0.18);
+    }
+
+    .poi-toggle-button.poi-toggle-active:hover,
+    .poi-toggle-button.poi-toggle-active:focus {
+      background: linear-gradient(135deg, #ea580c 0%, #b91c1c 100%);
+      color: #ffffff;
+    }
+
+    .accommodation-action-btn {
+      background: linear-gradient(135deg, #9a6b3f 0%, #7c4f2f 100%);
+      border-color: #7c4f2f;
+      color: #ffffff;
+      font-weight: 700;
+      box-shadow: 0 6px 14px rgba(124, 79, 47, 0.18);
+    }
+
+    .accommodation-action-btn:hover,
+    .accommodation-action-btn:focus {
+      background: linear-gradient(135deg, #8b5e34 0%, #603813 100%);
+      border-color: #603813;
+      color: #ffffff;
+    }
+
+    .accommodation-map-marker {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #d6b286 0%, #8b5e34 68%, #5b3920 100%);
+      border: 2px solid #f7efe4;
+      box-shadow: 0 2px 6px rgba(91, 57, 32, 0.28);
+    }
+
     /* Search control positioning - force to topleft beside zoom */
     .leaflet-top.leaflet-left .leaflet-control-search {
       position: absolute !important;
@@ -721,7 +763,7 @@ body.high-contrast-mode footer {
             <input class="form-check-input" type="checkbox" id="toggle-accommodations">
             <label class="form-check-label" for="toggle-accommodations">Show on Map</label>
           </div>
-          <button id="fetch-stays-btn" class="btn btn-sm btn-outline-primary w-100">Search This Area</button>
+          <button id="fetch-stays-btn" class="btn btn-sm w-100 accommodation-action-btn">Search This Area</button>
           <div id="accommodation-count" class="text-muted mt-2" style="font-size: 11px;"></div>
         </div>
       </div>
@@ -744,7 +786,7 @@ body.high-contrast-mode footer {
         <div class="card-header">📍 Points of Interest</div>
         <div class="card-body" id="poi-controls">
           <div id="poi-checkboxes"></div>
-          <button id="load-all-pois-btn" class="btn btn-sm btn-success w-100 mt-2">Show All POIs</button>
+          <button id="load-all-pois-btn" class="btn btn-sm btn-success w-100 mt-2 poi-toggle-button">Show All POIs</button>
         </div>
       </div>
 
@@ -787,7 +829,7 @@ body.high-contrast-mode footer {
 
           <div style="margin-bottom: 8px;">
             <span style="display: inline-block; width: 20px; height: 3px; background: #FF8C00; margin-right: 8px;"></span>
-            <strong>Trail Route</strong>
+            <strong>Trail Path</strong>
           </div>
 
           <div style="margin-bottom: 8px;">
@@ -806,18 +848,28 @@ body.high-contrast-mode footer {
           </div>
 
           <div style="margin-bottom: 8px;">
-            <span style="display: inline-block; width: 12px; height: 12px; background: #497db1ff; border: 2px solid #636e80ff; border-radius: 50%; margin-right: 8px;"></span>
+            <span style="display: inline-block; width: 12px; height: 18px; background: linear-gradient(180deg, #42b883 0%, #198754 100%); border: 2px solid #ffffff; border-radius: 10px 10px 10px 0; transform: rotate(-45deg); margin-right: 10px;"></span>
+            <strong>Trail Start Point</strong>
+          </div>
+
+          <div style="margin-bottom: 8px;">
+            <span style="display: inline-block; width: 12px; height: 18px; background: linear-gradient(180deg, #ef4444 0%, #b91c1c 100%); border: 2px solid #ffffff; border-radius: 10px 10px 10px 0; transform: rotate(-45deg); margin-right: 10px;"></span>
+            <strong>Search Point</strong>
+          </div>
+
+          <div style="margin-bottom: 8px;">
+            <span style="display: inline-block; width: 12px; height: 12px; background: #f59e0b; border: 2px solid #ea580c; border-radius: 50%; margin-right: 8px; opacity: 0.8;"></span>
             <strong>Town (Weather Info)</strong>
           </div>
 
           <div style="margin-bottom: 8px;">
-            <span style="display: inline-block; width: 12px; height: 12px; background: #8B4513; border-radius: 50%; margin-right: 8px;"></span>
+            <span style="display: inline-block; width: 12px; height: 12px; background: radial-gradient(circle at 35% 35%, #d6b286 0%, #8b5e34 68%, #5b3920 100%); border: 2px solid #f7efe4; border-radius: 50%; margin-right: 8px;"></span>
             <strong>Accommodation</strong>
           </div>
 
           <div>
             <span style="display: inline-block; width: 12px; height: 12px; background: #38de40ff; border: 2px solid #0a7041ff; border-radius: 50%; margin-right: 8px;"></span>
-            <strong>Selected Trail Details</strong>
+            <strong>Nearest Trail Result</strong>
           </div>
         </div>
       </div>

@@ -38,7 +38,7 @@ const POI_TYPES = {
   shelter: { color: "#A8D8D8", icon: "🏕️", label: "Shelter" },
   picnic: { color: "#FFC93C", icon: "🧺", label: "Picnic Area" },
   information: { color: "#95B8D1", icon: "ℹ️", label: "Information" },
-  accommodation: { color: "#E8B4B8", icon: "🏨", label: "Accommodation" },
+  accommodation: { color: "#8B5E34", icon: "🏨", label: "Accommodation" },
 };
 
 // Layer groups for different POI types
@@ -55,6 +55,7 @@ function updatePOIButtonState() {
   loadPoiBtn.textContent = allPOIsVisible ? "Hide All POIs" : "Show All POIs";
   loadPoiBtn.classList.toggle("btn-success", !allPOIsVisible);
   loadPoiBtn.classList.toggle("btn-outline-secondary", allPOIsVisible);
+  loadPoiBtn.classList.toggle("poi-toggle-active", allPOIsVisible);
 }
 
 function showSelectedPOILayers() {
@@ -798,7 +799,7 @@ function createPOIControlPanel() {
             )
             .join("")}
         </div>
-        <button id="load-all-pois-btn" class="btn btn-sm btn-success w-100 mt-2">
+        <button id="load-all-pois-btn" class="btn btn-sm btn-success w-100 mt-2 poi-toggle-button">
           Show All POIs
         </button>
         <button id="analysis-btn" class="btn btn-sm btn-success w-100 mt-2">
