@@ -455,7 +455,12 @@ fetch("/api/trails/towns/geojson/")
 
         layer.bindPopup(
           `<b>${feature.properties.name}</b><br>Click to find nearby trails`
-        );
+        ).bindTooltip(feature.properties.name || "Town", {
+          direction: "top",
+          offset: [0, -16],
+          opacity: 0.95,
+          sticky: true
+        });
 
         layer.on("mouseover", () => {
           layer.setOpacity(0.9);
