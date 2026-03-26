@@ -147,6 +147,25 @@
       color: #fff;
     }
 
+    .advanced-tools-toggle {
+      min-height: 44px;
+      border: 1px solid #d7c3ff;
+      background: linear-gradient(135deg, #6ec86d 0%, #24c907 55%, #0e3c20 100%);
+      color: #ffffff;
+      font-weight: 800;
+      box-shadow: 0 4px 12px rgba(91, 58, 141, 0.10);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
+    }
+
+    .advanced-tools-toggle:hover,
+    .advanced-tools-toggle:focus {
+      background: linear-gradient(135deg, #62b3c2 0%, #345a89 55%, #2b5ebe 100%);
+      border-color: #2f5713;
+      color: #ffffff;
+      box-shadow: 0 10px 22px rgba(124, 58, 237, 0.22);
+      transform: translateY(-1px);
+    }
+
     /* Search control positioning - force to topleft beside zoom */
     .leaflet-top.leaflet-left .leaflet-control-search {
       position: absolute !important;
@@ -706,6 +725,19 @@ body.high-contrast-mode footer {
         </div>
       </div>
 
+      <button
+        class="btn btn-sm w-100 mb-3 advanced-tools-toggle"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#advancedToolsPanel"
+        aria-expanded="false"
+        aria-controls="advancedToolsPanel"
+      >
+        Advanced Tools
+      </button>
+
+      <div id="advancedToolsPanel" class="collapse">
+
       <!-- Points of Interest -->
       <div class="card">
         <div class="card-header">📍 Points of Interest</div>
@@ -786,6 +818,7 @@ body.high-contrast-mode footer {
             <strong>Selected Trail Details</strong>
           </div>
         </div>
+      </div>
       </div>
       </div>
       </div>
