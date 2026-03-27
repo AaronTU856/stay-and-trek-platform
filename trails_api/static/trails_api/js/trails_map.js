@@ -14,6 +14,29 @@ let selectedAccommodation = null; // Store the currently selected accommodation 
 let routeLayer = null; // Layer to display the generated route
 let routingInProgress = false;
 
+function bindAccommodationHoverTooltip(marker, name) {
+  if (!marker) return;
+  marker.unbindTooltip();
+  marker.bindTooltip(name || "Accommodation", {
+    direction: "top",
+    offset: [0, -14],
+    opacity: 0.95,
+    sticky: true
+  });
+}
+
+function bindAccommodationDistanceTooltip(marker, routeDistanceKm) {
+  if (!marker) return;
+  marker.unbindTooltip();
+  marker.bindTooltip(`${routeDistanceKm} km`, {
+    direction: "top",
+    offset: [0, -18],
+    opacity: 1,
+    permanent: true,
+    className: "accommodation-distance-label"
+  }).openTooltip();
+}
+
 document.addEventListener("DOMContentLoaded", function () {
   console.log("📍 DOM loaded, initializing map...");
   initializeMap();
@@ -1825,6 +1848,7 @@ function updateAccommodations(searchLat = null, searchLng = null) {
       console.log("🏨 Features extracted:", features);
 
       window.accommodationLayer.clearLayers();
+      selectedAccommodation = null;
       console.log("🏨 Cleared old accommodation markers");
 
       let addedCount = 0;
@@ -1847,17 +1871,27 @@ function updateAccommodations(searchLat = null, searchLng = null) {
                 Select this stay to map your route from the chosen trail.
               </div>
             </div>
-        `).bindTooltip(props.name || "Accommodation", {
-            direction: "top",
-            offset: [0, -14],
-            opacity: 0.95,
-            sticky: true
-        });
+        `);
+
+        bindAccommodationHoverTooltip(marker, props.name || "Accommodation");
 
         marker.on("click", function () {
+          if (
+            selectedAccommodation &&
+            selectedAccommodation.marker &&
+            selectedAccommodation.marker !== marker
+          ) {
+            bindAccommodationHoverTooltip(
+              selectedAccommodation.marker,
+              selectedAccommodation.name
+            );
+          }
+
           selectedAccommodation = {
             lat: marker.getLatLng().lat,
-            lng: marker.getLatLng().lng
+            lng: marker.getLatLng().lng,
+            marker: marker,
+            name: props.name || "Accommodation"
           };
 
           console.log("Selected accommodation:", selectedAccommodation);
@@ -1993,7 +2027,7 @@ if (type === "success") {
   toastEl.className = `toast align-items-center border-0 text-bg-${type}`;
 
   const toast = new bootstrap.Toast(toastEl, {
-    delay: 9000
+    delay: 15000
   });
 
   toast.show();
@@ -2053,7 +2087,28 @@ function tryRoute() {
         if (data.status === "fallback") {
           showRouteToast("Route could not be found. Showing straight-line connection.", "warning");
         } else {
-          showRouteToast("Shortest road route to your accommodation shown.", "success");
+          if (
+            typeof data.route_distance_km === "number" &&
+            selectedAccommodation &&
+            selectedAccommodation.marker
+          ) {
+            bindAccommodationDistanceTooltip(
+              selectedAccommodation.marker,
+              data.route_distance_km
+            );
+
+            const countEl = document.getElementById("accommodation-count");
+            if (countEl) {
+              countEl.textContent = `Route distance to ${selectedAccommodation.name}: ${data.route_distance_km} km`;
+            }
+
+            showRouteToast(
+              `Shortest road route shown. Distance: ${data.route_distance_km} km.`,
+              "success"
+            );
+          } else {
+            showRouteToast("Shortest road route to your accommodation shown.", "success");
+          }
         }
 
       } else {

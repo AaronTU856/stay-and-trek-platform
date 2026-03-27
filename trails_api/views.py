@@ -6,7 +6,7 @@ from django.http import HttpResponse, JsonResponse
 from django.core.serializers import serialize
 from django.db import models, connection 
 from django.db.models import Count, Q
-from django.contrib.gis.geos import Point
+from django.contrib.gis.geos import Point, GEOSGeometry
 from django.contrib.gis.db.models.functions import Distance as DistanceFunction
 from django.contrib.gis.measure import Distance as D
 from django.views.decorators.csrf import csrf_exempt
@@ -1200,6 +1200,24 @@ def get_transport_route(start_coords, end_coords):
     start_lng, start_lat = start_coords
     end_lng, end_lat = end_coords
 
+    def route_distance_km_from_features(route_features):
+        total_meters = 0.0
+        for feature in route_features:
+            geometry = feature.get("geometry")
+            if not geometry:
+                continue
+            try:
+                geom = GEOSGeometry(json.dumps(geometry), srid=4326)
+            except Exception:
+                continue
+
+            if geom.geom_type not in {"LineString", "MultiLineString"}:
+                continue
+
+            total_meters += geom.transform(3857, clone=True).length
+
+        return round(total_meters / 1000, 2)
+
     with connection.cursor() as cursor:
         logger.warning(f"DEBUG coords: {start_lng},{start_lat} -> {end_lng},{end_lat}")
 
@@ -1267,7 +1285,12 @@ def get_transport_route(start_coords, end_coords):
                 "geometry": {"type": "LineString", "coordinates": [end_vertex_coords, [end_lng, end_lat]]}
             })
 
-        return {"status": "success_v2", "type": "FeatureCollection", "features": features}
+        return {
+            "status": "success_v2",
+            "type": "FeatureCollection",
+            "features": features,
+            "route_distance_km": route_distance_km_from_features(features),
+        }
 
 
 

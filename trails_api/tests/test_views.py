@@ -3,6 +3,7 @@ from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
+from unittest.mock import MagicMock, patch
 
 from trails_api.models import Trail
 
@@ -70,3 +71,51 @@ class TrailViewTests(TestCase):
         self.assertIn("total_trails", response.data)
         self.assertIn("average_distance_km", response.data)
         self.assertEqual(response.data["total_trails"], 2)
+
+    @patch("trails_api.views.connection.cursor")
+    @patch("trails_api.views.find_route_with_expanding_radius")
+    @patch("trails_api.views.get_road_node_for_point")
+    def test_route_between_nodes_returns_numeric_route_distance(
+        self,
+        mock_get_road_node_for_point,
+        mock_find_route_with_expanding_radius,
+        mock_connection_cursor,
+    ):
+        mock_get_road_node_for_point.side_effect = [101, 202]
+        mock_find_route_with_expanding_radius.return_value = {
+            "ok": True,
+            "geojson": """
+                {
+                    "type": "LineString",
+                    "coordinates": [[-6.09, 53.21], [-6.07, 53.23], [-6.05, 53.24]]
+                }
+            """,
+            "radius_used": 50000,
+            "attempts": 1,
+            "elapsed_seconds": 0.12,
+        }
+
+        mock_cursor = MagicMock()
+        mock_cursor.fetchone.side_effect = [
+            ('{"type":"Point","coordinates":[-6.09,53.21]}',),
+            ('{"type":"Point","coordinates":[-6.05,53.24]}',),
+        ]
+        mock_connection_cursor.return_value.__enter__.return_value = mock_cursor
+
+        response = self.client.post(
+            reverse("trails:route-between-nodes"),
+            {
+                "trail_lat": 53.2,
+                "trail_lng": -6.1,
+                "acc_lat": 53.25,
+                "acc_lng": -6.04,
+            },
+            format="json",
+            secure=True,
+        )
+
+        payload = response.json()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("route_distance_km", payload)
+        self.assertIsInstance(payload["route_distance_km"], (int, float))
+        self.assertGreater(payload["route_distance_km"], 0)
