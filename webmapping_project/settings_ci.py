@@ -24,3 +24,10 @@ SPATIALITE_LIBRARY_PATH = os.getenv(
 
 
 ROOT_URLCONF = "webmapping_project.urls_test_local"
+
+
+MIGRATION_MODULES = {
+    "advanced_js_mapping": None,
+    "maps": None,
+    "trails_api": None,
+}
