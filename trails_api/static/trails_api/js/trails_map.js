@@ -1871,7 +1871,20 @@ function updateAccommodations(searchLat = null, searchLng = null) {
                 Select this stay to map your route from the chosen trail.
               </div>
             </div>
-        `);
+        `, {
+            closeButton: false,
+            autoClose: true,
+            closeOnClick: false
+        });
+
+        // Keep accommodation details as a hover interaction so click can focus on route selection.
+        marker.off("click", marker._openPopup, marker);
+        marker.on("mouseover", function () {
+          marker.openPopup();
+        });
+        marker.on("mouseout", function () {
+          marker.closePopup();
+        });
 
         bindAccommodationHoverTooltip(marker, props.name || "Accommodation");
 

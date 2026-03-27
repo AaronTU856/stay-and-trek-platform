@@ -3,12 +3,7 @@ options:
   logging: CLOUD_LOGGING_ONLY
 
 steps:
-  # Step 1: Skip unit tests (environment setup issues - can be fixed later)
-  # Uncomment when Django settings are properly configured for testing
-
-
-
-  # Step 2: Build the Docker image
+  # Step 1: Build the Docker image used for testing and deployment
   - name: 'gcr.io/cloud-builders/docker'
     args: 
       - build
@@ -16,6 +11,23 @@ steps:
       - europe-west1-docker.pkg.dev/long-octane-477515-k6/cloud-run-source-deploy/stay-and-trek-service:latest
       - .
     id: BuildImage
+
+  # Step 2: Run Django automated tests inside the built application image.
+  # If tests fail here, Cloud Build stops and deployment is blocked.
+  - name: 'gcr.io/cloud-builders/docker'
+    id: RunDjangoTests
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+          echo "Running Django automated tests..."
+          docker run --rm \
+            -e SECRET_KEY=test-secret-key \
+            -e DEBUG=0 \
+            -e DJANGO_SETTINGS_MODULE=webmapping_project.settings_ci \
+            -e SPATIALITE_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/mod_spatialite.so \
+            europe-west1-docker.pkg.dev/long-octane-477515-k6/cloud-run-source-deploy/stay-and-trek-service:latest \
+            python manage.py test trails_api.tests.test_models trails_api.tests.test_filters trails_api.tests.test_api trails_api.tests.test_views trails_api.tests.test_integration -v 2
 
   # Step 3: Push the Docker image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'

@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgdal-dev \
     libgeos-dev \
     libproj-dev \
+    libsqlite3-mod-spatialite \
     && rm -rf /var/lib/apt/lists/*
 
 # Fix: Find where the libraries are actually installed and link them to /usr/lib/
@@ -42,4 +43,3 @@ EXPOSE 8080
 # 9. Start the service directly with Gunicorn
 # This bypasses any script delays and talks to Port 8080 immediately
 CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--timeout", "120", "webmapping_project.wsgi:application"]
-

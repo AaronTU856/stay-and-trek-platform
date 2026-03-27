@@ -19,6 +19,9 @@ ENV/
 env/
 webmapping_env/
 
+# --- Testing Artifacts ---
+report_screenshots/testing/
+
 # --- IDE / OS Files ---
 .vscode/
 .idea/
