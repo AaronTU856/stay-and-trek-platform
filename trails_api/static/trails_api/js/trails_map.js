@@ -14,14 +14,37 @@ let selectedAccommodation = null; // Store the currently selected accommodation 
 let routeLayer = null; // Layer to display the generated route
 let routingInProgress = false;
 
-function bindAccommodationHoverTooltip(marker, name) {
+function getAccommodationTooltipHtml(details) {
+  if (!details) return "Accommodation";
+
+  const parts = [
+    `<div class="accommodation-tooltip-name">${details.name || "Accommodation"}</div>`
+  ];
+
+  if (details.price_per_night) {
+    parts.push(
+      `<div class="accommodation-tooltip-meta">€${details.price_per_night}/night</div>`
+    );
+  }
+
+  if (details.rating) {
+    parts.push(
+      `<div class="accommodation-tooltip-meta">Rating: ${details.rating}</div>`
+    );
+  }
+
+  return `<div class="accommodation-tooltip-card">${parts.join("")}</div>`;
+}
+
+function bindAccommodationHoverTooltip(marker, details) {
   if (!marker) return;
   marker.unbindTooltip();
-  marker.bindTooltip(name || "Accommodation", {
+  marker.bindTooltip(getAccommodationTooltipHtml(details), {
     direction: "top",
-    offset: [0, -14],
-    opacity: 0.95,
-    sticky: true
+    offset: [0, -18],
+    opacity: 1,
+    sticky: true,
+    className: "accommodation-hover-tooltip"
   });
 }
 
@@ -1859,34 +1882,18 @@ function updateAccommodations(searchLat = null, searchLng = null) {
         }
         const [accLng, accLat] = coords;
         const props = feature.properties || {};
+        const tooltipDetails = {
+          name: props.name || "Accommodation",
+          price_per_night: props.price_per_night,
+          rating: props.rating
+        };
 
         const marker = L.marker([accLat, accLng], {
             icon: window.hotelIcon
-        }).bindPopup(`
-            <div style="font-size: 12px;">
-              <strong>${props.name || "Accommodation"}</strong><br>
-              ${props.price_per_night ? '💰 €' + props.price_per_night + '/night<br>' : ''}
-              ${props.rating ? '⭐ ' + props.rating : ''}
-              <div style="margin-top: 8px; color: #6b4a2f; font-weight: 600;">
-                Select this stay to map your route from the chosen trail.
-              </div>
-            </div>
-        `, {
-            closeButton: false,
-            autoClose: true,
-            closeOnClick: false
         });
+        marker.accommodationTooltipDetails = tooltipDetails;
 
-        // Keep accommodation details as a hover interaction so click can focus on route selection.
-        marker.off("click", marker._openPopup, marker);
-        marker.on("mouseover", function () {
-          marker.openPopup();
-        });
-        marker.on("mouseout", function () {
-          marker.closePopup();
-        });
-
-        bindAccommodationHoverTooltip(marker, props.name || "Accommodation");
+        bindAccommodationHoverTooltip(marker, tooltipDetails);
 
         marker.on("click", function () {
           if (
@@ -1896,7 +1903,7 @@ function updateAccommodations(searchLat = null, searchLng = null) {
           ) {
             bindAccommodationHoverTooltip(
               selectedAccommodation.marker,
-              selectedAccommodation.name
+              selectedAccommodation.marker.accommodationTooltipDetails
             );
           }
 
