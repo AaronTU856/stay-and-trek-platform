@@ -5,6 +5,27 @@
 from django.db import migrations
 
 
+def clean_dogs_allowed_forwards(apps, schema_editor):
+    if schema_editor.connection.vendor != "postgresql":
+        return
+
+    schema_editor.execute(
+        "ALTER TABLE trails_api_trail ALTER COLUMN dogs_allowed DROP NOT NULL;"
+    )
+    schema_editor.execute(
+        "UPDATE trails_api_trail SET dogs_allowed = NULL WHERE dogs_allowed::TEXT = '';"
+    )
+
+
+def clean_dogs_allowed_backwards(apps, schema_editor):
+    if schema_editor.connection.vendor != "postgresql":
+        return
+
+    schema_editor.execute(
+        "ALTER TABLE trails_api_trail ALTER COLUMN dogs_allowed SET NOT NULL;"
+    )
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -12,14 +33,8 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # First, remove NOT NULL constraint
-        migrations.RunSQL(
-            "ALTER TABLE trails_api_trail ALTER COLUMN dogs_allowed DROP NOT NULL;",
-            "ALTER TABLE trails_api_trail ALTER COLUMN dogs_allowed SET NOT NULL;",
-        ),
-        # Then clean the data
-        migrations.RunSQL(
-            "UPDATE trails_api_trail SET dogs_allowed = NULL WHERE dogs_allowed::TEXT = '';",
-            migrations.RunSQL.noop,
+        migrations.RunPython(
+            clean_dogs_allowed_forwards,
+            clean_dogs_allowed_backwards,
         ),
     ]
