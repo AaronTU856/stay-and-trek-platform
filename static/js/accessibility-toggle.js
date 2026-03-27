@@ -16,6 +16,23 @@ function initializeAccessibilityToggle() {
     console.warn('High contrast toggle button not found - accessibility features disabled');
     return;
   }
+ // Function to update the toggle button label and ARIA attributes based on state
+  function updateToggleLabel(toggle, isEnabled) {
+    const label = isEnabled ? 'High Contrast: On' : 'High Contrast: Off';
+    const helper = 'Improves text, buttons, and map controls for easier viewing.';
+    const labelEl = toggle.querySelector('.contrast-toggle-label');
+
+    if (labelEl) {
+      labelEl.textContent = label;
+    } else if (toggle.childElementCount === 0 || !toggle.querySelector('[aria-hidden="true"]')) {
+      toggle.textContent = label;
+    }
+
+    if (toggle.setAttribute) {
+      toggle.setAttribute('title', label);
+      toggle.setAttribute('aria-label', `${label}. ${helper}`);
+    }
+  }
 
   /**
    * Enable high contrast mode
@@ -31,6 +48,7 @@ function initializeAccessibilityToggle() {
       }
       toggle.classList.add('active');
       toggle.classList.remove('inactive');
+      updateToggleLabel(toggle, true);
     });
     
     console.log('High contrast mode enabled');
@@ -50,6 +68,7 @@ function initializeAccessibilityToggle() {
       }
       toggle.classList.remove('active');
       toggle.classList.add('inactive');
+      updateToggleLabel(toggle, false);
     });
     
     console.log('High contrast mode disabled');

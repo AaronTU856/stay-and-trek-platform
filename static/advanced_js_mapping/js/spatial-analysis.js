@@ -26,17 +26,23 @@ async function performSpatialSearch(polygonGeometry) {
         if (data && data.results) {
             if (Array.isArray(data.results.cities) && data.results.cities.length > 0) {
                 cities = data.results.cities.map(c => ({
+                    id: c.id,
                     name: c.name,
                     population: c.population || 0,
                     latitude: c.latitude || c.lat,
-                    longitude: c.longitude || c.lng
+                    longitude: c.longitude || c.lng,
+                    country: c.country || '',
+                    city_type: c.city_type || ''
                 }));
             } else if (data.results.geojson && Array.isArray(data.results.geojson.features)) {
                 cities = data.results.geojson.features.map(f => ({
+                    id: f.properties.id,
                     name: f.properties.name || f.properties.ENGLISH || 'Unknown',
                     population: f.properties.population || 0,
                     latitude: f.geometry.coordinates[1],
-                    longitude: f.geometry.coordinates[0]
+                    longitude: f.geometry.coordinates[0],
+                    country: f.properties.country || '',
+                    city_type: f.properties.city_type || ''
                 }));
             }
         }
@@ -54,12 +60,21 @@ async function performSpatialSearch(polygonGeometry) {
         // 4. Handle Empty Results
         if (cities.length === 0) {
             if (window.AdvancedMapping && typeof window.AdvancedMapping.showErrorMessage === 'function') {
-                window.AdvancedMapping.showErrorMessage('No towns found in this polygon.');
+                window.AdvancedMapping.showErrorMessage('No towns found in this area. Try a larger selection.');
             }
+        } else if (window.AdvancedMapping && typeof window.AdvancedMapping.showSuccessMessage === 'function') {
+            const townLabel = cities.length === 1 ? 'town' : 'towns';
+            window.AdvancedMapping.showSuccessMessage(cities.length + ' ' + townLabel + ' found in your selected area.');
         }
 
     } catch (e) {
         console.error('Spatial search failed', e);
+        if (window.UIControls && typeof window.UIControls.showWorkflowState === 'function') {
+            window.UIControls.showWorkflowState();
+        }
+        if (window.AdvancedMapping && typeof window.AdvancedMapping.showErrorMessage === 'function') {
+            window.AdvancedMapping.showErrorMessage('Search failed. Please try drawing the area again.');
+        }
     } finally {
         if (window.AdvancedMapping && typeof window.AdvancedMapping.showLoading === 'function') {
             window.AdvancedMapping.showLoading(false);
@@ -104,4 +119,3 @@ try {
 } catch (e) {
     console.warn('Could not attach SpatialAnalysis to window', e);
 }
-

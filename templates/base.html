@@ -135,8 +135,16 @@
 </ul>
 
                 <div class="d-flex align-items-center gap-2">
-                    <button id="high-contrast-toggle" class="btn btn-outline-secondary rounded-circle" style="width: 40px; height: 40px; padding: 0;" title="High Contrast Mode">
-                        👁️
+                    <button
+                        id="high-contrast-toggle"
+                        class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-2"
+                        style="min-height: 40px; padding: 0.4rem 0.75rem; border-radius: 999px;"
+                        title="High Contrast: Off"
+                        aria-label="High Contrast: Off"
+                        aria-pressed="false"
+                    >
+                        <span aria-hidden="true">👁️</span>
+                        <span class="contrast-toggle-label">High Contrast: Off</span>
                     </button>
                     
                     {% if user.is_authenticated %}

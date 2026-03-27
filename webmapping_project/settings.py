@@ -14,6 +14,8 @@ import os
 import ctypes
 import sys
 
+
+
 # Try to load environment variables from a .env file if python-dotenv is installed.
 # This keeps the app from crashing if the package isn't available in the environment.
 try:
@@ -43,8 +45,8 @@ if platform.system() == "Darwin":
     GEOS_LIBRARY_PATH = "/opt/homebrew/opt/geos/lib/libgeos_c.dylib"
     os.environ["PROJ_LIB"] = "/opt/homebrew/opt/proj/share/proj"
 else:
-    GDAL_LIBRARY_PATH = '/usr/lib/libgdal.so'
-    GEOS_LIBRARY_PATH = '/usr/lib/libgeos_c.so'
+    GDAL_LIBRARY_PATH = os.environ.get('GDAL_LIBRARY_PATH', '/usr/lib/libgdal.so')
+    GEOS_LIBRARY_PATH = os.environ.get('GEOS_LIBRARY_PATH', '/usr/lib/libgeos_c.so')
     # Linux (Docker/production) - rely on system libraries
     os.environ["PROJ_LIB"] = "/usr/share/proj"
     # Django will find these automatically
@@ -188,7 +190,7 @@ else:
     # Detect which database to use: local PostGIS or Cloud SQL
     # We check K_SERVICE (Google) or ACTIVE_DB to ensure we hit the right block
     if os.getenv("K_SERVICE") or os.getenv("ACTIVE_DB") == "new":
-        print("🚀 Using Cloud SQL (Production)")
+        print("🚀 Using Cloud SQL (Production Path)")
         DATABASES = {
             'default': {
                 'ENGINE': 'django.contrib.gis.db.backends.postgis',
@@ -197,6 +199,20 @@ else:
                 'PASSWORD': 'Clara2026',
                 'HOST': '/cloudsql/long-octane-477515-k6:europe-west1:stay-trek-db',
                 'PORT': '', 
+            }
+        }
+    
+    # 🚄 TRAVEL/PROXY BLOCK (For your Mac + Terminal Proxy)
+    elif os.getenv("USE_CLOUD_PROXY") == "true":
+        print("🚄 Traveling Mode: Using Cloud SQL via Local Proxy")
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.contrib.gis.db.backends.postgis',
+                'NAME': 'stay_and_trek',
+                'USER': 'postgres',
+                'PASSWORD': 'Clara2026',
+                'HOST': os.getenv('DB_HOST', '127.0.0.1'),
+                'PORT': '8080',
             }
         }
     elif os.getenv('DATABASE_URL'):

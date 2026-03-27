@@ -21,6 +21,7 @@
       gap: 0;
       overflow: visible;
       height: auto;
+      padding-top: 28px;
     }
 
     .sidebar {
@@ -47,6 +48,9 @@
 
     .sidebar .card-body {
       padding: 12px;
+      font-size: 13px;
+      color: #33413a;
+      line-height: 1.55;
     }
 
     #map-container {
@@ -74,9 +78,9 @@
     }
 
     .sidebar h6 {
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 600;
-      color: #2c3e50;
+      color: #24342c;
       margin: 0 0 10px 0;
     }
 
@@ -86,8 +90,8 @@
       color: #fff;
       background: linear-gradient(135deg, #2E8B57 0%, #1f5f3f 100%);
       padding: 10px 12px;
-      margin: -12px -12px 10px -12px;
-      border-radius: 4px 4px 0 0;
+      margin: 0 0 12px 0;
+      border-radius: 6px;
     }
 
     .sidebar h4 {
@@ -101,17 +105,29 @@
     }
 
     .sidebar label {
-      font-size: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #2a392f;
       margin-bottom: 6px;
     }
 
     .sidebar input, .sidebar select {
-      font-size: 12px;
+      font-size: 13px;
+      color: #223127;
     }
 
     .sidebar button {
-      font-size: 12px;
+      font-size: 13px;
       margin-top: 6px;
+    }
+
+    .sidebar small,
+    .sidebar medium,
+    .sidebar li,
+    .sidebar .text-muted,
+    .sidebar p {
+      font-size: 13px !important;
+      color: #46544b !important;
     }
 
     /* Scrollbar styling */
@@ -147,6 +163,153 @@
       color: #fff;
     }
 
+    .advanced-tools-toggle {
+      min-height: 44px;
+      border: 1px solid #7fa187;
+      background: linear-gradient(135deg, #7fa96b 0%, #567b52 55%, #35533c 100%);
+      color: #ffffff;
+      font-weight: 800;
+      box-shadow: 0 4px 12px rgba(53, 83, 60, 0.18);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
+    }
+
+    .advanced-tools-toggle:hover,
+    .advanced-tools-toggle:focus {
+      background: linear-gradient(135deg, #6f9860 0%, #466a48 55%, #2d4734 100%);
+      border-color: #35533c;
+      color: #ffffff;
+      box-shadow: 0 10px 22px rgba(53, 83, 60, 0.24);
+      transform: translateY(-1px);
+    }
+
+    .workflow-card {
+      border-color: #d8c982 !important;
+      background: #fffdf3;
+      box-shadow: 0 4px 12px rgba(150, 124, 54, 0.08);
+    }
+
+    .workflow-card .card-header {
+      background: linear-gradient(135deg, #efe1a5 0%, #dccb7a 100%);
+      color: #5d4b16;
+      border-bottom-color: #d8c982;
+    }
+
+    .workflow-card .card-body {
+      background: linear-gradient(180deg, #fffef8 0%, #faf4d9 100%);
+      color: #5b4a1f;
+    }
+
+    .workflow-step {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+
+    .workflow-step:last-child {
+      margin-bottom: 0;
+    }
+
+    .workflow-step-number {
+      flex: 0 0 24px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #6b8752;
+      color: #ffffff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      box-shadow: 0 2px 6px rgba(53, 83, 60, 0.18);
+    }
+
+    .workflow-step-text {
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .trails-card .card-header {
+      background: linear-gradient(135deg, #6c9b5f 0%, #3f6d44 100%);
+      color: #ffffff;
+    }
+
+    .accommodation-card .card-header {
+      background: linear-gradient(135deg, #8f6a43 0%, #6c4c2f 100%);
+      color: #ffffff;
+    }
+
+    .helper-note {
+      background: #fff8db;
+      border: 1px solid #ecd999;
+      border-radius: 8px;
+      color: #695625;
+      padding: 8px 10px;
+      font-size: 13px;
+      line-height: 1.45;
+      margin-bottom: 10px;
+    }
+
+    .poi-toggle-button {
+      font-weight: 700;
+      transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .poi-toggle-button.poi-toggle-active {
+      background: linear-gradient(135deg, #a78256 0%, #7b5a38 100%);
+      border-color: #6f5234;
+      color: #ffffff;
+      box-shadow: 0 8px 18px rgba(111, 82, 52, 0.18);
+    }
+
+    .poi-toggle-button.poi-toggle-active:hover,
+    .poi-toggle-button.poi-toggle-active:focus {
+      background: linear-gradient(135deg, #977449 0%, #65482d 100%);
+      color: #ffffff;
+    }
+
+    .accommodation-action-btn {
+      background: linear-gradient(135deg, #9a6b3f 0%, #7c4f2f 100%);
+      border-color: #7c4f2f;
+      color: #ffffff;
+      font-weight: 700;
+      box-shadow: 0 6px 14px rgba(124, 79, 47, 0.18);
+    }
+
+    .accommodation-action-btn:hover,
+    .accommodation-action-btn:focus {
+      background: linear-gradient(135deg, #8b5e34 0%, #603813 100%);
+      border-color: #603813;
+      color: #ffffff;
+    }
+
+    .accommodation-map-marker {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #f2d6aa 0%, #9b6d3e 58%, #5b3920 100%);
+      border: 3px solid #fffaf1;
+      box-shadow: 0 0 0 4px rgba(232, 204, 143, 0.45), 0 6px 14px rgba(91, 57, 32, 0.30);
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .accommodation-map-marker:hover {
+      transform: scale(1.08);
+      box-shadow: 0 0 0 5px rgba(232, 204, 143, 0.55), 0 8px 18px rgba(91, 57, 32, 0.35);
+    }
+
+    .accommodation-distance-label {
+      background: #fff7db;
+      border: 1px solid #d8c982;
+      border-radius: 999px;
+      color: #5f4b16;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 8px;
+      box-shadow: 0 4px 10px rgba(107, 75, 28, 0.18);
+    }
+
     /* Search control positioning - force to topleft beside zoom */
     .leaflet-top.leaflet-left .leaflet-control-search {
       position: absolute !important;
@@ -169,7 +332,8 @@
       flex-shrink: 0;
       background: #f8f9fa;
       border-top: 1px solid #dee2e6;
-      padding: 20px;
+      padding: 10px 20px;
+      margin-top: 12px !important;
     }
 
     /* Add these styles to your existing CSS */
@@ -667,16 +831,37 @@ body.high-contrast-mode footer {
       <div class="card">
         <div class="card-header">♿ Accessibility</div>
         <div class="card-body">
-          <button id="high-contrast-toggle" class="btn btn-warning btn-sm w-100" aria-pressed="false">
-            🎨 Toggle High Contrast
-          </button>
-          <small class="text-muted d-block mt-2">Improves visibility with enhanced colors and borders.</small>
+          <div class="small fw-bold" style="color: #2c3e50;">Use the top navigation toggle</div>
+          <small class="text-muted d-block mt-2">Use High Contrast in the top navigation to improve text, buttons, and map controls for easier viewing.</small>
+          <small class="text-muted d-block mt-2">This setting applies across the whole application.</small>
+        </div>
+      </div>
+
+      <div class="card workflow-card">
+        <div class="card-header">🌿 How It Works</div>
+        <div class="card-body">
+          <div class="workflow-step">
+            <span class="workflow-step-number">1</span>
+            <div class="workflow-step-text">Enable search and click a point on the map to find trails nearby.</div>
+          </div>
+          <div class="workflow-step">
+            <span class="workflow-step-number">2</span>
+            <div class="workflow-step-text">Choose a blue numbered trail marker to select the trek you want.</div>
+          </div>
+          <div class="workflow-step">
+            <span class="workflow-step-number">3</span>
+            <div class="workflow-step-text">Load nearby accommodation and pick a stay that suits your route.</div>
+          </div>
+          <div class="workflow-step">
+            <span class="workflow-step-number">4</span>
+            <div class="workflow-step-text">View the road route between the selected trail and accommodation.</div>
+          </div>
         </div>
       </div>
       
 
       <!-- Trails within radius -->
-      <div class="card">
+      <div class="card trails-card">
         <div class="card-header">📍 Trails within radius</div>
         <div class="card-body">
           <input id="radius-input" type="number" class="form-control form-control-sm mb-2" value="50" min="1" max="500" placeholder="Radius (m)"/>
@@ -693,21 +878,39 @@ body.high-contrast-mode footer {
         </div>
       </div>
 
+      <!-- Nearby Accommodations -->
+      <div id="accommodation-card" class="card accommodation-card">
+        <div class="card-header">Nearby Accommodation</div>
+        <div class="card-body">
+          <div class="helper-note">Select a blue numbered trail first, then choose a nearby accommodation to map your road route.</div>
+          <div class="form-check form-switch mb-2">
+            <input class="form-check-input" type="checkbox" id="toggle-accommodations">
+            <label class="form-check-label" for="toggle-accommodations">Show accommodation on map</label>
+          </div>
+          <button id="fetch-stays-btn" class="btn btn-sm w-100 accommodation-action-btn">Load nearby accommodation</button>
+          <div id="accommodation-count" class="text-muted mt-2" style="font-size: 11px;"></div>
+        </div>
+      </div>
+
+      <button
+        class="btn btn-sm w-100 mb-3 advanced-tools-toggle"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#advancedToolsPanel"
+        aria-expanded="false"
+        aria-controls="advancedToolsPanel"
+      >
+        Advanced Tools
+      </button>
+
+      <div id="advancedToolsPanel" class="collapse">
+
       <!-- Points of Interest -->
       <div class="card">
         <div class="card-header">📍 Points of Interest</div>
         <div class="card-body" id="poi-controls">
           <div id="poi-checkboxes"></div>
-          <button id="load-all-pois-btn" class="btn btn-sm btn-success w-100 mt-2">Load All POIs</button>
-        </div>
-      </div>
-
-      <!-- Spatial Analysis -->
-      <div class="card">
-        <div class="card-header">📊 Spatial Analysis</div>
-        <div class="card-body">
-          <button id="analysis-btn" class="btn btn-sm btn-success w-100">Generate Report</button>
-          <div id="analysis-results" style="font-size: 11px; margin-top: 8px;"></div>
+          <button id="load-all-pois-btn" class="btn btn-sm btn-success w-100 mt-2 poi-toggle-button">Show All POIs</button>
         </div>
       </div>
 
@@ -733,17 +936,14 @@ body.high-contrast-mode footer {
         </div>
       </div>
 
-      <!-- Nearby Accommodations -->
-      <div id="accommodation-card" class="card">
-        <div class="card-header" style="background: linear-gradient(135deg, #FF8C00 0%, #e67e22 100%); color: white;">🏨 Nearby Accommodations</div>
+      <!-- Spatial Analysis -->
+      <div class="card">
+        <div class="card-header">📊 Spatial Analysis</div>
         <div class="card-body">
-          <div class="form-check form-switch mb-2">
-            <input class="form-check-input" type="checkbox" id="toggle-accommodations">
-            <label class="form-check-label" for="toggle-accommodations">Show on Map</label>
-          </div>
-          <button id="fetch-stays-btn" class="btn btn-sm btn-outline-primary w-100">Search This Area</button>
-          <div id="accommodation-count" class="text-muted mt-2" style="font-size: 11px;"></div>
+          <button id="analysis-btn" class="btn btn-sm btn-success w-100">Generate Report</button>
+          <div id="analysis-results" style="font-size: 11px; margin-top: 8px;"></div>
         </div>
+      </div>
       </div>
 
       <!-- Legend -->
@@ -753,7 +953,7 @@ body.high-contrast-mode footer {
 
           <div style="margin-bottom: 8px;">
             <span style="display: inline-block; width: 20px; height: 3px; background: #FF8C00; margin-right: 8px;"></span>
-            <strong>Trail Route</strong>
+            <strong>Trail Path</strong>
           </div>
 
           <div style="margin-bottom: 8px;">
@@ -772,18 +972,28 @@ body.high-contrast-mode footer {
           </div>
 
           <div style="margin-bottom: 8px;">
-            <span style="display: inline-block; width: 12px; height: 12px; background: #497db1ff; border: 2px solid #636e80ff; border-radius: 50%; margin-right: 8px;"></span>
+            <span style="display: inline-block; width: 12px; height: 18px; background: linear-gradient(180deg, #42b883 0%, #198754 100%); border: 2px solid #ffffff; border-radius: 10px 10px 10px 0; transform: rotate(-45deg); margin-right: 10px;"></span>
+            <strong>Trail Result from Search</strong>
+          </div>
+
+          <div style="margin-bottom: 8px;">
+            <span style="display: inline-block; width: 12px; height: 18px; background: linear-gradient(180deg, #ef4444 0%, #b91c1c 100%); border: 2px solid #ffffff; border-radius: 10px 10px 10px 0; transform: rotate(-45deg); margin-right: 10px;"></span>
+            <strong>Search Point</strong>
+          </div>
+
+          <div style="margin-bottom: 8px;">
+            <span style="display: inline-block; width: 12px; height: 12px; background: #f59e0b; border: 2px solid #ea580c; border-radius: 50%; margin-right: 8px; opacity: 0.8;"></span>
             <strong>Town (Weather Info)</strong>
           </div>
 
           <div style="margin-bottom: 8px;">
-            <span style="display: inline-block; width: 12px; height: 12px; background: #8B4513; border-radius: 50%; margin-right: 8px;"></span>
+            <span style="display: inline-block; width: 12px; height: 12px; background: radial-gradient(circle at 35% 35%, #d6b286 0%, #8b5e34 68%, #5b3920 100%); border: 2px solid #f7efe4; border-radius: 50%; margin-right: 8px;"></span>
             <strong>Accommodation</strong>
           </div>
 
           <div>
-            <span style="display: inline-block; width: 12px; height: 12px; background: #38de40ff; border: 2px solid #0a7041ff; border-radius: 50%; margin-right: 8px;"></span>
-            <strong>Selected Trail Details</strong>
+            <span style="display: inline-block; width: 14px; height: 14px; background: #1f7aec; border: 2px solid #ffffff; border-radius: 50%; margin-right: 8px; box-shadow: 0 1px 4px rgba(31, 122, 236, 0.25);"></span>
+            <strong>Nearest Trail Result</strong>
           </div>
         </div>
       </div>
@@ -816,83 +1026,6 @@ body.high-contrast-mode footer {
   <script src="{% static 'trails_api/js/pois_boundaries.js' %}"></script>
 
   <script>
-  /**
-   * High Contrast Mode Toggle
-   * Improves accessibility for users with visual impairments
-   */
-  function initializeHighContrastMode() {
-    const toggle = document.getElementById('high-contrast-toggle');
-    
-    if (!toggle) {
-      console.warn('High contrast toggle button not found');
-      return;
-    }
-
-    // Load saved preference from localStorage
-    const savedPreference = localStorage.getItem('highContrastMode');
-    if (savedPreference === 'true') {
-      enableHighContrast();
-    }
-
-    // Toggle button click handler
-    toggle.addEventListener('click', () => {
-      const isEnabled = document.body.classList.contains('high-contrast-mode');
-      
-      if (isEnabled) {
-        disableHighContrast();
-      } else {
-        enableHighContrast();
-      }
-    });
-  }
-
-  function enableHighContrast() {
-    document.body.classList.add('high-contrast-mode');
-    localStorage.setItem('highContrastMode', 'true');
-    
-    const toggle = document.getElementById('high-contrast-toggle');
-    if (toggle) {
-      toggle.setAttribute('aria-pressed', 'true');
-      toggle.textContent = '🎨 High Contrast: ON';
-    }
-
-    // Announce to screen readers
-    announceToScreenReader('High contrast mode enabled');
-    
-    console.log('✅ High contrast mode enabled');
-  }
-
-  function disableHighContrast() {
-    document.body.classList.remove('high-contrast-mode');
-    localStorage.setItem('highContrastMode', 'false');
-    
-    const toggle = document.getElementById('high-contrast-toggle');
-    if (toggle) {
-      toggle.setAttribute('aria-pressed', 'false');
-      toggle.textContent = '🎨 Toggle High Contrast';
-    }
-
-    // Announce to screen readers
-    announceToScreenReader('High contrast mode disabled');
-    
-    console.log('✅ High contrast mode disabled');
-  }
-
-  function announceToScreenReader(message) {
-    const announcement = document.createElement('div');
-    announcement.setAttribute('role', 'status');
-    announcement.setAttribute('aria-live', 'polite');
-    announcement.setAttribute('aria-atomic', 'true');
-    announcement.textContent = message;
-    announcement.style.position = 'absolute';
-    announcement.style.left = '-9999px';
-    announcement.style.top = '-9999px';
-    document.body.appendChild(announcement);
-    
-    // Remove after announcement is read
-    setTimeout(() => announcement.remove(), 2000);
-  }
-
   function initializeResponsiveSidebarMap() {
     const sidebar = document.getElementById('trailsSidebar');
 
@@ -913,7 +1046,6 @@ body.high-contrast-mode footer {
 
   // Initialize when DOM is ready
   document.addEventListener('DOMContentLoaded', () => {
-    initializeHighContrastMode();
     initializeResponsiveSidebarMap();
   });
   </script>

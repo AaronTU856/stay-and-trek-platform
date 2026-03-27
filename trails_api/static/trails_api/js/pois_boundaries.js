@@ -38,13 +38,47 @@ const POI_TYPES = {
   shelter: { color: "#A8D8D8", icon: "🏕️", label: "Shelter" },
   picnic: { color: "#FFC93C", icon: "🧺", label: "Picnic Area" },
   information: { color: "#95B8D1", icon: "ℹ️", label: "Information" },
-  accommodation: { color: "#E8B4B8", icon: "🏨", label: "Accommodation" },
+  accommodation: { color: "#8B5E34", icon: "🏨", label: "Accommodation" },
 };
 
 // Layer groups for different POI types
 let poiLayerGroups = {};
 let boundaryLayer = L.layerGroup();
 let selectedPOITypes = new Set(Object.keys(POI_TYPES)); // All POI types visible by default
+let allPOIsVisible = false;
+let allPOIsLoaded = false;
+
+function updatePOIButtonState() {
+  const loadPoiBtn = document.getElementById("load-all-pois-btn");
+  if (!loadPoiBtn) return;
+
+  loadPoiBtn.textContent = allPOIsVisible ? "Hide All POIs" : "Show All POIs";
+  loadPoiBtn.classList.toggle("btn-success", !allPOIsVisible);
+  loadPoiBtn.classList.toggle("btn-outline-secondary", allPOIsVisible);
+  loadPoiBtn.classList.toggle("poi-toggle-active", allPOIsVisible);
+}
+
+function showSelectedPOILayers() {
+  Object.keys(poiLayerGroups).forEach((poiType) => {
+    if (!poiLayerGroups[poiType]) return;
+
+    if (selectedPOITypes.has(poiType)) {
+      if (!window.trailsMap.hasLayer(poiLayerGroups[poiType])) {
+        window.trailsMap.addLayer(poiLayerGroups[poiType]);
+      }
+    } else if (window.trailsMap.hasLayer(poiLayerGroups[poiType])) {
+      window.trailsMap.removeLayer(poiLayerGroups[poiType]);
+    }
+  });
+}
+
+function hideAllPOILayers() {
+  Object.values(poiLayerGroups).forEach((group) => {
+    if (group && window.trailsMap.hasLayer(group)) {
+      window.trailsMap.removeLayer(group);
+    }
+  });
+}
 
 /**
  * Initialize POI layers on the map
@@ -84,7 +118,12 @@ function loadAllPOIs() {
 
       // Handle pagination
       const pois = data.results || data;
+      Object.values(poiLayerGroups).forEach((group) => group.clearLayers());
       pois.forEach((poi) => addPOIMarker(poi));
+      allPOIsLoaded = true;
+      allPOIsVisible = true;
+      showSelectedPOILayers();
+      updatePOIButtonState();
 
       console.log("✅ All POIs loaded");
     })
@@ -679,6 +718,29 @@ function togglePOIType(poiType) {
   console.log("Visible POI types:", Array.from(selectedPOITypes));
 }
 
+function toggleAllPOIs() {
+  if (!window.trailsMap) {
+    console.warn("⚠️ trailsMap not initialized yet");
+    return;
+  }
+
+  if (allPOIsVisible) {
+    hideAllPOILayers();
+    allPOIsVisible = false;
+    updatePOIButtonState();
+    return;
+  }
+
+  if (!allPOIsLoaded) {
+    loadAllPOIs();
+    return;
+  }
+
+  showSelectedPOILayers();
+  allPOIsVisible = true;
+  updatePOIButtonState();
+}
+
 /**
  * Create a control panel for filtering and displaying different POI types
  * Generates checkboxes for each POI category and attaches them to the map sidebar
@@ -737,8 +799,8 @@ function createPOIControlPanel() {
             )
             .join("")}
         </div>
-        <button id="load-all-pois-btn" class="btn btn-sm btn-success w-100 mt-2">
-          Load All POIs
+        <button id="load-all-pois-btn" class="btn btn-sm btn-success w-100 mt-2 poi-toggle-button">
+          Show All POIs
         </button>
         <button id="analysis-btn" class="btn btn-sm btn-success w-100 mt-2">
           Spatial Analysis
@@ -761,14 +823,6 @@ function createPOIControlPanel() {
         togglePOIType(e.target.dataset.poiType);
       });
     });
-
-    document.getElementById("load-all-pois-btn").addEventListener("click", () => {
-      loadAllPOIs();
-    });
-
-    document.getElementById("analysis-btn").addEventListener("click", () => {
-      getSpatialAnalysisSummary();
-    });
   }
 
   // Add event listeners to sidebar buttons if they exist
@@ -776,15 +830,19 @@ function createPOIControlPanel() {
   const analysisBtn = document.getElementById("analysis-btn");
   
   if (loadPoiBtn) {
-    loadPoiBtn.addEventListener("click", () => {
-      loadAllPOIs();
-    });
+    if (!loadPoiBtn.dataset.poiToggleInitialized) {
+      loadPoiBtn.addEventListener("click", toggleAllPOIs);
+      loadPoiBtn.dataset.poiToggleInitialized = "true";
+    }
   }
   
   if (analysisBtn) {
-    analysisBtn.addEventListener("click", () => {
-      getSpatialAnalysisSummary();
-    });
+    if (!analysisBtn.dataset.poiAnalysisInitialized) {
+      analysisBtn.addEventListener("click", () => {
+        getSpatialAnalysisSummary();
+      });
+      analysisBtn.dataset.poiAnalysisInitialized = "true";
+    }
   }
 }
 
@@ -867,7 +925,9 @@ document.addEventListener("DOMContentLoaded", function () {
       console.log("🎯 POI system initializing...");
       initializePOILayers();
       createPOIControlPanel();
-      loadAllPOIs();
+      hideAllPOILayers();
+      updatePOIButtonState();
+      // Keep POIs off on first load so users can opt in from Advanced Tools.
       // loadRivers();
       loadGeographicBoundaries();
       getSpatialAnalysisSummary();

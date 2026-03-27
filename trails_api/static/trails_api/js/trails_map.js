@@ -14,6 +14,29 @@ let selectedAccommodation = null; // Store the currently selected accommodation 
 let routeLayer = null; // Layer to display the generated route
 let routingInProgress = false;
 
+function bindAccommodationHoverTooltip(marker, name) {
+  if (!marker) return;
+  marker.unbindTooltip();
+  marker.bindTooltip(name || "Accommodation", {
+    direction: "top",
+    offset: [0, -14],
+    opacity: 0.95,
+    sticky: true
+  });
+}
+
+function bindAccommodationDistanceTooltip(marker, routeDistanceKm) {
+  if (!marker) return;
+  marker.unbindTooltip();
+  marker.bindTooltip(`${routeDistanceKm} km`, {
+    direction: "top",
+    offset: [0, -18],
+    opacity: 1,
+    permanent: true,
+    className: "accommodation-distance-label"
+  }).openTooltip();
+}
+
 document.addEventListener("DOMContentLoaded", function () {
   console.log("📍 DOM loaded, initializing map...");
   initializeMap();
@@ -57,21 +80,9 @@ document.addEventListener("DOMContentLoaded", function () {
   // addSearchControls() will be called automatically when trails finish loading
   loadAllTrailsForSearch();
 
-  if (window.trailsMap) {
-        window.trailsMap.on('moveend', () => {
-
-            if (routingInProgress) return;
-
-            console.log("🔄 Map moved, updating accommodations...");
-            updateAccommodations();
-        });
-        setTimeout(() => {
-          console.log("🚀 Initial accommodation check...");
-          updateAccommodations();
-        }, 500);
-    } else {
-        console.error("❌ trailsMap not found during initialization");
-    }
+  if (!window.trailsMap) {
+    console.error("❌ trailsMap not found during initialization");
+  }
 });
 
  
@@ -318,14 +329,13 @@ function initializeMap() {
   window.accommodationLayer = L.layerGroup().addTo(window.trailsMap);
   console.log("✅ Accommodation layer added to map");
 
-  // Custom icon for hotels
-  window.hotelIcon = L.icon({
-    iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png",
-    shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41],
+  // Accommodation markers use a quieter brown dot so they do not compete with towns.
+  window.hotelIcon = L.divIcon({
+    className: "custom-marker",
+    html: '<div class="accommodation-map-marker"></div>',
+    iconSize: [22, 22],
+    iconAnchor: [11, 11],
+    popupAnchor: [0, -14],
   });
 
   // Define layers for the toggle control
@@ -435,23 +445,64 @@ function loadTrails() {
 fetch("/api/trails/towns/geojson/")
   .then((res) => res.json())
   .then((data) => {
-    const townIcon = L.icon({
+    const townIconQuiet = L.icon({
       iconUrl:
-        "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png",
+        "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png",
       shadowUrl:
         "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
-      iconSize: [25, 41],
-      iconAnchor: [12, 41],
-      popupAnchor: [1, -34],
-      shadowSize: [41, 41],
+      iconSize: [20, 33],
+      iconAnchor: [10, 33],
+      popupAnchor: [1, -28],
+      shadowSize: [33, 33],
     });
 
-    L.geoJSON(data, {
-      pointToLayer: (feature, latlng) => L.marker(latlng, { icon: townIcon }),
+    const townIconZoomed = L.icon({
+      iconUrl:
+        "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png",
+      shadowUrl:
+        "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+      iconSize: [24, 39],
+      iconAnchor: [12, 39],
+      popupAnchor: [1, -32],
+      shadowSize: [39, 39],
+    });
+
+    window.townMarkersLayer = L.geoJSON(data, {
+      pointToLayer: (feature, latlng) =>
+        L.marker(latlng, {
+          icon: townIconQuiet,
+          opacity: 0.58
+        }),
       onEachFeature: (feature, layer) => {
+        layer._townActive = false;
+
         layer.bindPopup(
           `<b>${feature.properties.name}</b><br>Click to find nearby trails`
-        );
+        ).bindTooltip(feature.properties.name || "Town", {
+          direction: "top",
+          offset: [0, -16],
+          opacity: 0.95,
+          sticky: true
+        });
+
+        layer.on("mouseover", () => {
+          layer.setOpacity(0.9);
+        });
+
+        layer.on("mouseout", () => {
+          layer.setOpacity(layer._townActive ? 0.95 : 0.58);
+        });
+
+        layer.on("popupopen", () => {
+          layer._townActive = true;
+          layer.setOpacity(0.95);
+        });
+
+        layer.on("popupclose", () => {
+          layer._townActive = false;
+          layer.setOpacity(0.58);
+        });
+
         layer.on("click", () => {
           const [lng, lat] = feature.geometry.coordinates;
 
@@ -486,6 +537,20 @@ fetch("/api/trails/towns/geojson/")
         });
       },
     }).addTo(window.trailsMap);
+
+    const updateTownMarkerIcons = () => {
+      if (!window.townMarkersLayer) return;
+
+      const zoomedIn = window.trailsMap.getZoom() >= 9;
+      window.townMarkersLayer.eachLayer((layer) => {
+        if (layer && typeof layer.setIcon === "function") {
+          layer.setIcon(zoomedIn ? townIconZoomed : townIconQuiet);
+        }
+      });
+    };
+
+    updateTownMarkerIcons();
+    window.trailsMap.on("zoomend", updateTownMarkerIcons);
   });
 
 /**
@@ -696,7 +761,12 @@ function displayTrailsOnMap(trails) {
         icon: markerIcon,
         title: name,
         county: props.county || "",
-      }).bindPopup(popupHTML);
+      }).bindPopup(popupHTML).bindTooltip(name, {
+        direction: "top",
+        offset: [0, -16],
+        opacity: 0.95,
+        sticky: true
+      });
 
       marker.on("click", async function () {
 
@@ -711,7 +781,11 @@ function displayTrailsOnMap(trails) {
 
         console.log("Selected trail:", selectedTrail)
 
-        alert("Trail selected. Now click an accommodation to generate route")
+        const countEl = document.getElementById("accommodation-count");
+        if (countEl) {
+          countEl.textContent = "Trail selected. Choose an accommodation next.";
+        }
+        showRouteToast("Trail selected. Choose an accommodation next.", "info");
 
        
     })
@@ -1089,19 +1163,24 @@ function setupEventListeners() {
   if (toggleAccommodations) {
     toggleAccommodations.addEventListener("change", function () {
       console.log("Accommodation toggle changed:", this.checked);
+      const countEl = document.getElementById("accommodation-count");
 
       if (this.checked) {
-        // Show accommodations
         if (!window.trailsMap.hasLayer(window.accommodationLayer)) {
           window.trailsMap.addLayer(window.accommodationLayer);
         }
-        updateAccommodations();
+
+        const hasLoadedAccommodations = window.accommodationLayer.getLayers().length > 0;
+        if (countEl && !hasLoadedAccommodations) {
+          countEl.textContent = "Use Load nearby accommodation to load results for the current map view.";
+        }
       } else {
-        // Hide accommodations
         if (window.trailsMap.hasLayer(window.accommodationLayer)) {
           window.trailsMap.removeLayer(window.accommodationLayer);
         }
-        window.accommodationLayer.clearLayers();
+        if (countEl) {
+          countEl.textContent = "Accommodation markers are hidden. Turn Show accommodation on map back on to view loaded results.";
+        }
       }
     });
   }
@@ -1109,7 +1188,6 @@ function setupEventListeners() {
   if (fetchStaysBtn) {
     fetchStaysBtn.addEventListener("click", function () {
       console.log("Fetching accommodations for currrent map area...");
-      const center = window.trailsMap.getCenter();
 
       // Ensure checkbox is checked and layerv visible
       if (toggleAccommodations && !toggleAccommodations.checked) {
@@ -1560,7 +1638,12 @@ function displayNearestTrails(trails) {
             Distance: ${trail.distance_km || "?"} km<br>
             From Search: ${distanceKm.toFixed(1)} km
             
-        `);
+        `).bindTooltip(name, {
+            direction: "top",
+            offset: [0, -16],
+            opacity: 0.95,
+            sticky: true
+        });
 
         // Routing store selected trail
         marker.on("click", function () {
@@ -1570,6 +1653,12 @@ function displayNearestTrails(trails) {
           name: name
         };
         console.log("Selected trail for routing:", selectedTrail);
+
+        const countEl = document.getElementById("accommodation-count");
+        if (countEl) {
+          countEl.textContent = "Trail selected. Choose an accommodation next.";
+        }
+        showRouteToast("Trail selected. Choose an accommodation next.", "info");
 
       });
 
@@ -1722,10 +1811,21 @@ function updateAccommodations(searchLat = null, searchLng = null) {
 
   const lat = searchLat || window.trailsMap.getCenter().lat;
   const lng = searchLng || window.trailsMap.getCenter().lng;
+  const countEl = document.getElementById("accommodation-count");
+  const fetchBtn = document.getElementById("fetch-stays-btn");
 
   const requestId = ++accommodationRequestId;
 
   console.log(`🏨 Fetching accommodations for lat=${lat}, lng=${lng}`);
+
+      if (countEl) {
+        countEl.textContent = "Searching the current map area for nearby accommodations...";
+      }
+
+      if (fetchBtn) {
+        fetchBtn.disabled = true;
+        fetchBtn.textContent = "Searching...";
+  }
   
   fetch(`/api/trails/accommodations/nearby/?lat=${lat}&lng=${lng}&radius=10`)
     .then(res => {
@@ -1748,6 +1848,7 @@ function updateAccommodations(searchLat = null, searchLng = null) {
       console.log("🏨 Features extracted:", features);
 
       window.accommodationLayer.clearLayers();
+      selectedAccommodation = null;
       console.log("🏨 Cleared old accommodation markers");
 
       let addedCount = 0;
@@ -1766,13 +1867,44 @@ function updateAccommodations(searchLat = null, searchLng = null) {
               <strong>${props.name || "Accommodation"}</strong><br>
               ${props.price_per_night ? '💰 €' + props.price_per_night + '/night<br>' : ''}
               ${props.rating ? '⭐ ' + props.rating : ''}
+              <div style="margin-top: 8px; color: #6b4a2f; font-weight: 600;">
+                Select this stay to map your route from the chosen trail.
+              </div>
             </div>
-        `);
+        `, {
+            closeButton: false,
+            autoClose: true,
+            closeOnClick: false
+        });
+
+        // Keep accommodation details as a hover interaction so click can focus on route selection.
+        marker.off("click", marker._openPopup, marker);
+        marker.on("mouseover", function () {
+          marker.openPopup();
+        });
+        marker.on("mouseout", function () {
+          marker.closePopup();
+        });
+
+        bindAccommodationHoverTooltip(marker, props.name || "Accommodation");
 
         marker.on("click", function () {
+          if (
+            selectedAccommodation &&
+            selectedAccommodation.marker &&
+            selectedAccommodation.marker !== marker
+          ) {
+            bindAccommodationHoverTooltip(
+              selectedAccommodation.marker,
+              selectedAccommodation.name
+            );
+          }
+
           selectedAccommodation = {
             lat: marker.getLatLng().lat,
-            lng: marker.getLatLng().lng
+            lng: marker.getLatLng().lng,
+            marker: marker,
+            name: props.name || "Accommodation"
           };
 
           console.log("Selected accommodation:", selectedAccommodation);
@@ -1796,16 +1928,22 @@ function updateAccommodations(searchLat = null, searchLng = null) {
           });
         }
 
-        const countEl = document.getElementById("accommodation-count");
         if (countEl) {
-          countEl.textContent = `Found ${features.length} accommodations nearby`;
+          countEl.textContent = features.length > 0
+            ? `Found ${features.length} accommodations nearby`
+            : "No nearby accommodations found in the current map area.";
         }
     })
     .catch(err => {
       console.error("❌ API Error:", err);
-      const countEl = document.getElementById("accommodation-count");
       if (countEl) {
         countEl.textContent = "❌ Error loading accommodations";
+      }
+    })
+    .finally(() => {
+      if (fetchBtn) {
+        fetchBtn.disabled = false;
+        fetchBtn.textContent = "Load nearby accommodation";
       }
     });
 }
@@ -1902,7 +2040,7 @@ if (type === "success") {
   toastEl.className = `toast align-items-center border-0 text-bg-${type}`;
 
   const toast = new bootstrap.Toast(toastEl, {
-    delay: 5000
+    delay: 15000
   });
 
   toast.show();
@@ -1962,7 +2100,28 @@ function tryRoute() {
         if (data.status === "fallback") {
           showRouteToast("Route could not be found. Showing straight-line connection.", "warning");
         } else {
-          showRouteToast("Shortest road route to your accommodation shown.", "success");
+          if (
+            typeof data.route_distance_km === "number" &&
+            selectedAccommodation &&
+            selectedAccommodation.marker
+          ) {
+            bindAccommodationDistanceTooltip(
+              selectedAccommodation.marker,
+              data.route_distance_km
+            );
+
+            const countEl = document.getElementById("accommodation-count");
+            if (countEl) {
+              countEl.textContent = `Route distance to ${selectedAccommodation.name}: ${data.route_distance_km} km`;
+            }
+
+            showRouteToast(
+              `Shortest road route shown. Distance: ${data.route_distance_km} km.`,
+              "success"
+            );
+          } else {
+            showRouteToast("Shortest road route to your accommodation shown.", "success");
+          }
         }
 
       } else {
