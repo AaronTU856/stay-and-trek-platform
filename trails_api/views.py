@@ -771,6 +771,7 @@ def accommodations_near_trail(request):
         from django.contrib.gis.db.models import Value as V
         from django.contrib.gis.db.models.functions import Transform
         
+        # Starts with the closest stays around the trail start point.
         accommodations = list(
             Accommodation.objects.annotate(
                 distance=DistanceFunction('location', trail.start_point)
@@ -791,6 +792,7 @@ def accommodations_near_trail(request):
         
         accommodations = [acc for acc in accommodations if acc.location]
 
+        # Tries to rank stays by road distance so the list feels more realistic in the demo.
         road_distances = {}
         if accommodations:
             with connection.cursor() as cursor:
@@ -819,6 +821,7 @@ def accommodations_near_trail(request):
                 end_nodes = list(dict.fromkeys(end_nodes))
 
                 if start_node is not None and end_nodes:
+                    # Uses the furthest stay to size a road search area that covers the full set.
                     far_acc = max(
                         accommodations,
                         key=lambda a: abs(a.location.y - trail_lat) + abs(a.location.x - trail_lng)
@@ -842,9 +845,11 @@ def accommodations_near_trail(request):
             dist = road_distances.get(acc_item.id)
             return dist if dist is not None else float("inf")
 
+        # Keeps the closest road routes at the top when routing data is available.
         accommodations.sort(key=road_distance_sort_key)
 
         features = []
+        # Shapes the response for map markers and accommodation cards.
         for acc in accommodations:
             road_distance_m = road_distances.get(acc.id)
             road_distance_km = round(road_distance_m / 1000, 2) if road_distance_m is not None else None
@@ -974,6 +979,7 @@ def build_road_inner_sql(cursor, start_coords, end_coords, road_filter, bbox_buf
         "ST_Transform(ST_Buffer(ST_Envelope(ST_Collect(" +
         start_geom + "," + end_geom + ")), " + str(bbox_buffer_deg) + "), 3857)"
     )
+    # Keeps the routing query focused on the road network table used by pgRouting.
     return f"""
         SELECT id,
                source,
@@ -1098,6 +1104,7 @@ def get_transport_route(start_coords, end_coords):
     start_lng, start_lat = start_coords
     end_lng, end_lat = end_coords
 
+    # Adds up the line segments so the UI can show one route distance.
     def route_distance_km_from_features(route_features):
         total_meters = 0.0
         for feature in route_features:
@@ -1119,6 +1126,7 @@ def get_transport_route(start_coords, end_coords):
     with connection.cursor() as cursor:
         logger.warning(f"DEBUG coords: {start_lng},{start_lat} -> {end_lng},{end_lat}")
 
+        # Snaps the trail and accommodation points to the nearest routable road nodes.
         start_node = get_road_node_for_point(cursor, start_lng, start_lat)
         end_node = get_road_node_for_point(cursor, end_lng, end_lat)
 
@@ -1133,6 +1141,7 @@ def get_transport_route(start_coords, end_coords):
 
         if start_geom_row:
             start_vertex_coords = json.loads(start_geom_row[0])["coordinates"]
+            # Draws a short connector from the clicked trail point to the road network.
             features.append({
                 "type": "Feature",
                 "properties": {"segment": "connector_start"},
@@ -1140,6 +1149,7 @@ def get_transport_route(start_coords, end_coords):
             })
 
         try:
+            # Looks for the shortest road route and widens the search if needed.
             route_result = find_route_with_expanding_radius(
                 cursor,
                 start_lng,
@@ -1172,12 +1182,14 @@ def get_transport_route(start_coords, end_coords):
 
         if end_geom_row:
             end_vertex_coords = json.loads(end_geom_row[0])["coordinates"]
+            # Finishes the route with the short connector into the accommodation point.
             features.append({
                 "type": "Feature",
                 "properties": {"segment": "connector_end"},
                 "geometry": {"type": "LineString", "coordinates": [end_vertex_coords, [end_lng, end_lat]]}
             })
 
+        # Sends back one feature collection the map can draw in a single step.
         return {
             "status": "success_v2",
             "type": "FeatureCollection",
@@ -1201,6 +1213,7 @@ def route_between_nodes(request):
     route_data = get_transport_route((t_lng, t_lat), (a_lng, a_lat))
 
     if route_data.get("status") != "success_v2":
+        # Falls back to a straight line so the route action still shows something in the demo.
         return JsonResponse({
             "status": "fallback",
             "type": "FeatureCollection",
@@ -1318,6 +1331,7 @@ def accommodations_near_town(request):
     except Town.DoesNotExist:
         return Response({'error': f'Town {town_id} not found'}, status=status.HTTP_404_NOT_FOUND)
     
+    # Uses the town as the search centre and returns the closest stays first.
     nearby_accommodations = PointOfInterest.objects.filter(
         poi_type='accommodation',
         location__distance_lte=(town.location, D(km=radius_km))
@@ -1326,6 +1340,7 @@ def accommodations_near_town(request):
     ).order_by('distance_km')
     
     features = []
+    # Shapes the stay data for the map and side panel.
     for acc in nearby_accommodations:
         features.append({
             "type": "Feature",

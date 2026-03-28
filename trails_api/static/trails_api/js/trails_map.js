@@ -7,13 +7,14 @@ console.log("✅ trails_map.js loaded");
 let map;
 let allTrailsData = [];
 
-// Global variables for route planning
-let accommodationRequestId = 0; // API request control
-let selectedTrail = null; // Store the currently selected trail for route planning
-let selectedAccommodation = null; // Store the currently selected accommodation for route planning
-let routeLayer = null; // Layer to display the generated route
+// Keeps track of the trail, stay, and route currently being used for planning.
+let accommodationRequestId = 0;
+let selectedTrail = null;
+let selectedAccommodation = null;
+let routeLayer = null;
 let routingInProgress = false;
 
+// Builds the hover tooltip shown on accommodation markers.
 function getAccommodationTooltipHtml(details) {
   if (!details) return "Accommodation";
 
@@ -36,6 +37,7 @@ function getAccommodationTooltipHtml(details) {
   return `<div class="accommodation-tooltip-card">${parts.join("")}</div>`;
 }
 
+// Adds the richer hover tooltip to one accommodation marker.
 function bindAccommodationHoverTooltip(marker, details) {
   if (!marker) return;
   marker.unbindTooltip();
@@ -48,6 +50,7 @@ function bindAccommodationHoverTooltip(marker, details) {
   });
 }
 
+// Swaps the hover tooltip for a route-distance label once a route is found.
 function bindAccommodationDistanceTooltip(marker, routeDistanceKm) {
   if (!marker) return;
   marker.unbindTooltip();
@@ -60,6 +63,7 @@ function bindAccommodationDistanceTooltip(marker, routeDistanceKm) {
   }).openTooltip();
 }
 
+// Starts the main trails map workflow when the page is ready.
 document.addEventListener("DOMContentLoaded", function () {
   console.log("📍 DOM loaded, initializing map...");
   initializeMap();
@@ -94,13 +98,11 @@ document.addEventListener("DOMContentLoaded", function () {
       console.warn("Route test skipped:", error.message);
     });
   
-  //loadTrails(); // Don't load all trails by default
   loadTrailPaths();
   setupEventListeners();
   enableProximitySearch();
   
-  // Load all trails into searchable layer (hidden from map view)
-  // addSearchControls() will be called automatically when trails finish loading
+  // Loads every trail into the hidden search layer used by the global search box.
   loadAllTrailsForSearch();
 
   if (!window.trailsMap) {
@@ -112,10 +114,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 
-/*Load trails from the start point when search radius is performed
-  This calls performProximitySearch instead*/
-
-  function loadTrailsForSearch() {
+// Loads trail start points for the search-driven flow.
+function loadTrailsForSearch() {
     console.log("Loading trails for proximity search...");
 
     return fetch("/api/trails/geojson/")
@@ -156,22 +156,19 @@ document.addEventListener("DOMContentLoaded", function () {
 }
 
 
-/**
- * Load all trails into a searchable layer (invisible on map)
- */
+// Loads every trail into an invisible layer so the search box can find them.
 function loadAllTrailsForSearch() {
   console.log("📚 Loading all trails for global search...");
   
-  // Create searchable layer if it doesn't exist
   if (!window.allSearchableTrails) {
     window.allSearchableTrails = L.layerGroup();
     console.log("✅ Created allSearchableTrails layer");
   }
   
-  // Fetch all pages of trails since API is paginated
   let allTrails = [];
   let currentPage = 1;
   
+  // Pulls every page of trail data before building the search layer.
   function fetchPage(pageNum) {
     fetch(`/api/trails/?page=${pageNum}`)
       .then((response) => {
@@ -183,12 +180,10 @@ function loadAllTrailsForSearch() {
           allTrails = allTrails.concat(data.results);
           console.log(`📄 Loaded page ${pageNum}: ${data.results.length} trails (total: ${allTrails.length})`);
           
-          // Check if there are more pages
           if (data.next) {
             currentPage++;
             fetchPage(currentPage);
           } else {
-            // All pages loaded, now create markers
             createSearchableMarkers(allTrails);
           }
         }
@@ -198,10 +193,10 @@ function loadAllTrailsForSearch() {
       });
   }
   
+  // Builds invisible markers that can be searched without cluttering the map.
   function createSearchableMarkers(trailsArray) {
     console.log(`📚 Creating markers for ${trailsArray.length} total trails...`);
     
-    // Add each trail to the searchable layer but not displayed
     trailsArray.forEach((trail) => {
       try {
         const lat = parseFloat(trail.latitude);
@@ -213,7 +208,6 @@ function loadAllTrailsForSearch() {
         const county = trail.county || "Unknown";
         const trailId = trail.id || trail.pk;
         
-        // Create an invisible marker that can be searched but won't show on the map
         const marker = L.marker([lat, lng], {
           title: name,
           county: county,
@@ -230,18 +224,13 @@ function loadAllTrailsForSearch() {
     
     console.log(`✅ ${window.allSearchableTrails.getLayers().length} trails loaded for search`);
     
-    // Update the search control to include these trails
     addSearchControls();
   }
   
-  // Start fetching from page 1
   fetchPage(1);
 }
 
-/**
- * Display a specific trail on the map when selected from search results
- * @param {number} trailId - The ID of the trail to display
- */
+// Shows one searched trail on the map and opens its details.
 function displaySearchedTrail(trailId) {
   console.log(`🎯 Displaying trail with ID: ${trailId}`);
   
@@ -265,7 +254,6 @@ function displaySearchedTrail(trailId) {
       const difficulty = trail.difficulty || "Unknown";
       const description = trail.description || "";
       
-      // Create a popup with trail information
       const popupContent = `
         <div class="trail-popup">
           <h5>${name}</h5>
@@ -276,7 +264,6 @@ function displaySearchedTrail(trailId) {
         </div>
       `;
       
-      // Use the green icon for highlighted trails
       const greenIcon = L.icon({
         iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png",
         shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
@@ -286,13 +273,11 @@ function displaySearchedTrail(trailId) {
         shadowSize: [41, 41],
       });
       
-      // Create and add marker to the map
       const marker = L.marker([lat, lng], { icon: greenIcon })
         .bindPopup(popupContent)
         .addTo(window.trailMarkers)
         .openPopup();
       
-      // Zoom to the trail with some padding
       window.trailsMap.setView([lat, lng], 12);
       
       console.log(`✅ Trail ${name} (ID: ${trailId}) displayed on map`);
@@ -302,12 +287,7 @@ function displaySearchedTrail(trailId) {
     });
 }
 
-
-// Initialize map
-/**
- * Initialize the Leaflet map with base tiles, zoom controls, and event listeners
- * Creates a global reference at window.trailsMap for use throughout the application
- */
+// Builds the map, shared layers, and base controls for the trails page.
 function initializeMap() {
   console.log("🗺️ Map initializing...");
 
@@ -316,13 +296,11 @@ function initializeMap() {
     [56.3, -4.8]
   );
 
-  // If already created, skip
   if (window.trailsMap instanceof L.Map) {
     console.warn("Map already exists — skipping reinitialization");
     return;
   }
 
-  // Create and store globally
   window.trailsMap = L.map("map", {
     maxBounds: irelandBounds,
     maxBoundsViscosity: 1.0,
@@ -334,7 +312,6 @@ function initializeMap() {
     window.trailsMap
   );
 
-  // Add tile layer
   L.tileLayer(
     "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
     {
@@ -345,14 +322,13 @@ function initializeMap() {
     }
   ).addTo(window.trailsMap);
 
-  // Initialize marker layer
   window.trailMarkers = L.layerGroup().addTo(window.trailsMap);
   console.log("✅ Trail marker layer added to map");
 
   window.accommodationLayer = L.layerGroup().addTo(window.trailsMap);
   console.log("✅ Accommodation layer added to map");
 
-  // Accommodation markers use a quieter brown dot so they do not compete with towns.
+  // Uses a quieter marker style for accommodation so it stays secondary to trails.
   window.hotelIcon = L.divIcon({
     className: "custom-marker",
     html: '<div class="accommodation-map-marker"></div>',
@@ -361,16 +337,13 @@ function initializeMap() {
     popupAnchor: [0, -14],
   });
 
-  // Define layers for the toggle control
   const overlayMaps = {
     "Trail Start Points": window.trailMarkers,
     "Accommodations": window.accommodationLayer,
   };
-  //Add control box to the map
   L.control.layers(null, overlayMaps).addTo(window.trailsMap);
 
 
-  //  Custom green icon
   const defaultGreenIcon = L.icon({
     iconUrl:
       "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png",
@@ -385,11 +358,7 @@ function initializeMap() {
   console.log("✅ Map and base layer ready!");
 }
 
-/**
- * Load trail start points from the GeoJSON API endpoint
- * Fetches all trails and displays them as markers on the map
- * Handles loading state and error reporting
- */
+// Loads trail start points and shows them as markers.
 function loadTrails() {
   console.log("🚀 Loading trails...");
   showLoading(true);
@@ -411,7 +380,6 @@ function loadTrails() {
 
       let features = [];
 
-      // ✅ Handle GeoJSON FeatureCollection
       if (
         data &&
         data.type === "FeatureCollection" &&
@@ -419,7 +387,6 @@ function loadTrails() {
       ) {
         features = data.features;
 
-        // ✅ Handle nested FeatureCollection (rare)
       } else if (
         data &&
         data.features &&
@@ -427,7 +394,6 @@ function loadTrails() {
       ) {
         features = data.features.features;
 
-        // ✅ Handle plain array (non-GeoJSON response)
       } else if (Array.isArray(data)) {
         console.warn("Converting non-GeoJSON array to GeoJSON format...");
         features = data.map((trail) => ({
@@ -443,7 +409,6 @@ function loadTrails() {
         }));
       }
 
-      // ✅ Handle results
       if (features.length > 0) {
         console.log(`✅ Loaded ${features.length} trail features`);
         allTrailsData = features;
@@ -465,6 +430,7 @@ function loadTrails() {
     });
 }
 
+// Loads the town markers and weather popups used alongside the trail search flow.
 fetch("/api/trails/towns/geojson/")
   .then((res) => res.json())
   .then((data) => {
@@ -529,14 +495,12 @@ fetch("/api/trails/towns/geojson/")
         layer.on("click", () => {
           const [lng, lat] = feature.geometry.coordinates;
 
-          // Show weather popup with loading state
           const loadingHtml = `
             <b>${feature.properties.name}</b><br>
             <strong>Weather:</strong> Loading...
           `;
           layer.bindPopup(loadingHtml).openPopup();
 
-          // Weather fetch on click
           fetch(`/api/trails/weather-town/?lat=${lat}&lng=${lng}`)
             .then(res => res.json())
             .then((weather) => {
@@ -576,11 +540,7 @@ fetch("/api/trails/towns/geojson/")
     window.trailsMap.on("zoomend", updateTownMarkerIcons);
   });
 
-/**
- * Load trail path geometries from the GeoJSON API endpoint
- * Displays full trail routes as polylines on the map
- * Creates a layer that can be toggled on and off
- */
+// Loads the full trail paths so routes are visible as lines instead of just points.
 let trailPathsLayer;
 
 function loadTrailPaths() {
@@ -608,17 +568,12 @@ function loadTrailPaths() {
         },
       }).addTo(window.trailsMap);
 
-      
-      trailPathsLayer.bringToFront(); // ensure it’s visible on top
+      trailPathsLayer.bringToFront();
     })
     .catch((err) => console.error("❌ Error loading trail paths:", err));
 }
 
-/**
- * Load trail data from the regular API endpoint (fallback method)
- * Used as a backup when the GeoJSON endpoint is unavailable
- * @returns {Promise} Promise resolving to the trail data
- */
+// Falls back to the regular trail API if GeoJSON loading fails.
 function loadTrailsFromRegularAPI() {
   console.log("Trying regular API endpoint...");
 
@@ -640,21 +595,13 @@ function loadTrailsFromRegularAPI() {
 
       let trailsArray;
 
-      // Handle different response formats
-
       if (data && data.results && Array.isArray(data.results)) {
-        // Paginated response
-
         trailsArray = data.results;
       } else if (Array.isArray(data)) {
-        // Direct array response
-
         trailsArray = data;
       } else {
         throw new Error("Unexpected response format from regular API");
       }
-
-      // Convert to GeoJSON format
 
       const geojsonFeatures = trailsArray.map((trail) => ({
         type: "Feature",
@@ -685,7 +632,6 @@ function loadTrailsFromRegularAPI() {
     .catch((error) => {
       console.error("Error loading trails from both endpoints:", error);
 
-      // Show specific error messages
       if (error.message.includes("404")) {
         showAlert(
           "API endpoints not found. Please check your URLs configuration.",
@@ -707,10 +653,7 @@ function loadTrailsFromRegularAPI() {
     });
 }
 
-/**
- * Display trail markers and popups on the Leaflet map
- * @param {Array} trails - Array of trail objects to display
- */
+// Rebuilds the visible trail markers from the supplied trail list.
 function displayTrailsOnMap(trails) {
   if (!window.trailsMap) {
     console.error("❌ trailsMap not initialized before displaying trails");
@@ -829,7 +772,6 @@ function displayTrailsOnMap(trails) {
     console.warn("⚠️ No valid markers to display or invalid trailMarkers type");
   }
 
-  // ✅ Add search controls only when markers exist
   setTimeout(() => {
     if (
       typeof L.Control.Search === "function" &&
@@ -843,16 +785,12 @@ function displayTrailsOnMap(trails) {
   }, 1000);
 }
 
-/**
- * Add search control panel to the map sidebar
- * Creates input field and search button for trail name searches
- */
+// Adds the trail-name search box to the map once the search layer is ready.
 function addSearchControls() {
   if (!window.trailsMap) return;
 
   console.log("📌 Initializing search controls...");
 
-  // Use the all searchable trails layer that was loaded on page init
   if (!window.allSearchableTrails || !(window.allSearchableTrails instanceof L.LayerGroup)) {
     console.warn("⚠️ allSearchableTrails layer not ready yet");
     return;
@@ -861,12 +799,10 @@ function addSearchControls() {
   const trailLayers = window.allSearchableTrails.getLayers();
   console.log(`✅ Using allSearchableTrails with ${trailLayers.length} trails for search`);
 
-  // Remove old control if it exists
   if (window.searchTrail) {
     window.trailsMap.removeControl(window.searchTrail);
   }
 
-  // Create search control with all loaded trails
   window.searchTrail = new L.Control.Search({
     layer: window.allSearchableTrails,
     propertyName: "title",
@@ -879,7 +815,6 @@ function addSearchControls() {
     moveToLocation: function (latlng, title, map) {
       console.log(`🎯 Search result selected: ${title}`);
       
-      // Find the trail ID from the markers
       let trailId = null;
       window.allSearchableTrails.eachLayer((layer) => {
         if (layer.options.title === title) {
@@ -888,10 +823,8 @@ function addSearchControls() {
       });
       
       if (trailId) {
-        // Display the selected trail
         displaySearchedTrail(trailId);
       } else {
-        // Fallback: just zoom to the location
         console.warn("Trail ID not found for:", title);
         map.setView(latlng, 13);
       }
@@ -903,10 +836,7 @@ function addSearchControls() {
 
 
 
-/**
- * Execute a trail search based on user input from the search field
- * Filters trails by name and updates the map display
- */
+// Runs a typed trail search and redraws the map with the results.
 function performSearch() {
   const query = document.getElementById("trail-search").value.trim();
 
@@ -935,7 +865,6 @@ function performSearch() {
       let filteredTrails;
 
       if (Array.isArray(data)) {
-        // If search returns array of trail objects, convert to GeoJSON
         filteredTrails = data.map((trail) => ({
           type: "Feature",
 
@@ -951,11 +880,8 @@ function performSearch() {
           properties: trail,
         }));
       } else if (data.features && Array.isArray(data.features)) {
-        // If search returns GeoJSON
         filteredTrails = data.features;
       } else {
-        // Filter from existing data as fallback
-
         filteredTrails = allTrailsData.filter(
           (trail) =>
             trail.properties.name.toLowerCase().includes(query.toLowerCase()) ||
@@ -973,8 +899,6 @@ function performSearch() {
 
     .catch((error) => {
       console.error("Error searching trails:", error);
-
-      // Fallback to client-side search
 
       const filteredTrails = allTrailsData.filter(
         (trail) =>
@@ -1001,11 +925,7 @@ function performSearch() {
     });
 }
 
-/**
- * Calculate appropriate marker size based on population
- * @param {number} population - The population value
- * @returns {number} Marker radius in pixels
- */
+// Keeps compatibility with older marker sizing logic.
 function getMarkerSize(population) {
   const pop = parseInt(population) || 0;
 
@@ -1020,10 +940,7 @@ function getMarkerSize(population) {
   return 24;
 }
 
-/**
- * Display detailed information about a trail in a sidebar popup
- * @param {Object} trail - The trail object to display
- */
+// Fills the side panel with one trail's details.
 function showTrailInfo(trail) {
   const infoPanel = document.getElementById("trail-info");
 
@@ -1034,7 +951,6 @@ function showTrailInfo(trail) {
 
     return;
   }
-  // Safely handle missing properties
   const name =
     trail.name ||
     trail.trail_name ||
@@ -1166,13 +1082,8 @@ function showTrailInfo(trail) {
   infoPanel.scrollIntoView({ behavior: "smooth" });
 }
 
-/**
- * Set up event listeners for map interactions and form controls
- * Binds button clicks and form submissions to their respective handlers
- */
+// Hooks the main trail, stay, and search controls into the page.
 function setupEventListeners() {
-  // Search functionality
-
   const searchBtn = document.getElementById("search-btn");
   const searchInput = document.getElementById("trail-search");
   const clearSearchBtn = document.getElementById("clear-search");
@@ -1212,7 +1123,7 @@ function setupEventListeners() {
     fetchStaysBtn.addEventListener("click", function () {
       console.log("Fetching accommodations for currrent map area...");
 
-      // Ensure checkbox is checked and layerv visible
+      // Makes sure the accommodation layer is visible before loading stays.
       if (toggleAccommodations && !toggleAccommodations.checked) {
         toggleAccommodations.checked = true;
       }
@@ -1273,10 +1184,7 @@ function setupEventListeners() {
   }
 }
 
-/**
- * Save a new trail to the database via the API
- * Validates form input and sends POST request with trail data
- */
+// Saves a new trail from the add-trail form.
 function saveNewTrail() {
   const nameInput = document.getElementById("trail-name");
   const countryInput = document.getElementById("trail-country");
@@ -1301,7 +1209,6 @@ function saveNewTrail() {
     nearest_town: townInput.value.trim(),
   };
 
-  // ✅ Validation
   if (
     !formData.name ||
     !formData.country ||
@@ -1329,7 +1236,6 @@ function saveNewTrail() {
     return;
   }
 
-  // Proceed with saving via API
   fetch("/api/trails/", {
     method: "POST",
     headers: {
@@ -1353,11 +1259,7 @@ function saveNewTrail() {
     });
 }
 
-// Utility functions
-/**
- * Center and zoom the map to a specific trail's start point
- * @param {number} trailId - The ID of the trail to zoom to
- */
+// Zooms the map to one stored trail marker.
 function zoomToTrail(trailId) {
   const trail = allTrailsData.find(
     (c) => c.properties.id === parseInt(trailId)
@@ -1372,10 +1274,7 @@ function zoomToTrail(trailId) {
   }
 }
 
-/**
- * Update the trail count display in the UI
- * @param {number} count - The number of trails to display
- */
+// Updates the loaded-trail count in the UI.
 function updateTrailCount(count) {
   const countElement = document.getElementById("trail-count");
 
@@ -1384,10 +1283,7 @@ function updateTrailCount(count) {
   }
 }
 
-/**
- * Show or hide the loading indicator
- * @param {boolean} show - true to display loading indicator, false to hide
- */
+// Switches the loading state on the search button.
 function showLoading(show) {
   const searchBtn = document.getElementById("search-btn");
   if (searchBtn) {
@@ -1403,14 +1299,8 @@ function showLoading(show) {
   }
 }
 
-/**
- * Display an alert message to the user
- * @param {string} message - The message text to display
- * @param {string} type - The alert type (success, error, info, warning)
- */
+// Shows a temporary Bootstrap alert.
 function showAlert(message, type) {
-  // Create alert element
-
   const alertDiv = document.createElement("div");
   alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
   alertDiv.style.top = "20px";
@@ -1427,8 +1317,6 @@ function showAlert(message, type) {
 
   document.body.appendChild(alertDiv);
 
-  // Auto remove after 5 seconds
-
   setTimeout(() => {
     if (alertDiv.parentNode) {
       alertDiv.remove();
@@ -1436,15 +1324,8 @@ function showAlert(message, type) {
   }, 5000);
 }
 
-/**
- * Retrieve CSRF token from page cookies for secure API requests
- * @returns {string} The CSRF token value
- */
+// Reads the CSRF token before API writes.
 function getCsrfToken() {
-  // Try multiple methods to get CSRF token
-
-  // Method 1: From cookie
-
   const cookies = document.cookie.split(";");
 
   for (let cookie of cookies) {
@@ -1455,15 +1336,11 @@ function getCsrfToken() {
     }
   }
 
-  // Method 2: From meta tag
-
   const metaTag = document.querySelector('meta[name="csrf-token"]');
 
   if (metaTag) {
     return metaTag.getAttribute("content");
   }
-
-  // Method 3: From form input
 
   const csrfInput = document.querySelector('input[name="csrfmiddlewaretoken"]');
 
@@ -1477,11 +1354,7 @@ function getCsrfToken() {
 
 console.log("✅ trails_map.js fully loaded");
 
-// Proximity Search Functionality
-/**
- * Enable proximity-based trail search functionality
- * Allows users to find trails within a specified radius of a clicked point
- */
+// Turns the click-to-search mode on and off.
 function enableProximitySearch() {
   const toggleBtn = document.getElementById("toggle-search");
   const radiusInput = document.getElementById("radius-input");
@@ -1506,14 +1379,13 @@ function enableProximitySearch() {
     }
   });
 
-  // Map click handler
   window.trailsMap.on("click", (e) => {
     if (!searchEnabled) return;
     performProximitySearch(e.latlng.lat, e.latlng.lng);
   });
 }
 
-// Main proximity search
+// Finds nearby trails from the clicked search point.
 async function performProximitySearch(lat, lng) {
   clearProximityResults();
 
@@ -1521,7 +1393,6 @@ async function performProximitySearch(lat, lng) {
     document.getElementById("radius-input").value || 10
   );
 
-  // 🔴 Red search marker
   window.searchMarker = L.marker([lat, lng], {
     icon: L.icon({
       iconUrl:
@@ -1542,7 +1413,6 @@ async function performProximitySearch(lat, lng) {
       )}<br>Lng: ${lng.toFixed(5)}`
     );
 
-  // 🔵 Add or update the search radius circle
   if (window.searchCircle) {
     window.trailsMap.removeLayer(window.searchCircle);
   }
@@ -1576,7 +1446,7 @@ async function performProximitySearch(lat, lng) {
 
     if (!data.nearest_trails?.length) {
       showAlert(`⚠️ No trails found within ${radiusKm} km.`, "warning");
-      // 🔹 Still find the nearest town even if no trails found
+      // Still shows the nearest town even when no trails are returned.
       await findNearestTown(lat, lng);
       return;
     }
@@ -1586,7 +1456,6 @@ async function performProximitySearch(lat, lng) {
     updateResultsPanel(data);
     showAlert(`✅ Found ${data.nearest_trails.length} trails`, "success");
 
-    // ✅ Always call this after trail results are shown
     await findNearestTown(lat, lng);
   } catch (err) {
     console.error("❌ Proximity search failed:", err);
@@ -1595,7 +1464,7 @@ async function performProximitySearch(lat, lng) {
     showLoading(false);
   }
 
-  // Find closect town to trails
+  // Adds the nearest town popup for extra context around the search point.
   async function findNearestTown(lat, lng) {
     try {
       const response = await fetch("/api/trails/nearest-town/", {
@@ -1626,11 +1495,7 @@ async function performProximitySearch(lat, lng) {
   }
 }
 
-// Display numbered trail markers
-/**
- * Display nearest trails found in proximity search with numbered markers
- * @param {Array} trails - Array of trail objects to display
- */
+// Shows the nearby trail results with numbered markers.
 function displayNearestTrails(trails) {
   if (!window.nearestTrailsLayer)
     window.nearestTrailsLayer = L.layerGroup().addTo(window.trailsMap);
@@ -1638,7 +1503,6 @@ function displayNearestTrails(trails) {
   window.nearestTrailsLayer.clearLayers();
 
   trails.forEach((trail, index) => {
-    // Use distance_from_point_km which is returned by the API
     const distanceKm = trail.distance_from_point_km || trail.distance_to_user || 0;
 
     const lat = parseFloat(trail.latitude || trail.coordinates?.lat);
@@ -1668,7 +1532,7 @@ function displayNearestTrails(trails) {
             sticky: true
         });
 
-        // Routing store selected trail
+        // Stores the selected trail so the next accommodation click can route from it.
         marker.on("click", function () {
         selectedTrail = {
           lat: lat,
@@ -1695,12 +1559,7 @@ function displayNearestTrails(trails) {
   window.trailsMap.fitBounds(group.getBounds().pad(0.2));
 }
 
-// Simple numbered marker icon
-/**
- * Create a numbered icon for numbered markers
- * @param {number} number - The number to display on the icon
- * @returns {L.DivIcon} A Leaflet icon object with the number
- */
+// Builds a numbered marker icon for search results.
 function getNumberedIcon(number) {
   return L.divIcon({
     className: "numbered-marker",
@@ -1710,11 +1569,7 @@ function getNumberedIcon(number) {
   });
 }
 
-// Side results panel
-/**
- * Update the results panel with nearest trails information
- * @param {Object} data - The search results data containing trails array
- */
+// Fills the floating results panel with the latest nearby trails.
 function updateResultsPanel(data) {
   let resultsPanel = document.getElementById("proximity-results");
   if (!resultsPanel) {
@@ -1767,10 +1622,7 @@ function updateResultsPanel(data) {
   }
 }
 
-// Clear markers and panel
-/**
- * Clear proximity search results and remove temporary markers from the map
- */
+// Clears the search point, nearby trail markers, and results panel.
 function clearProximityResults() {
   if (window.searchMarker) {
     window.trailsMap.removeLayer(window.searchMarker);
@@ -1781,14 +1633,13 @@ function clearProximityResults() {
   const panel = document.getElementById("proximity-results");
   if (panel) panel.style.display = "none";
   
-  // Show accommodation card again when clearing results
   const accommodationCard = document.getElementById("accommodation-card");
   if (accommodationCard) {
     accommodationCard.style.display = "block";
   }
 }
 
-// Weather popup for trail markers
+// Shows weather details for a clicked trail marker.
 function onTrailClick(e) {
     const trailId = e.target.options.trailId;
 
@@ -1810,6 +1661,7 @@ function onTrailClick(e) {
         .catch(error => console.error('Weather error:', error));
 }
 
+// Loads accommodation near the selected search area or trail.
 function updateAccommodations(searchLat = null, searchLng = null) {
   console.log("🏨 updateAccommodations called");
   
@@ -1862,8 +1714,6 @@ function updateAccommodations(searchLat = null, searchLng = null) {
       }
       console.log("🏨 API Response:", data);
       
-      // Handle both GeoJSON (features) and direct results format
-
       console.log("RAW DATA:", JSON.stringify(data, null, 2));
 
       const features = data.results?.features || data.features || [];
@@ -1957,6 +1807,7 @@ function updateAccommodations(searchLat = null, searchLng = null) {
 
 
 
+// Draws the returned route and styles the road and connector segments.
 function drawRoute(geojson) {
 
   console.log("Total segments to draw:", geojson.features.length);
@@ -1976,7 +1827,6 @@ function drawRoute(geojson) {
     })));
   }
 
-  // cretae GeoJSON layer
   routeLayer = L.geoJSON(geojson, {
 
     style: function(feature) {
@@ -2014,7 +1864,6 @@ function drawRoute(geojson) {
     }
   }
 
-  // Handle Tooltips/Status
   const routeNote = geojson.route_note || (geojson.features[0] && geojson.features[0].properties.note);
   const routeStatus = document.getElementById("route-status");
   if (routeStatus) {
@@ -2022,8 +1871,7 @@ function drawRoute(geojson) {
   }
 }
 
-
-// Display a toast notification for routing status
+// Shows the routing status toast at the top of the page.
 function showRouteToast(message, type = "success") {
   const toastEl = document.getElementById("routeToast");
   const toastBody = document.getElementById("routeToastBody");
@@ -2054,6 +1902,7 @@ if (type === "success") {
 }
 
 
+// Sends the selected trail and accommodation to the routing API.
 function tryRoute() {
 
   if (!selectedTrail || !selectedAccommodation) return;
@@ -2082,15 +1931,11 @@ function tryRoute() {
   
     if (data && ["success", "success_v2", "fallback"].includes(data.status)) {
       
-      // --- SAFETY WRAPPER START ---
       let geojson = null;
 
       if (data.feature) {
-          // If the backend updated to the new 'feature' key
           geojson = data.feature;
       } else if (data.type === "Feature") {
-          // If backend is still sending the old 'flat' Feature format
-          // Wrap it in a FeatureCollection so .length exists
           geojson = {
               type: "FeatureCollection",
               features: [data]
@@ -2098,8 +1943,6 @@ function tryRoute() {
       } else if (data.type === "FeatureCollection") {
           geojson = data;
       }
-      // --- SAFETY WRAPPER END ---
-
       if (geojson && geojson.features) {
         console.log(`🎨 Drawing ${geojson.features.length} segments`);
         drawRoute(geojson);
