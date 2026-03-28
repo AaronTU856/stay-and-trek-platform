@@ -37,7 +37,8 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>🥾 Stay & Trek ⛰️</Text>
+      <Text style={styles.title}>Stay and Trek</Text>
+      <Text style={styles.subtitle}>Sign in to continue</Text>
       <TextInput 
         style={styles.input} 
         placeholder="Username" 
@@ -56,10 +57,10 @@ export default function LoginScreen() {
         <Text style={styles.buttonText}>Login</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.registerButton} onPress={register}>
-        <Text style={styles.registerButtonText}>Not Registered? Register Here..</Text>
+        <Text style={styles.registerButtonText}>Create an account</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.guestButton} onPress={() => router.replace('/map')}>
-        <Text style={styles.guestButtonText}>Continue as Guest</Text>
+        <Text style={styles.guestButtonText}>Continue as guest</Text>
       </TouchableOpacity>
 
 
@@ -75,9 +76,16 @@ const styles = StyleSheet.create({
   title: { 
     fontSize: 28, 
     fontWeight: 'bold', 
-    marginBottom: 20, 
+    marginBottom: 8, 
     color: '#175c1d', 
     textAlign: 'center' },
+
+  subtitle: {
+    fontSize: 15,
+    color: '#304b34',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
 
   input: { 
     borderWidth: 1, 

@@ -61,8 +61,8 @@ const Register = () => {
     <ScrollView contentContainerStyle={styles.container}></ScrollView>
     <ScrollView contentContainerStyle={styles.container}>
        
-      <Text style={styles.title}>🥾 Stay & Trek ⛰️</Text>
-      <Text style={styles.title}>Create Account</Text>
+      <Text style={styles.title}>Stay and Trek</Text>
+      <Text style={styles.subtitle}>Create account</Text>
         
       <TextInput
         style={styles.input}
@@ -109,7 +109,7 @@ const Register = () => {
       </TouchableOpacity>
 
       <TouchableOpacity style={[styles.button, styles.loginButton]} onPress={() => router.push('/(auth)/login')}>
-        <Text style={styles.loginButtonText}>Back to Login</Text>
+        <Text style={styles.loginButtonText}>Back to sign in</Text>
       </TouchableOpacity>
     </ScrollView>
   </KeyboardAvoidingView>
@@ -128,9 +128,16 @@ const styles = StyleSheet.create({
   title: { 
     fontSize: 28, 
     fontWeight: 'bold',
-    marginBottom: 20, 
+    marginBottom: 8, 
     color: '#2e7d32', 
     textAlign: 'center'},
+
+  subtitle: {
+    fontSize: 16,
+    color: '#305337',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
 
   input: { 
     borderWidth: 1, 
