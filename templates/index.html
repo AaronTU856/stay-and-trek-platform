@@ -176,13 +176,14 @@
     </section>
 
     <script>
+      // Wires up the landing page audio controls after the page loads.
       document.addEventListener("DOMContentLoaded", () => {
         const audio = document.getElementById("home-audio");
         const toggle = document.getElementById("home-audio-toggle");
         const volume = document.getElementById("home-volume");
         const muteBtn = document.getElementById("home-mute-toggle");
 
-          
+        // Lets the volume slider control the background audio level.
         if (volume) {
           volume.addEventListener("input", (e) => {
             audio.volume = e.target.value;
@@ -190,21 +191,19 @@
         }
         if (!audio || !toggle) return;
 
-        
+        // Mutes the audio and swaps the speaker icon.
         muteBtn.addEventListener("click", () => {
           audio.muted = !audio.muted;
-
           muteBtn.textContent = audio.muted ? "🔇" : "🔊";
-
-          // toggle style class
           muteBtn.classList.toggle("muted", audio.muted);
         });
                 
-
-       const setState = (playing) => {
+        // Keeps the play button label in sync with the audio state.
+        const setState = (playing) => {
           toggle.textContent = playing ? "Pause music" : "Play music";
         };
 
+        // Tries to autoplay and falls back to the play button if the browser blocks it.
         const tryAutoplay = async () => {
           try {
             await audio.play();
@@ -216,9 +215,7 @@
           }
         };
 
-        
-        
-
+        // Lets the play button start or pause the background track.
         toggle.addEventListener("click", async () => {
           if (audio.paused) {
             try {
@@ -233,11 +230,10 @@
           }
         });
 
+        // Keeps the slider working after autoplay or manual play kicks in.
         volume.addEventListener("input", (e) => {
-          audio.volume = e.target.value; // 0.0 → 1.0
+          audio.volume = e.target.value;
         });
-
-       
 
         tryAutoplay();
       });

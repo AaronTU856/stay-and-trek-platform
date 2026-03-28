@@ -1,8 +1,8 @@
-// Global variables
+// Keeps track of the shared map and any markers added by the user.
 let map;
 let userMarkers = [];
 
-// Initialize application when page loads
+// Starts the map page once the DOM is ready.
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🗺️ Initializing Hello Map application...');
     initializeMap();
@@ -10,15 +10,11 @@ document.addEventListener('DOMContentLoaded', function() {
     loadSampleData();
 });
 
-/**
- * Initialize the Leaflet map
- */
+// Builds the Leaflet map and adds the base controls.
 function initializeMap() {
     try {
-        // Create map instance centered on Ireland
         map = L.map('map').setView([54.0, -8.0], 7);
         
-        // Changed tile provider to CartoDB Voyager (more reliable for web apps)
         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
             subdomains: 'abcd',
@@ -26,7 +22,6 @@ function initializeMap() {
             minZoom: 2
         }).addTo(map);
         
-        // Add scale control
         L.control.scale({
             position: 'bottomright',
             imperial: false
@@ -40,34 +35,26 @@ function initializeMap() {
     }
 }
 
-/**
- * Set up event listeners for user interactions
- */
+// Connects clicks, form actions, and layer toggles to the map.
 function setupEventListeners() {
-    // Map click event for coordinates
     map.on('click', function(e) {
         const lat = e.latlng.lat.toFixed(6);
         const lng = e.latlng.lng.toFixed(6);
         
-        // Update coordinate display
         document.getElementById('map-coordinates').textContent = 
             `Coordinates: ${lat}, ${lng}`;
         
-        // Fill form inputs
         document.getElementById('location-lat').value = lat;
         document.getElementById('location-lng').value = lng;
         
-        // Show temporary marker
         showTemporaryMarker(e.latlng);
     });
     
-    // Quick add form submission
     document.getElementById('quick-add-form').addEventListener('submit', function(e) {
         e.preventDefault();
         addUserLocation();
     });
     
-    // Layer toggle controls
     document.getElementById('locations-layer').addEventListener('change', function(e) {
         toggleSampleLocations(e.target.checked);
     });
@@ -76,19 +63,15 @@ function setupEventListeners() {
         toggleUserLocations(e.target.checked);
     });
     
-    // Reset view button
     document.getElementById('reset-view').addEventListener('click', function() {
         resetMapView();
     });
 }
 
-/**
- * Load sample location data to demonstrate the map
- */
+// Drops in sample places so the map has something to show straight away.
 function loadSampleData() {
     showMapLoading(true);
     
-    // Sample European cities for demonstration
     const sampleLocations = [
         { name: "Dublin, Ireland", lat: 53.3498, lng: -6.2603 },
         { name: "London, UK", lat: 51.5074, lng: -0.1278 },
@@ -99,11 +82,10 @@ function loadSampleData() {
         { name: "Amsterdam, Netherlands", lat: 52.3676, lng: 4.9041 }
     ];
     
-    // Add markers for sample locations
     sampleLocations.forEach((location, index) => {
         setTimeout(() => {
             addSampleMarker(location);
-        }, index * 200); // Stagger the animations
+        }, index * 200);
     });
     
     setTimeout(() => {
@@ -112,9 +94,7 @@ function loadSampleData() {
     }, sampleLocations.length * 200 + 500);
 }
 
-/**
- * Add a sample location marker
- */
+// Adds one sample marker with a simple popup and entry animation.
 function addSampleMarker(location) {
     const icon = L.divIcon({
         className: 'custom-marker',
@@ -143,7 +123,6 @@ function addSampleMarker(location) {
     marker.bindPopup(popupContent);
     marker.location = location;
     
-    // Add bounce animation
     setTimeout(() => {
         const element = marker.getElement();
         if (element) {
@@ -152,15 +131,12 @@ function addSampleMarker(location) {
     }, 100);
 }
 
-/**
- * Add user-created location
- */
+// Validates the quick-add form and places a new marker on the map.
 function addUserLocation() {
     const name = document.getElementById('location-name').value.trim();
     const lat = parseFloat(document.getElementById('location-lat').value);
     const lng = parseFloat(document.getElementById('location-lng').value);
     
-    // Validation
     if (!name) {
         showAlert('warning', 'Please enter a location name');
         return;
@@ -176,7 +152,6 @@ function addUserLocation() {
         return;
     }
     
-    // Create user marker with different styling
     const icon = L.divIcon({
         className: 'custom-marker',
         html: `<div style="
@@ -209,19 +184,15 @@ function addUserLocation() {
     marker.userIndex = userMarkers.length;
     userMarkers.push(marker);
     
-    // Clear form
     document.getElementById('quick-add-form').reset();
     
-    // Focus on new marker
     map.setView([lat, lng], Math.max(map.getZoom(), 10));
     marker.openPopup();
     
     showAlert('success', `Added "${name}" to the map!`);
 }
 
-/**
- * Remove user marker
- */
+// Removes a marker that was added through the quick-add form.
 function removeUserMarker(index) {
     if (userMarkers[index]) {
         map.removeLayer(userMarkers[index]);
@@ -230,11 +201,8 @@ function removeUserMarker(index) {
     }
 }
 
-/**
- * Show temporary marker for coordinate selection
- */
+// Shows a short-lived marker where the user clicks on the map.
 function showTemporaryMarker(latlng) {
-    // Remove existing temporary marker if any
     if (window.tempMarker) {
         map.removeLayer(window.tempMarker);
     }
@@ -256,7 +224,6 @@ function showTemporaryMarker(latlng) {
     
     window.tempMarker = L.marker(latlng, { icon }).addTo(map);
     
-    // Auto-remove after 3 seconds
     setTimeout(() => {
         if (window.tempMarker) {
             map.removeLayer(window.tempMarker);
@@ -265,9 +232,7 @@ function showTemporaryMarker(latlng) {
     }, 3000);
 }
 
-/**
- * Toggle sample locations visibility
- */
+// Shows or hides the built-in sample markers.
 function toggleSampleLocations(show) {
     map.eachLayer(function(layer) {
         if (layer.location && !layer.userIndex !== undefined) {
@@ -280,9 +245,7 @@ function toggleSampleLocations(show) {
     });
 }
 
-/**
- * Toggle user locations visibility
- */
+// Shows or hides markers that came from the quick-add form.
 function toggleUserLocations(show) {
     userMarkers.forEach(marker => {
         if (marker) {
@@ -295,18 +258,14 @@ function toggleUserLocations(show) {
     });
 }
 
-/**
- * Reset map to default view
- */
+// Sends the map back to its default view and clears the coordinate prompt.
 function resetMapView() {
     map.setView([54.0, 15.0], 4);
     document.getElementById('map-coordinates').textContent = 'Click on map to see coordinates';
     showAlert('info', 'Map view reset to default');
 }
 
-/**
- * Show/hide map loading overlay
- */
+// Switches the loading overlay on and off.
 function showMapLoading(show) {
     const overlay = document.getElementById('map-loading');
     if (show) {
@@ -316,11 +275,8 @@ function showMapLoading(show) {
     }
 }
 
-/**
- * Show Bootstrap alert
- */
+// Shows a temporary Bootstrap alert near the top of the page.
 function showAlert(type, message) {
-    // Create alert element
     const alert = document.createElement('div');
     alert.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
     alert.style.cssText = 'top: 80px; right: 20px; z-index: 9999; min-width: 300px;';
@@ -331,7 +287,6 @@ function showAlert(type, message) {
     
     document.body.appendChild(alert);
     
-    // Auto-remove after 5 seconds
     setTimeout(() => {
         if (alert.parentNode) {
             alert.classList.remove('show');
@@ -340,7 +295,7 @@ function showAlert(type, message) {
     }, 5000);
 }
 
-// CSS for animations
+// Adds the pulse animation used by the temporary click marker.
 const style = document.createElement('style');
 style.textContent = `
     @keyframes pulse {

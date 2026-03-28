@@ -1,19 +1,3 @@
-"""
-URL configuration for webmapping_project project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/4.2/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
@@ -25,73 +9,58 @@ from webmapping_project import views as project_views
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 
+# Wires the main web pages, APIs, and app sections into one route table.
 urlpatterns = [
     path('admin/', admin.site.urls),
 
-    # Home page (main map view)
-    #path('', trail_map, name='home'),
+    # Sends the root URL to the public landing page.
     path('', project_views.home, name='home'),
     
-    # AUTHENTICATION ENDPOINTS
+    # Exposes token endpoints for the mobile app and API clients.
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    
-    
-    
-    # Accommodations API
-    #path('api/accommodations/nearby/', NearbyAccommodationView.as_view(), name='nearby-accommodations'),
-    #path('api/', include('trails_api.urls')),
 
-    # Maps app
+    # Hands off the map pages to the maps app.
     path('maps/', include(('maps.urls', 'maps'), namespace='maps')),
 
-    # Trails API
+    # Hands off trail data and trail pages to the trails app.
     path('api/trails/', include(('trails_api.urls', 'trails'), namespace='trails')),
-    
-    # Weather
-    #path('api/trails/weather/<int:pk>/', views.trail_weather, name='trail-weather'),
 
+    # Opens the advanced mapping section.
     path('advanced-js-mapping/', include(('advanced_js_mapping.urls','advanced_js_mapping'), namespace='advanced_js_mapping')),
 
-    # API documentation
+    # Publishes API schema and docs pages.
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 
-    # Dashboard
+    # Opens the analytics and dashboard section.
     path('dashboard/', include('dashboard.urls')),
     
-    # Authentication
-    path('auth/', include('authentication.urls')),  # Add this line
-    
-    
+    # Opens the login, signup, and profile pages.
+    path('auth/', include('authentication.urls')),
 ]
 
-# Serve static and media files during development
+# Serves local static and media files while developing.
 if settings.DEBUG:
     from django.views.static import serve as static_serve
     from django.urls import re_path
     import os
     from pathlib import Path
     
-    # Helper to serve files from multiple static directories (root + app-specific)
+    # Tries collected files first, then falls back to root and app static folders.
     def static_files_view(request, path):
-        """Serve static files from root static/ and app-specific static/ dirs"""
-        # Prefer collected static (STATIC_ROOT) to avoid host bind-mount locking issues
         static_root = Path(settings.STATIC_ROOT)
         if (static_root / path).exists():
             return static_serve(request, path, document_root=str(static_root))
 
-        # Try root static directory next
         root_static = settings.BASE_DIR / 'static'
         if (root_static / path).exists():
             return static_serve(request, path, document_root=str(root_static))
         
-        # Try app-specific static directories
-        # Path format: "trails_api/js/file.js" - split on first /
         if '/' in path:
             app_name = path.split('/')[0]
-            remaining_path = path[len(app_name)+1:]  # Remove app_name/ prefix
+            remaining_path = path[len(app_name)+1:]
             
             app_static_dir = settings.BASE_DIR / app_name / 'static' / app_name
             if app_static_dir.exists():
@@ -99,20 +68,19 @@ if settings.DEBUG:
                 if full_path.exists():
                     return static_serve(request, remaining_path, document_root=str(app_static_dir))
         
-        # File not found - return 404
         from django.http import Http404
         raise Http404(f"Static file not found: {path}")
     
-    # Serve static files directly from the source directories
     urlpatterns += [
         re_path(r'^static/(?P<path>.*)$', static_files_view),
         re_path(r'^media/(?P<path>.*)$', static_serve, {'document_root': str(settings.BASE_DIR / 'media')}),
     ]
- # --- EMERGENCY SUPERUSER (BACKGROUND VERSION) ---
+
 from django.contrib.auth import get_user_model
 import threading
 import logging
 
+# Creates a fallback admin account if the default one is missing.
 def create_emergency_admin():
     try:
         User = get_user_model()
@@ -126,6 +94,5 @@ def create_emergency_admin():
     except Exception as e:
         print(f"⚠️ Superuser check skipped: {e}")
 
-# This 'threading' bit is the fix. It lets the website start 
-# while the database check runs in the background.
+# Runs the admin check in the background so startup is not blocked.
 threading.Thread(target=create_emergency_admin, daemon=True).start()
