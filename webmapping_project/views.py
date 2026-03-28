@@ -1,14 +1,11 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
-# Create your views here.
+
+# Renders the public landing page for the web app.
 def home(request):
-    """
-    Public Landing Page.
-    Anyone can see the 'Stay and Trek' banner here.
-    """
     return render(request, 'index.html')
 
 @login_required
 def trail_map(request):
-    # This is the view for your 'advanced_js_mapping:map'
+    # Opens the main trail map for signed-in users.
     return render(request, 'advanced_js_mapping/map.html')
