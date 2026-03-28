@@ -892,6 +892,41 @@ body.high-contrast-mode .leaflet-control-layers-toggle {
     border-color: #111111 !important;
 }
 
+body.high-contrast-mode .leaflet-control-search.search-exp input[type="text"],
+body.high-contrast-mode .leaflet-control-search.search-exp input[type="search"] {
+    font-weight: 700 !important;
+}
+
+body.high-contrast-mode .leaflet-control-search.search-exp input::placeholder {
+    color: #3a3a3a !important;
+    opacity: 1 !important;
+}
+
+body.high-contrast-mode .leaflet-bar a:hover,
+body.high-contrast-mode .leaflet-bar a:focus,
+body.high-contrast-mode .leaflet-control-layers-toggle:hover,
+body.high-contrast-mode .leaflet-control-layers-toggle:focus {
+    background: #ffd400 !important;
+    color: #111111 !important;
+}
+
+body.high-contrast-mode .leaflet-control-layers,
+body.high-contrast-mode .leaflet-control-layers-expanded {
+    background: #ffffff !important;
+    color: #111111 !important;
+    border: 2px solid #111111 !important;
+}
+
+body.high-contrast-mode .accommodation-map-marker {
+    background: radial-gradient(circle at 35% 35%, #ffd86f 0%, #d48000 58%, #5c2e00 100%) !important;
+    border: 3px solid #111111 !important;
+    box-shadow: 0 0 0 4px rgba(255, 212, 0, 0.45), 0 6px 14px rgba(17, 17, 17, 0.25) !important;
+}
+
+body.high-contrast-mode .accommodation-map-marker:hover {
+    box-shadow: 0 0 0 5px rgba(255, 212, 0, 0.6), 0 8px 18px rgba(17, 17, 17, 0.3) !important;
+}
+
 body.high-contrast-mode .accommodation-distance-label,
 body.high-contrast-mode .accommodation-hover-tooltip .leaflet-tooltip-content,
 body.high-contrast-mode #trail-results {
