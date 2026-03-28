@@ -5,6 +5,7 @@ import * as SecureStore from 'expo-secure-store';
 import IconButton from '../../components/IconButton';
 import { useRouter } from 'expo-router';
 
+// Gives signed-in users a quick way into the main parts of the app.
 export default function HomeScreen() {
   const { largeText, darkMode } = useAccessibility();
   const { setUserToken, userToken } = useAuth();
@@ -12,6 +13,7 @@ export default function HomeScreen() {
   const titleFontSize = largeText ? 34 : 26;
   const bodyFontSize = largeText ? 18 : 16;
 
+  // Clears saved tokens and returns the app to a signed-out state.
   const handleLogout = async () => {
     try {
       await SecureStore.deleteItemAsync('userToken');
@@ -56,7 +58,6 @@ export default function HomeScreen() {
 
       <View style={styles.contentArea}>
         {userToken ? (
-           /* SECTION B: Logged In Quick Access */
           <View style={[styles.memberDashboard, darkMode && styles.moduleCardDark]}>
             <Text style={[styles.welcomeText, darkMode && styles.titleDark]}>Quick Access</Text>
             <Text style={[styles.subtitleText, darkMode && styles.subtitleTextDark]}>
@@ -70,8 +71,6 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
         ) : (
-          /* This state should technically be bypassed by your layout redirect, 
-             but it's good for a fallback */
           <TouchableOpacity style={styles.loginButton} onPress={() => router.push('/login')}>
             <Text style={styles.loginButtonText}>Sign In to Explore More</Text>
           </TouchableOpacity>

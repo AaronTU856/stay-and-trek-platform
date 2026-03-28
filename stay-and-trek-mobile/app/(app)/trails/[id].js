@@ -1,6 +1,3 @@
-// Trail details screen - displays detailed information about a selected hiking trail
-// Shows information like difficulty, distance, description, and weather conditions
-
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, TextInput, Alert, Share } from "react-native";
 import { useAccessibility } from "../../../context/AccessibilityContext";
 import { useAuth } from "../../_layout";
@@ -10,10 +7,10 @@ import { getTrailById } from '../../../services/apiClient';
 import { Ionicons } from '@expo/vector-icons';
 import { API_BASE_URL } from '../../../config/apiConfig';
 
-// Helper for Unit Conversion
+// Converts the weather temperature when the unit is switched.
 const cToF = (c) => Math.round((c * 9) / 5 + 32);
 
-
+// Shows the selected trail, nearby stays, and current weather in one place.
 export default function TrailDetails() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
@@ -39,6 +36,7 @@ export default function TrailDetails() {
 
   const { userToken } = useAuth();
 
+  // Shares the key trail details through the device share sheet.
   const handleShare = async () => {
     try {
       await Share.share({
@@ -50,6 +48,7 @@ export default function TrailDetails() {
     }
   };
 
+  // Sends a suggested trail description for moderator review.
   const handleContribution = async () => {
 
     if (!userToken) {
@@ -70,7 +69,7 @@ export default function TrailDetails() {
 
         if (response.ok) {
             setSubmitted(true);
-            setNewDesc(''); // Clear input after successful submission
+            setNewDesc('');
             Alert.alert("Success", "Your suggestion has been sent for review!");
         } else {
           Alert.alert("Error", "Something went wrong. Please try again.");
@@ -81,32 +80,28 @@ export default function TrailDetails() {
   };
 
  
+  // Loads nearby accommodation for the selected trail and current filter.
   useEffect(() => {
-    // 1. Ensure we have the trail ID from the URL params
   if (!id) return;
 
   const controller = new AbortController();
   const categoryParam = selectedCategory ? `&category=${selectedCategory}` : '';
-  // 2. Point to the new endpoint we optimized today
   fetch(`${API_BASE_URL}/api/trails/accommodations/near-trail/?trail_id=${id}${categoryParam}`)
     .then(res => {
       if (!res.ok) throw new Error(`API returned ${res.status}`);
       return res.json();
     })
     .then(data => {
-      // 3. Convert GeoJSON features into the format your UI expects
       if (data && data.features) {
         const places = data.features.map(f => ({
           id: f.properties.id,
           name: f.properties.name,
           price_per_night: f.properties.price_per_night ? parseFloat(f.properties.price_per_night) : 0,
           source: f.properties.source,
-          // Extract coordinates for mapping if you add a map later
           latitude: f.geometry.coordinates[1],
           longitude: f.geometry.coordinates[0]
         }));
         
-        // Sort by price as you had before
         places.sort((a, b) => (a.price_per_night || 0) - (b.price_per_night || 0));
         setAccommodation(places);
       }
@@ -119,9 +114,10 @@ export default function TrailDetails() {
     });
 
   return () => controller.abort();
-}, [id, selectedCategory]); // Dependency is 'id', not 'trail'
+}, [id, selectedCategory]);
 
 
+  // Loads the full trail record when the screen opens or the id changes.
   useEffect(() => {
     const fetchTrailDetails = async () => {
       try {
@@ -146,14 +142,13 @@ export default function TrailDetails() {
     fetchTrailDetails();
   }, [id]);
 
-  // 2. Fetch Weather only AFTER trail is loaded
+  // Loads current weather after the trail coordinates are available.
   useEffect(() => {
     if (!trail) return;
     
     const fetchTrailWeather = async () => {
     try {
       setWeatherLoading(true);
-      // Ensure this matches your .env exactly
       const API_KEY = process.env.EXPO_PUBLIC_OPENWEATHERMAP_API_KEY; 
 
       console.log("WEATHER DEBUG - Key loaded:", API_KEY ? "YES" : "NO");
@@ -179,7 +174,7 @@ export default function TrailDetails() {
   fetchTrailWeather();
 }, [trail]);
 
-  // Handle Initial Trail Loading
+  // Shows a loading state until the trail data is ready.
   if (loading) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
@@ -196,7 +191,7 @@ export default function TrailDetails() {
     );
   }
  
-  // Calculate temp only if weather exists
+  // Picks the right temperature to show for the current unit.
   const temp = (weather && weather.main) 
     ? (unit === 'C' ? Math.round(weather.main.temp) : cToF(weather.main.temp)) 
     : '--';
@@ -260,7 +255,7 @@ export default function TrailDetails() {
       <View style={styles.weatherStrip}>
         {weatherLoading ? (
           <ActivityIndicator size="small" color="#2E7D32" />
-      ) : weather?.weather ? ( // Check if weather AND the weather array exist
+      ) : weather?.weather ? (
         <>
             <View style={styles.mainInfo}>
               <Ionicons 
@@ -316,17 +311,16 @@ export default function TrailDetails() {
                   value={newDesc}
                   onChangeText={setNewDesc}
                   placeholder={userToken ? "Suggest a better description..." : "Log in to suggest changes"}
-                  editable={!!userToken} // Prevents typing if logged out
+                  editable={!!userToken}
                   multiline
                 />
                 <TouchableOpacity 
                   style={[
                     styles.saveButton, 
-                    // Logic: Grey out if guest OR if currently sending
                     { backgroundColor: (!userToken || isSubmitting) ? '#A0AEC0' : '#2E7D32' }
                   ]} 
                   onPress={handleContribution}
-                  disabled={!userToken || isSubmitting} // Disable for guests AND during submission
+                  disabled={!userToken || isSubmitting}
                 >
                   <Text style={styles.buttonText}>
                     {!userToken 
@@ -349,7 +343,7 @@ export default function TrailDetails() {
           {accommodation.length} places found along this trail
         </Text>
 
-        {/* Category Filter Buttons */}
+        {/* Category filters */}
         <View style={styles.filterButtonsRow}>
           <TouchableOpacity 
             onPress={() => setSelectedCategory('hotel')}
@@ -373,7 +367,6 @@ export default function TrailDetails() {
           </TouchableOpacity>
         </View>
 
-        {/* Check if the array itself exists first */}
         {!accommodation ? (
           <ActivityIndicator size="small" color="#2E7D32" />
         ) : accommodation.length === 0 ? (
@@ -467,13 +460,11 @@ export default function TrailDetails() {
   );
 }
 
-// Styles for trail details screen
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
-  // Header section with back button and title
   header: {
     backgroundColor: '#fff',
     paddingHorizontal: 16,
@@ -482,17 +473,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
   },
-  // Back button styling
   backButton: {
     marginBottom: 8,
     paddingVertical: 6,
   },
-  // Trail title in header
   title: {
     fontWeight: '700',
     color: '#333',
   },
-  // Stats grid showing key trail information
   statsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -502,7 +490,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     marginBottom: 8,
   },
-  // Individual stat box
   statBox: {
     width: '48%',
     backgroundColor: '#f0f0f0',
@@ -510,7 +497,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 8,
   },
-  // Section styling for content blocks
   section: {
     backgroundColor: '#fff',
     marginHorizontal: 12,

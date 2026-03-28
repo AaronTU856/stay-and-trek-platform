@@ -6,4 +6,8 @@ Folder for:
 - step-by-step workflow test records
 - screenshots references
 
-Existing manual shell scripts at the project root can be reviewed and moved here later if needed.
+Current manual helper scripts:
+- `test_web_app.sh`
+- `test_trails_towns.sh`
+
+These are support scripts for manual smoke checks and are not part of Django test discovery.
