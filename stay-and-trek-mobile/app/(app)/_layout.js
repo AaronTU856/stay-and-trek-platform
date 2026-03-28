@@ -9,6 +9,7 @@ export default function AppLayout() {
         <Tabs.Screen name="map" options={{ title: "Map View" }} />
         <Tabs.Screen name="trails" options={{ title: "Trails" }} />
         <Tabs.Screen name="index" options={{ title: "Home" }} />
+        <Tabs.Screen name="list" options={{ title: "My Trip" }} />
         <Tabs.Screen name="stay" options={{ title: "Stay" }} />
         <Tabs.Screen name="weather" options={{ title: "Weather" }} />
       </Tabs>
