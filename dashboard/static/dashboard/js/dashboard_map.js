@@ -1,36 +1,34 @@
 console.log("✅ dashboard_map.js loaded");
 
+// Sets up the dashboard map, filters, and summary cards.
 document.addEventListener("DOMContentLoaded", () => {
     console.log("🚀 Initializing dashboard map...");
 
-    // ✅ Prevent multiple Leaflet initializations
+    // Clears any old Leaflet instance before rebuilding the dashboard map.
     const existingMap = L.DomUtil.get('map');
     if (existingMap !== null) {
         existingMap._leaflet_id = null;
     }
 
-    // ✅ Initialize map
-    // Define the corners of the box around Ireland
-    const southWest = L.latLng(51.0, -11.0); // Bottom left (Atlantic)
-    const northEast = L.latLng(55.5, -5.0);  // Top right (North Channel/Irish Sea)
+    const southWest = L.latLng(51.0, -11.0);
+    const northEast = L.latLng(55.5, -5.0);
     const bounds = L.latLngBounds(southWest, northEast);
 
-    // Initialize map with restricted bounds
+    // Keeps the dashboard map focused on Ireland.
     const map = L.map('map', {
-        maxBounds: bounds,         // Restricts panning
-        maxBoundsViscosity: 1.0,   // Makes the bounds "hard" (bounces back)
-        minZoom: 7.2,                // Prevents zooming out to see the whole world
+        maxBounds: bounds,
+        maxBoundsViscosity: 1.0,
+        minZoom: 7.2,
         maxZoom: 20
     }).setView([53.4, -8.2], 7.3);
 
-    // 🗺️ Base tile layer - Updated to CartoDB to fix 403 Access Blocked
+    // Adds the base map tiles.
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
         subdomains: 'abcd',
         maxZoom: 20
     }).addTo(map);
 
-    // 🟩 Custom icons
     const trailIcons = {
         easy: L.icon({
             iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
@@ -66,10 +64,10 @@ document.addEventListener("DOMContentLoaded", () => {
     let trailsClusterLayer = null;
     let townsLayer = null;
 
-    
+    // Loads trail data onto the map and refreshes the totals.
     function loadTrails(filters = {}) {
         const loader = document.getElementById('loading');
-        if (loader) loader.style.display = 'block'; // Start the spinner
+        if (loader) loader.style.display = 'block';
 
         let url = '/api/trails/geojson/';
         const params = new URLSearchParams(filters);
@@ -94,37 +92,35 @@ document.addEventListener("DOMContentLoaded", () => {
                     
                     style: (feature) => {
                         const difficulty = (feature.properties.difficulty || "").toLowerCase();
-                        let trailColor = '#28a745'; // Default Green
+                        let trailColor = '#28a745';
                         if (difficulty === 'moderate') trailColor = '#fd7e14'; 
                         if (difficulty === 'hard') trailColor = '#dc3545';
                         
                         return { color: trailColor, weight: 4, opacity: 0.9 };
                     },
 
-                    // This part handles the Pins (Markers)
+                    // Uses colour-coded dots for trail points.
                     pointToLayer: (feature, latlng) => {
                             const difficulty = (feature.properties.difficulty || "").toLowerCase();
                             
-                            // Define the Traffic Light colors for the dots
                             let dotColor;
                             if (difficulty === 'easy') {
-                                dotColor = '#28a745'; // Green
+                                dotColor = '#28a745';
                             } else if (difficulty === 'moderate') {
-                                dotColor = '#fd7e14'; // Orange
+                                dotColor = '#fd7e14';
                             } else if (difficulty === 'hard') {
-                                dotColor = '#dc3545'; // Red
+                                dotColor = '#dc3545';
                             } else {
-                                dotColor = '#6c757d'; // Grey for unknown
+                                dotColor = '#6c757d';
                             }
 
-                            // Return a CircleMarker instead of a standard Marker
                             return L.circleMarker(latlng, {
-                                radius: 6,               // Size of the dot
-                                fillColor: dotColor,     // The "Traffic Light" color
-                                color: "#ffffff",        // White border (makes it pop)
-                                weight: 2,               // Border thickness
+                                radius: 6,
+                                fillColor: dotColor,
+                                color: "#ffffff",
+                                weight: 2,
                                 opacity: 1,
-                                fillOpacity: 0.9         // Slight transparency
+                                fillOpacity: 0.9
                             });
                     },
                     onEachFeature: (feature, layer) => {
@@ -149,65 +145,61 @@ document.addEventListener("DOMContentLoaded", () => {
                 
                 updateDashboardSummary(trailsCount, townsCount, currentPop);
 
-                // STOP THE SPINNER HERE 
                 if (loader) loader.style.display = 'none';
             })
             .catch(err => {
                 console.error('❌ Error loading trails:', err);
-                //  STOP THE SPINNER 
                 if (loader) loader.style.display = 'none';
             });
     }
 
+    // Collects the current filter values and reloads both datasets.
+    function applyFilters() {
+        const minLength = document.getElementById('trail-length-min')?.value.trim();
+        const maxLength = document.getElementById('trail-length-max')?.value.trim();
+        const difficulty = document.getElementById('trail-difficulty-min')?.value.trim().toLowerCase();
+        const county = document.getElementById('country-filter')?.value.trim();
+        const townType = document.getElementById('town-type-filter')?.value.trim();
+        const minTownPop = document.getElementById('town-pop-min')?.value.trim();
+        const maxTownPop = document.getElementById('town-pop-max')?.value.trim();
+        const trailType = document.getElementById('trail-type-filter')?.value.trim();
 
-function applyFilters() {
-    const minLength = document.getElementById('trail-length-min')?.value.trim();
-    const maxLength = document.getElementById('trail-length-max')?.value.trim();
-    const difficulty = document.getElementById('trail-difficulty-min')?.value.trim().toLowerCase();
-    const county = document.getElementById('country-filter')?.value.trim();
-    const townType = document.getElementById('town-type-filter')?.value.trim();
-    const minTownPop = document.getElementById('town-pop-min')?.value.trim();
-    const maxTownPop = document.getElementById('town-pop-max')?.value.trim();
-    const trailType = document.getElementById('trail-type-filter')?.value.trim();
+        const filters = {};
 
-    const filters = {};
+        if (minLength && !isNaN(minLength)) filters.min_length = minLength;
+        if (maxLength && !isNaN(maxLength)) filters.max_length = maxLength;
+        if (difficulty && ['easy', 'moderate', 'hard'].includes(difficulty)) {
+            filters.difficulty = difficulty;
+        }
+        if (county && county !== "") {
+            filters.county = county;
+        }
+        if (townType) filters.town_type = townType;
+        if (minTownPop) filters.min_population = minTownPop;
+        if (maxTownPop) filters.max_population = maxTownPop;
+        if (trailType) filters.trail_type = trailType;
 
-    if (minLength && !isNaN(minLength)) filters.min_length = minLength;
-    if (maxLength && !isNaN(maxLength)) filters.max_length = maxLength;
-    if (difficulty && ['easy', 'moderate', 'hard'].includes(difficulty)) {
-        filters.difficulty = difficulty;
+        console.log("Selected county:", county);
+        console.log("🎯 Applying filters:", filters);
+        loadTrails(filters);
+        loadTowns(filters);
     }
-    if (county && county !== "") {
-        filters.county = county;
-    }
-    if (townType) filters.town_type = townType;
-    if (minTownPop) filters.min_population = minTownPop;
-    if (maxTownPop) filters.max_population = maxTownPop;
-    if (trailType) filters.trail_type = trailType;
 
-    console.log("Selected county:", county);
-    console.log("🎯 Applying filters:", filters);
-    loadTrails(filters);
-    loadTowns(filters);
-}
+    // Hooks the filter controls into the dashboard map.
+    document.getElementById('apply-filters').addEventListener('click', applyFilters);
+    document.getElementById('country-filter')?.addEventListener('change', applyFilters);
 
-// Apply filters when the user clicks
-document.getElementById('apply-filters').addEventListener('click', applyFilters);
-
-// Re-apply when county changes so "All Counties" immediately resets the filter
-document.getElementById('country-filter')?.addEventListener('change', applyFilters);
-
-// Clear filters when the user clicks
-document.getElementById('clear-filters').addEventListener('click', () => {
-    document.querySelectorAll('#trail-length-min, #trail-length-max, #trail-difficulty-min, #country-filter, #town-type-filter, #town-pop-min, #town-pop-max, #trail-type-filter')
-        .forEach(el => el.value = '');
-    loadTrails({});
-    loadTowns({});
-});
+    // Clears the form and reloads the full dataset.
+    document.getElementById('clear-filters').addEventListener('click', () => {
+        document.querySelectorAll('#trail-length-min, #trail-length-max, #trail-difficulty-min, #country-filter, #town-type-filter, #town-pop-min, #town-pop-max, #trail-type-filter')
+            .forEach(el => el.value = '');
+        loadTrails({});
+        loadTowns({});
+    });
 
     
     
-    // ✅ Cluster toggle
+    // Switches between clustered and plain trail layers.
     const clusterTrails = document.getElementById('cluster-trails');
     if (clusterTrails) {
         clusterTrails.addEventListener('change', (e) => {
@@ -224,7 +216,7 @@ document.getElementById('clear-filters').addEventListener('click', () => {
     }
     
 
-    // ✅ Load Towns
+    // Loads town markers and refreshes the totals.
     function loadTowns(filters = {}) {
         const loader = document.getElementById('loading');
         if (loader) loader.style.display = 'block';
@@ -270,7 +262,7 @@ document.getElementById('clear-filters').addEventListener('click', () => {
     }
 
 
-    // ✅ Toggles
+    // Hooks the layer toggles into the trail and town layers.
     const showTrails = document.getElementById('show-trails');
     const showTowns = document.getElementById('show-towns');
 
@@ -292,6 +284,7 @@ document.getElementById('clear-filters').addEventListener('click', () => {
         });
     }
 
+    // Updates the summary cards under the map.
     function updateDashboardSummary(trailsCount = 0, townsCount = 0, totalPopulation = 0) {
         const trailsEl = document.getElementById('trails-count');
         const townsEl = document.getElementById('towns-count');
@@ -305,12 +298,7 @@ document.getElementById('clear-filters').addEventListener('click', () => {
     }
     
 
-
-    // ✅ Initial load
+    // Loads the first set of trails and towns when the page opens.
     loadTrails();
     loadTowns();
-
-
-
-    
 });

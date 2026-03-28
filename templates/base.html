@@ -7,11 +7,11 @@
     <title>{% block title %}Stay and Trek 2026{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/global-theme.css' %}">
-    <!-- Leaflet CSS for mapping -->
+    <!-- Loads the shared map styles used across the site. -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <!-- Leaflet Draw CSS for drawing tools -->
+    <!-- Loads the drawing tool styles for polygon and shape tools. -->
     <link rel="stylesheet" href="{% static 'leaflet/draw/leaflet.draw.css' %}" />
-    <!-- MarkerCluster CSS for trail clustering -->
+    <!-- Loads the cluster styles for grouped map markers. -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
   
@@ -40,7 +40,7 @@
 </head>
 <body>
 
-
+    <!-- Shared site header and main navigation. -->
     <nav class="navbar navbar-expand-lg sticky-top shadow-sm" style="background-color: white; border-bottom: 3px solid #2E8B57;">
         <div class="container-fluid px-4">
             <a class="navbar-brand d-flex align-items-center" href="/">
@@ -178,6 +178,7 @@
         {% block content %}{% endblock %}
     </main>
 
+    <!-- Shared footer shown on the web pages. -->
     <footer class="text-center py-5 mt-5" style="background-color: #b2d3c0; border-top: 4px solid #2E8B57;">
         <div class="container">
             <p class="mb-0" style="color: #0e542c; font-weight: bold;">Stay and Trek</p>
@@ -186,15 +187,16 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Leaflet JS libraries -->
+    <!-- Loads the shared map libraries. -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="{% static 'leaflet/draw/leaflet.draw.js' %}"></script>
-    <!-- MarkerCluster JS for trail clustering -->
+    <!-- Loads marker clustering for dense trail and town data. -->
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-    <!-- Accessibility Features -->
+    <!-- Loads the accessibility toggle used across the site. -->
     <script src="{% static 'js/accessibility-toggle.js' %}"></script>
 
 
+<!-- Shared toast used for route and map messages. -->
 <div class="toast-container position-fixed top-0 start-50 translate-middle-x p-3" style="z-index: 2000;">
   <div id="routeToast" class="toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true">
     <div class="d-flex">

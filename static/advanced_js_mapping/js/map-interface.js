@@ -1,23 +1,14 @@
-// advanced_js_mapping/static/advanced_js_mapping/js/map-interface.js
-
-/**
- * Advanced Mapping Interface Module
- * Handles Leaflet.js map initialization and polygon drawing functionality
- */
-
-
-// Detect if running on Cloud Run or locally (Docker)
+// Picks the right API root for production and local development.
 let API_BASE = "";
 
 if (window.location.hostname.includes("run.app")) {
-    // Production (Cloud Run) backend URL
     API_BASE = "https://stay-and-trek-service-642845720185.europe-west1.run.app";
 } else {
-    // Local development (Docker)
     API_BASE = "";
 }
 
 
+// Manages the advanced townland map, drawing tools, and map feedback.
 window.AdvancedMapping = (function() {
     let map = null;
     let drawControl = null;
@@ -38,7 +29,8 @@ window.AdvancedMapping = (function() {
         const imageIndex = Math.abs(seed) % townImagePool.length;
         return townImagePool[imageIndex];
     }
-    // Utility function to show toast notifications
+
+    // Shows a short toast message without repeating the same one too quickly.
     function showToast(message, variant, delay) {
         const toastEl = document.getElementById('routeToast');
         const toastBody = document.getElementById('routeToastBody');
@@ -73,6 +65,7 @@ window.AdvancedMapping = (function() {
         }).show();
     }
 
+    // Builds the popup content for a town marker.
     function createTownPopupContent(city, imageUrl) {
         const townImage = imageUrl || getTownImage(city);
         const population = Number(city && city.population);
@@ -90,6 +83,7 @@ window.AdvancedMapping = (function() {
         `;
     }
 
+    // Moves the map to a town and opens its popup.
     function focusTown(city, imageUrl) {
         if (!map || !city) return;
 
@@ -105,9 +99,7 @@ window.AdvancedMapping = (function() {
             .openOn(map);
     }
 
-    /**
-     * Initialize the interactive map with drawing tools
-     */
+    // Builds the map, shared layers, and drawing tools for the explorer page.
     function initializeMap(containerId) {
         try {
             const irelandBounds = L.latLngBounds(
@@ -115,21 +107,19 @@ window.AdvancedMapping = (function() {
                 [56.3, -4.8]
             );
 
-            // Create map instance
             map = L.map(containerId, {
                 maxBounds: irelandBounds,
                 maxBoundsViscosity: 1.0,
                 minZoom: 7
-            }).setView([53.3598, -7.7603], 7.4); // Centered on Ireland
+            }).setView([53.3598, -7.7603], 7.4);
 
-            // Add base tile layer
            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
                 subdomains: 'abcd',
                 maxZoom: 20
             }).addTo(map);
 
-            // Smoothly fly in to Ireland after 1 second
+            // Adds a short fly-in when the map first appears.
             setTimeout(() => {
                 map.flyTo([53.35, -7.8], 7, {
                     duration: 2.5,
@@ -137,11 +127,9 @@ window.AdvancedMapping = (function() {
                 });
             }, 1000);
 
-            // Expose map globally for other modules that expect it
             window.map = map;
 
-            // Ensure Leaflet default icon URLs point to local static files so markers render correctly.
-            // Use explicit absolute static URLs to avoid path resolution issues.
+            // Points Leaflet at the local marker images so icons render reliably.
             try {
                 if (L && L.Icon && L.Icon.Default) {
                     L.Icon.Default.mergeOptions({
@@ -154,15 +142,12 @@ window.AdvancedMapping = (function() {
                 // Icon settings failed silently
             }
 
-            // Create and expose common layer groups used by analysis/UI modules
-            // Use FeatureGroup so we can call getBounds() and treat it as a group of features
+            // Sets up shared layers used by the search and results panels.
             window.citiesLayer = L.featureGroup().addTo(map);
             window.resultsLayer = L.featureGroup().addTo(map);
 
-            // Load initial towns from Trails API and display them
             loadInitialTowns();
 
-            // Basic marker style config expected by spatial-analysis.js
             window.MARKERS = window.MARKERS || {
                 result: {
                     color: '#ff5722',
@@ -173,8 +158,7 @@ window.AdvancedMapping = (function() {
                 }
             };
 
-            // Explicit result marker icon to avoid icon path resolution issues
-            // Using blue colored markers from GitHub CDN to match dashboard style
+            // Sets a shared marker icon for search results and town markers.
             try {
                 window.resultMarkerIcon = L.icon({
                     iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
@@ -189,15 +173,13 @@ window.AdvancedMapping = (function() {
                 window.resultMarkerIcon = null;
             }
 
-            // Shared state placeholders
             window.currentPolygon = null;
             window.currentResults = null;
 
-            // Initialize drawing controls
             initializeDrawingControls();
 
 
-            // Add Legend Control
+            // Adds a small map key for towns and polygon searches.
             const legend = L.control({ position: 'bottomleft' });
 
             legend.onAdd = function() {
@@ -240,10 +222,7 @@ window.AdvancedMapping = (function() {
             legend.addTo(map);
 
 
-
-            // Add a small helper control to finish a polygon drawing if the draw:created
-            // event does not fire in some environments. This control finds the last
-            // polygon layer on the map and triggers the spatial search.
+            // Adds a fallback finish button for browsers where draw events can miss.
             const FinishDrawControl = L.Control.extend({
                 options: { position: 'topright' },
                 onAdd: function() {
@@ -259,7 +238,6 @@ window.AdvancedMapping = (function() {
                             try {
                                 let lastPoly = null;
                                 map.eachLayer(function(layer) {
-                                    // detect polygons (exclude tile layers and marker groups)
                                     if (layer instanceof L.Polygon && !(layer instanceof L.Rectangle) && layer._latlngs) {
                                         lastPoly = layer;
                                     }
@@ -281,7 +259,6 @@ window.AdvancedMapping = (function() {
                                     }
                                 }
                             } catch (err) {
-                                // Finish button click failed silently
                             }
                         });
                     return container;
@@ -295,15 +272,11 @@ window.AdvancedMapping = (function() {
         }
     }
 
-    /**
-     * Set up Leaflet.draw controls for polygon drawing
-     */
+    // Sets up drawing tools and the fallback manual polygon flow.
     function initializeDrawingControls() {
-        // Create feature group for drawn items
         drawnItems = new L.FeatureGroup();
         map.addLayer(drawnItems);
 
-        // Configure drawing options
         const drawControl = new L.Control.Draw({
             position: 'topright',
             draw: {
@@ -314,11 +287,11 @@ window.AdvancedMapping = (function() {
                         message: '<strong>Error:</strong> Shape edges cannot cross!'
                     },
                     shapeOptions: {
-                        color: '#2E8B57',      // Green (brand color for visibility)
-                        weight: 4,              // Thicker line
-                        opacity: 1,             // Fully opaque outline
-                        fillColor: '#90EE90',   // Light green fill
-                        fillOpacity: 0.15      // Subtle fill
+                        color: '#2E8B57',
+                        weight: 4,
+                        opacity: 1,
+                        fillColor: '#90EE90',
+                        fillOpacity: 0.15
                     },
                     metric: true
                 },
@@ -344,13 +317,12 @@ window.AdvancedMapping = (function() {
         });
 
         map.addControl(drawControl);
-        // CRITICAL WORKAROUND: Leaflet.Draw 1.0.4 has click handling issues in some environments
-        // Create a manual polygon drawing system as fallback
+
+        // Falls back to manual point collection if the built-in draw flow misbehaves.
         let manualPolygonMode = false;
         let manualPolygonPoints = [];
         let manualPolygonLayer = null;
         
-        // Hook into polygon button click to enable manual drawing mode
         setTimeout(() => {
             const polygonBtn = document.querySelector('.leaflet-draw-draw-polygon');
             if (polygonBtn) {
@@ -364,7 +336,6 @@ window.AdvancedMapping = (function() {
             }
         }, 600);
         
-        // Attach finish button handler
         function attachFinishButtonHandler() {
             setTimeout(() => {
                 let finishBtn = document.querySelector('.leaflet-draw-actions a');
@@ -380,26 +351,21 @@ window.AdvancedMapping = (function() {
             }, 100);
         }
         
-        // Hook into cancel button to disable manual mode
         map.on('draw:drawstop', function() {
             manualPolygonMode = false;
             manualPolygonPoints = [];
         });
         
-        // Capture map clicks during manual polygon mode
         map.on('click', function(e) {
             if (manualPolygonMode && e.originalEvent) {
-                // Make sure this click isn't from a UI element
                 if (e.originalEvent.target.closest('.leaflet-draw')) return;
                 
                 manualPolygonPoints.push([e.latlng.lat, e.latlng.lng]);
                 
-                // Remove old preview layer if exists
                 if (manualPolygonLayer) {
                     map.removeLayer(manualPolygonLayer);
                 }
                 
-                // Draw preview of polygon so far
                 if (manualPolygonPoints.length > 1) {
                     manualPolygonLayer = L.polyline(manualPolygonPoints, {
                         color: '#2E8B57',
@@ -411,14 +377,13 @@ window.AdvancedMapping = (function() {
             }
         });
         
-        // Support double-click to finish polygon
         map.on('dblclick', function(e) {
             if (manualPolygonMode && manualPolygonPoints.length > 2) {
                 finishManualPolygon();
             }
         });
         
-        // Finish manual polygon
+        // Turns the collected manual points into a real polygon and runs the search.
         function finishManualPolygon() {
             console.log('📍 finishManualPolygon called, mode:', manualPolygonMode, 'points:', manualPolygonPoints.length);
             if (manualPolygonMode && manualPolygonPoints.length > 2) {
@@ -439,21 +404,18 @@ window.AdvancedMapping = (function() {
                 manualPolygonMode = false;
                 manualPolygonPoints = [];
                 
-                // Clean up preview layer
                 if (manualPolygonLayer) {
                     map.removeLayer(manualPolygonLayer);
                     manualPolygonLayer = null;
                 }
                 
                 console.log('✅ Polygon created, triggering spatial search...');
-                // Trigger spatial search
                 if (window.SpatialAnalysis && typeof window.SpatialAnalysis.performSpatialSearch === 'function') {
                     window.SpatialAnalysis.performSpatialSearch(geoJson.geometry);
                 } else {
                     console.warn('❌ SpatialAnalysis.performSpatialSearch not available');
                 }
                 
-                // Fire draw:created event
                 map.fire('draw:created', { layer: polygon });
             } else {
                 console.warn('⚠️ finishManualPolygon: mode=' + manualPolygonMode + ', points=' + manualPolygonPoints.length);
@@ -464,7 +426,6 @@ window.AdvancedMapping = (function() {
         map.on('draw:created', function(event) {
             const layer = event.layer;
             
-            // Apply explicit polygon styling to ensure visibility
             if (layer instanceof L.Polygon) {
                 layer.setStyle({
                     color: '#2E8B57',
@@ -477,13 +438,10 @@ window.AdvancedMapping = (function() {
             
             drawnItems.addLayer(layer);
 
-            // Extract polygon coordinates
             const geoJson = layer.toGeoJSON();
 
-            // Track current polygon for other modules
             window.currentPolygon = layer;
 
-            // Trigger spatial analysis
             if (window.SpatialAnalysis && typeof window.SpatialAnalysis.performSpatialSearch === 'function') {
                 window.SpatialAnalysis.performSpatialSearch(geoJson.geometry);
             } else if (window.SpatialAnalysis && typeof window.SpatialAnalysis.executeSpatialQuery === 'function') {
@@ -492,7 +450,6 @@ window.AdvancedMapping = (function() {
         });
 
         map.on('draw:deleted', function(event) {
-            // Clear current polygon reference and results
             window.currentPolygon = null;
             if (window.UIControls && typeof window.UIControls.clearResults === 'function') window.UIControls.clearResults();
         });
@@ -533,10 +490,8 @@ window.AdvancedMapping = (function() {
                 container.style.cursor = '';
                 container.classList.remove('awmdrawing');
             }
-            // Fallback: some Leaflet builds may not emit draw:created reliably.
-            // If no `window.currentPolygon` was set by draw:created but drawnItems
-            // contains a new layer, use the last layer as the drawn polygon and
-            // Fallback: trigger spatial search if draw:created didn't fire
+
+            // Falls back to the latest drawn shape if the normal draw event was missed.
             try {
                 if (!window.currentPolygon && drawnItems && drawnItems.getLayers && drawnItems.getLayers().length > 0) {
                     const layers = drawnItems.getLayers();
@@ -561,22 +516,16 @@ window.AdvancedMapping = (function() {
                     }
                 }
             } catch (fallbackErr) {
-                // Fallback failed silently
             }
         });
     }
 
-    /**
-     * Add cities as markers to the map
-     */
+    // Replaces the current town markers with the latest search results.
     function displayCitiesOnMap(cities) {
-        // Clear existing city markers (use citiesLayer to manage them)
         if (window.citiesLayer) {
             window.citiesLayer.clearLayers();
         }
-        // Display cities on map
 
-        // Add new city markers into the citiesLayer
         cities.forEach(function(city, idx) {
             try {
                 const lat = Number(city.latitude);
@@ -595,11 +544,9 @@ window.AdvancedMapping = (function() {
                     marker.addTo(map);
                 }
             } catch (e) {
-                // Marker addition failed silently
             }
         });
 
-        // Fit bounds to displayed cities
         try {
             if (window.citiesLayer && window.citiesLayer.getLayers().length > 0) {
                 const bounds = window.citiesLayer.getBounds();
@@ -608,10 +555,9 @@ window.AdvancedMapping = (function() {
                 }
             }
         } catch (e) {
-            // Bounds fitting failed silently
         }
 
-        // Fallback: if had cities but no marker icons were added, use circleMarker
+        // Falls back to simple circle markers if normal markers fail.
         try {
             const added = window.citiesLayer ? window.citiesLayer.getLayers().length : 0;
             if (cities.length > 0 && added === 0) {
@@ -628,22 +574,18 @@ window.AdvancedMapping = (function() {
                         }).bindPopup(createTownPopupContent(city));
                         if (window.citiesLayer) window.citiesLayer.addLayer(cm); else cm.addTo(map);
                     } catch (e) {
-                        // Fallback marker addition failed silently
                     }
                 });
                 try {
                     if (window.citiesLayer && window.citiesLayer.getLayers().length > 0) map.fitBounds(window.citiesLayer.getBounds().pad(0.1));
-                } catch (e) { }
+                } catch (e) {}
             }
         } catch (e) {
-            // Fallback logic failed silently
         }
 
     }
 
-    /**
-     * Fetch initial towns from the Trails API and add to `citiesLayer`.
-     */
+    // Loads the starting town markers before any polygon search is run.
     async function loadInitialTowns() {
         try {
             const res = await fetch(`${API_BASE}/api/trails/towns/geojson/`);
@@ -651,7 +593,6 @@ window.AdvancedMapping = (function() {
             if (!res.ok) throw new Error('Failed to fetch towns');
             const geojson = await res.json();
 
-            // Clear existing town markers
             if (window.citiesLayer) window.citiesLayer.clearLayers();
 
             if (geojson && geojson.features) {
@@ -674,23 +615,19 @@ window.AdvancedMapping = (function() {
                         }));
                         window.citiesLayer.addLayer(marker);
                     } catch (e) {
-                        // Town marker addition failed silently
                     }
                 });
             }
         } catch (err) {
-            // Town loading failed silently
         }
     }
 
-    /**
-     * Get reference to the map instance
-     */
+    // Returns the current Leaflet map instance for other modules.
     function getMap() {
         return map;
     }
 
-    // Public API
+    // Exposes the map helpers used by the search and UI modules.
     return {
         initializeMap: initializeMap,
         displayCitiesOnMap: displayCitiesOnMap,

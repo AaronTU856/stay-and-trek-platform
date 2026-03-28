@@ -1,8 +1,6 @@
-/* Spatial analysis client module (trimmed/compat copy)
-   Copied from temp advanced_js_mapping export and adjusted for project paths. */
-
 console.log('🔬 Advanced JavaScript Mapping - Loading spatial analysis module...');
 
+// Sends the drawn polygon to the server and pushes the results into the map and UI.
 async function performSpatialSearch(polygonGeometry) {
     console.log('🔍 performSpatialSearch called with geometry:', polygonGeometry);
     if (window.AdvancedMapping && typeof window.AdvancedMapping.showLoading === 'function') {
@@ -22,7 +20,7 @@ async function performSpatialSearch(polygonGeometry) {
         const data = await response.json();
         let cities = [];
 
-        // 1. Parse the data into a standard city array
+        // Normalises the API response into one town list for the rest of the UI.
         if (data && data.results) {
             if (Array.isArray(data.results.cities) && data.results.cities.length > 0) {
                 cities = data.results.cities.map(c => ({
@@ -47,17 +45,17 @@ async function performSpatialSearch(polygonGeometry) {
             }
         }
 
-        // 2. TRIGGER THE UI 
+        // Updates the results panel with the returned towns and summary.
         if (window.UIControls && typeof window.UIControls.updateResultsUI === 'function') {
             window.UIControls.updateResultsUI(cities, data.results.analysis);
         }
 
-        // 3. Update Markers on Map
+        // Refreshes the map markers to match the new result set.
         if (window.AdvancedMapping && typeof window.AdvancedMapping.displayCitiesOnMap === 'function') {
             window.AdvancedMapping.displayCitiesOnMap(cities);
         }
 
-        // 4. Handle Empty Results
+        // Shows a simple success or empty-state message.
         if (cities.length === 0) {
             if (window.AdvancedMapping && typeof window.AdvancedMapping.showErrorMessage === 'function') {
                 window.AdvancedMapping.showErrorMessage('No towns found in this area. Try a larger selection.');
@@ -82,14 +80,7 @@ async function performSpatialSearch(polygonGeometry) {
     }
 }
 
-
-
-
-
-/**
- * Retrieve CSRF token from cookies for secure API requests
- * @returns {string} The CSRF token value from document cookies
- */
+// Reads the CSRF token from cookies before the polygon search request is sent.
 function getCsrfToken() {
     const name = 'csrftoken';
     let cookieValue = null;
@@ -106,11 +97,11 @@ function getCsrfToken() {
     return cookieValue || '';
 }
 
-// Expose API for other modules (map-interface expects window.SpatialAnalysis.performSpatialSearch)
+// Exposes the search helpers for the map and older code paths.
 try {
     window.SpatialAnalysis = window.SpatialAnalysis || {};
     window.SpatialAnalysis.performSpatialSearch = performSpatialSearch;
-    // backward-compatible alias used by some older code paths
+
     window.SpatialAnalysis.executeSpatialQuery = async function(params) {
         const polygon = params && params.polygon ? params.polygon : params;
         return performSpatialSearch(polygon);
