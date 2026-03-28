@@ -8,9 +8,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { getTrailById } from '../../../services/apiClient';
 import { Ionicons } from '@expo/vector-icons';
-
-// const API_BASE_URL = 'http://172.20.10.2:8000';
-const API_BASE_URL = 'http://192.168.1.83:8000';
+import { API_BASE_URL } from '../../../config/apiConfig';
 
 // Helper for Unit Conversion
 const cToF = (c) => Math.round((c * 9) / 5 + 32);

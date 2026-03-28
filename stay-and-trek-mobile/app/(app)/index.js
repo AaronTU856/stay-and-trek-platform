@@ -43,18 +43,19 @@ export default function HomeScreen() {
 
       <View style={styles.contentArea}>
         {userToken ? (
-           /* SECTION B: Logged In Extra Features */
+           /* SECTION B: Logged In Quick Access */
           <View style={styles.memberDashboard}>
-            <Text style={styles.welcomeText}>Member Dashboard</Text>
-            <View style={styles.iconRow}>
-              <IconButton name="sunny-outline" iconSet="ionicon" label="Weather" bgColor="#FFA000" onPress={() => router.push('/weather')} />
-              <IconButton name="heart" iconSet="ionicon" label="Favorites" bgColor="#d32f2f" onPress={() => router.push('/favorites')} />
-              <IconButton name="settings-outline" iconSet="ionicon" label="Settings" bgColor="#607d8b" onPress={() => router.push('/settings')} />
-            </View>
-            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-              <Text style={styles.logoutButtonText}>🚪 Logout</Text>
+            <Text style={styles.welcomeText}>Quick Access</Text>
+            <Text style={styles.subtitleText}>
+              You are signed in. Use the main navigation above to browse trails, stays and the map.
+            </Text>
+            <TouchableOpacity style={styles.secondaryButton} onPress={() => router.push('/weather')}>
+              <Text style={styles.secondaryButtonText}>Open Weather</Text>
             </TouchableOpacity>
-      </View>
+            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+              <Text style={styles.logoutButtonText}>Logout</Text>
+            </TouchableOpacity>
+          </View>
         ) : (
           /* This state should technically be bypassed by your layout redirect, 
              but it's good for a fallback */
@@ -106,9 +107,26 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#666',
     lineHeight: 20,
+    marginBottom: 16,
+  },
+  memberDashboard: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  secondaryButton: {
+    backgroundColor: '#FFA000',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+  },
+  secondaryButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 14,
+    textAlign: 'center',
   },
   logoutButton: {
-    marginTop: 24,
+    marginTop: 12,
     backgroundColor: '#5478b590',
     paddingVertical: 12,
     paddingHorizontal: 24,
@@ -131,4 +149,16 @@ const styles = StyleSheet.create({
       fontWeight: '500',
       letterSpacing: 0.3,
     },
+  loginButton: {
+    backgroundColor: '#2E7D32',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+  },
+  loginButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 14,
+    textAlign: 'center',
+  },
 });

@@ -24,24 +24,65 @@
  */
 
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 
-// Get your Mac's IP address by running:
-// ifconfig | grep "inet " | grep -v 127.0.0.1
-const MAC_LOCAL_IP = '192.168.1.83';  //  CHANGE THIS TO YOUR MAC'S IP
+// Default LAN fallback if Expo cannot infer the host automatically.
+// You can override this with EXPO_PUBLIC_API_BASE_URL or EXPO_PUBLIC_API_HOST.
+const FALLBACK_MAC_LOCAL_IP = '192.168.1.83';
+const API_PORT = '8000';
+
+function stripPort(hostValue) {
+  if (!hostValue || typeof hostValue !== 'string') {
+    return null;
+  }
+
+  return hostValue.split(':')[0];
+}
+
+function getExpoHost() {
+  const hostCandidates = [
+    Constants.expoConfig?.hostUri,
+    Constants.expoGoConfig?.debuggerHost,
+    Constants.manifest2?.extra?.expoClient?.hostUri,
+  ];
+
+  for (const candidate of hostCandidates) {
+    const host = stripPort(candidate);
+    if (host) {
+      return host;
+    }
+  }
+
+  return null;
+}
+
+function getLanBaseUrl() {
+  const explicitBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim();
+  if (explicitBaseUrl) {
+    return explicitBaseUrl.replace(/\/$/, '');
+  }
+
+  const explicitHost = process.env.EXPO_PUBLIC_API_HOST?.trim();
+  const resolvedHost = explicitHost || getExpoHost() || FALLBACK_MAC_LOCAL_IP;
+
+  return `http://${resolvedHost}:${API_PORT}`;
+}
+
+const LAN_BASE_URL = getLanBaseUrl();
 
 const API_CONFIGS = {
   // Development with Docker running
   docker: {
-    simulator: `http://${MAC_LOCAL_IP}:8000`,  // iOS Simulator needs Mac IP, not localhost
-    device: `http://${MAC_LOCAL_IP}:8000`,
-    android: 'http://10.0.2.2:8000',
+    simulator: LAN_BASE_URL,
+    device: LAN_BASE_URL,
+    androidEmulator: 'http://10.0.2.2:8000',
   },
   
   // Development with Python runserver (deprecated)
   runserver: {
-    simulator: `http://${MAC_LOCAL_IP}:8000`,  // iOS Simulator needs Mac IP, not localhost
-    device: `http://${MAC_LOCAL_IP}:8000`,
-    android: 'http://10.0.2.2:8000',
+    simulator: LAN_BASE_URL,
+    device: LAN_BASE_URL,
+    androidEmulator: 'http://10.0.2.2:8000',
   },
   
   // Production (Cloud Run)
@@ -67,20 +108,18 @@ export function getApiBaseUrl(environment = 'docker') {
     return config.all;
   }
   
-  // Detect platform
   const isDevice = Constants.isDevice;
-  
-  // Check if running on Android
-  const isAndroid = Constants.platform?.android;
-  
-  if (isAndroid && isDevice) {
-    return config.android;  // Android emulator
-  } else if (!isDevice) {
-    return config.simulator;  // iOS simulator
-  } else {
-    return config.device;  // Physical device
+  const isAndroid = Platform.OS === 'android';
+
+  if (isAndroid && !isDevice) {
+    return config.androidEmulator;
   }
+
+  return isDevice ? config.device : config.simulator;
 }
+
+export const DEFAULT_ENVIRONMENT = 'docker';
+export const API_BASE_URL = getApiBaseUrl(DEFAULT_ENVIRONMENT);
 
 /**
  * Debugging helper - log current configuration
@@ -91,7 +130,8 @@ export function logApiConfig(environment = 'docker') {
   console.log('=== API Configuration ===');
   console.log(`Environment: ${environment}`);
   console.log(`Is Device: ${Constants.isDevice}`);
-  console.log(`Is Android: ${Constants.platform?.android}`);
+  console.log(`Platform: ${Platform.OS}`);
+  console.log(`Expo Host: ${getExpoHost() || 'unavailable'}`);
   console.log(`API Base URL: ${url}`);
   console.log(`============================`);
   

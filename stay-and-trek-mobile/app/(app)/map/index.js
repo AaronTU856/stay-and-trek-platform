@@ -3,6 +3,7 @@ import { StyleSheet, View, Linking, ActivityIndicator, Text, Platform, Touchable
 import { useNavigation } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../_layout';
+import { API_BASE_URL } from '../../../config/apiConfig';
 
 let MapView, Marker, Callout;
 if (Platform.OS !== 'web') {
@@ -12,12 +13,8 @@ if (Platform.OS !== 'web') {
   Callout = maps.Callout;
 }
 
-
-// Use Mac's local network IP (works for simulator and physical devices)
-const BASE_URL = 'http://192.168.1.83:8000';
-// const BASE_URL = 'http://172.20.10.2:8000'; // Update this to your local IP address and port
-
 const FETCH_TIMEOUT = 10000; //10 seconds
+const GLOBAL_STAYS_RADIUS_KM = 250;
 
 const fetchWithTimeout = (url, timeout = FETCH_TIMEOUT) => {
   const controller = new AbortController();
@@ -86,7 +83,9 @@ export default function MapScreen() {
     setShowGlobalLayer(nextState);
 
     if (nextState && globalStays.length === 0) {
-      const targetUrl = `${BASE_URL}/api/trails/accommodations/geojson/`;
+      const targetUrl =
+        `${API_BASE_URL}/api/trails/accommodations/geojson/` +
+        `?lat=${region.latitude}&lng=${region.longitude}&radius=${GLOBAL_STAYS_RADIUS_KM}`;
       console.log("Fetching from:", targetUrl);
 
       try {
@@ -95,7 +94,8 @@ export default function MapScreen() {
           const data = await res.json();
           setGlobalStays(data.features || []);
         } else {
-          console.error("Server error:", res.status);
+          const errorText = await res.text();
+          console.error("Server error:", res.status, errorText);
           setShowGlobalLayer(false);
         }
       } catch (err) {
@@ -107,7 +107,7 @@ export default function MapScreen() {
 
   const fetchStaysForTrail = async (trailId) => {
     try {
-      const res = await fetchWithTimeout(`${BASE_URL}/api/trails/accommodations/near-trail/?trail_id=${trailId}`);
+      const res = await fetchWithTimeout(`${API_BASE_URL}/api/trails/accommodations/near-trail/?trail_id=${trailId}`);
       if (res.ok) {
         const data = await res.json();
         let features = [];
@@ -135,7 +135,7 @@ export default function MapScreen() {
 
   const loadData = async () => {
     try {
-      const trailsRes = await fetchWithTimeout(`${BASE_URL}/api/trails/`);
+      const trailsRes = await fetchWithTimeout(`${API_BASE_URL}/api/trails/`);
       if (trailsRes.ok) {
         const trailsData = await trailsRes.json();
         setTrails(Array.isArray(trailsData) ? trailsData : (trailsData.results || []));
@@ -145,7 +145,7 @@ export default function MapScreen() {
       }
 
       const staysRes = await fetchWithTimeout(
-        `${BASE_URL}/api/trails/accommodations/nearby/?lat=53.5&lng=-7.7&radius=50`
+        `${API_BASE_URL}/api/trails/accommodations/nearby/?lat=53.5&lng=-7.7&radius=50`
       );
       if (staysRes.ok) {
         const staysData = await staysRes.json();

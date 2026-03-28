@@ -1,18 +1,15 @@
 import * as SecureStore from 'expo-secure-store';
-import getApiBaseUrl, { logApiConfig } from '../config/apiConfig';
+import { API_BASE_URL, DEFAULT_ENVIRONMENT, logApiConfig } from '../config/apiConfig';
 
 // API service for all backend communications
 // Handles configuration, error handling, request and response setup
 
 // API Base URL - auto-detect environment and platform
 // Set environment to 'docker' when Docker is running
-const ENVIRONMENT = 'docker';  // Change to 'production' for cloud deployment
-const API_BASE_URL = getApiBaseUrl(ENVIRONMENT);
-
 const DEFAULT_TIMEOUT = 60000; // 60 seconds for slow backend responses
 
 // Log configuration on startup
-logApiConfig(ENVIRONMENT);
+logApiConfig(DEFAULT_ENVIRONMENT);
 
 /**
  * AUTHENTICATION: Login user and return JWT tokens
@@ -162,14 +159,16 @@ export async function getAccommodations(params = {}) {
  * Fetch accommodations near a trail
  */
 export async function getAccommodationsNearTrail(trailId) {
-  return apiCall(`/api/accommodations-near-trail/?trail_id=${trailId}`);
+  return apiCall(`/api/trails/accommodations/near-trail/?trail_id=${trailId}`);
 }
 
 /**
  * Get accommodations as GeoJSON (for map)
  */
-export async function getAccommodationsGeoJSON() {
-  return apiCall('/api/accommodations/geojson/');
+export async function getAccommodationsGeoJSON(params = {}) {
+  const queryString = new URLSearchParams(params).toString();
+  const suffix = queryString ? `?${queryString}` : '';
+  return apiCall(`/api/trails/accommodations/geojson/${suffix}`);
 }
 
 // Weather
@@ -270,7 +269,5 @@ export async function getSpatialAnalysisSummary() {
 }
 
 export { API_BASE_URL };
-
-
 
 
