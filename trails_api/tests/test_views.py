@@ -72,6 +72,130 @@ class TrailViewTests(TestCase):
         self.assertIn("average_distance_km", response.data)
         self.assertEqual(response.data["total_trails"], 2)
 
+    @patch("trails_api.views.requests.get")
+    def test_trail_weather_returns_weather_payload_for_valid_trail(self, mock_requests_get):
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "weather": [{"description": "light rain"}],
+            "main": {"temp": 9.4},
+            "wind": {"speed": 4.1},
+        }
+        mock_requests_get.return_value = mock_response
+
+        response = self.client.get(
+            reverse("trails:trail-weather", kwargs={"pk": self.trail1.pk}),
+            secure=True,
+        )
+        payload = response.json()
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(payload["weather"][0]["description"], "light rain")
+        self.assertEqual(payload["main"]["temp"], 9.4)
+
+    def test_trail_weather_returns_404_for_missing_trail(self):
+        response = self.client.get(
+            reverse("trails:trail-weather", kwargs={"pk": 999999}),
+            secure=True,
+        )
+        payload = response.json()
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(payload["error"], "Trail not found")
+
+    def test_town_weather_missing_coordinates_returns_400(self):
+        response = self.client.get(
+            reverse("trails:town-weather"),
+            secure=True,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["error"], "Missing coordinates")
+
+    @patch("trails_api.views.requests.get")
+    def test_town_weather_returns_weather_payload_for_valid_coordinates(
+        self,
+        mock_requests_get,
+    ):
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "weather": [{"description": "clear sky"}],
+            "main": {"temp": 13.2},
+            "wind": {"speed": 2.6},
+        }
+        mock_requests_get.return_value = mock_response
+
+        response = self.client.get(
+            reverse("trails:town-weather"),
+            {"lat": 53.3498, "lng": -6.2603},
+            secure=True,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["weather"][0]["description"], "clear sky")
+        self.assertEqual(response.data["main"]["temp"], 13.2)
+
+    def test_route_between_nodes_missing_coordinates_returns_400(self):
+        response = self.client.post(
+            reverse("trails:route-between-nodes"),
+            {
+                "trail_lat": 53.2,
+                "trail_lng": -6.1,
+                "acc_lat": 53.25,
+            },
+            format="json",
+            secure=True,
+        )
+
+        payload = response.json()
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(payload["error"], "Valid coordinates required")
+
+    def test_route_between_nodes_invalid_coordinates_returns_400(self):
+        response = self.client.post(
+            reverse("trails:route-between-nodes"),
+            {
+                "trail_lat": "not-a-latitude",
+                "trail_lng": -6.1,
+                "acc_lat": 53.25,
+                "acc_lng": -6.04,
+            },
+            format="json",
+            secure=True,
+        )
+
+        payload = response.json()
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(payload["error"], "Valid coordinates required")
+
+    @patch("trails_api.views.get_transport_route")
+    def test_route_between_nodes_returns_fallback_when_no_route_found(
+        self,
+        mock_get_transport_route,
+    ):
+        mock_get_transport_route.return_value = {
+            "status": "no_route_found",
+            "error": "No route found within search radius",
+        }
+
+        response = self.client.post(
+            reverse("trails:route-between-nodes"),
+            {
+                "trail_lat": 53.2,
+                "trail_lng": -6.1,
+                "acc_lat": 53.25,
+                "acc_lng": -6.04,
+            },
+            format="json",
+            secure=True,
+        )
+
+        payload = response.json()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(payload["status"], "fallback")
+        self.assertEqual(payload["type"], "FeatureCollection")
+        self.assertEqual(payload["features"][0]["properties"]["segment"], "straight_line")
+        self.assertNotIn("route_distance_km", payload)
+
     @patch("trails_api.views.connection.cursor")
     @patch("trails_api.views.find_route_with_expanding_radius")
     @patch("trails_api.views.get_road_node_for_point")

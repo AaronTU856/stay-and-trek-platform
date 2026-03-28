@@ -15,6 +15,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 
 from rest_framework import generics, status
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.pagination import PageNumberPagination
@@ -492,9 +493,7 @@ def town_weather(request):
         return Response({"error": "Missing coordinates"}, status=400)
 
     api_key = settings.OPENWEATHERMAP_API_KEY
-    print(f"DEBUG: API Key = {api_key}")
-    print(f"DEBUG: lat={lat}, lng={lng}")
-    
+
     url = (
         f"https://api.openweathermap.org/data/2.5/weather?"
         f"lat={lat}&lon={lng}&appid={api_key}&units=metric"
@@ -1409,7 +1408,12 @@ class NearbyAccommodationView(generics.ListAPIView):
         # Extract lat/lng from the URL parameters
         lat = self.request.query_params.get('lat')
         lng = self.request.query_params.get('lng')
-        radius_km = float(self.request.query_params.get('radius', 20))  # Default 20km radius
+        radius_param = self.request.query_params.get('radius', 20)
+
+        try:
+            radius_km = float(radius_param)  # Default 20km radius
+        except (ValueError, TypeError):
+            raise ValidationError({"error": "Valid radius required"})
         
         if lat and lng:
             try:

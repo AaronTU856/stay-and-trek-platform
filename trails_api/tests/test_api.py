@@ -5,7 +5,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from trails_api.models import Town, Trail
+from trails_api.models import Accommodation, Town, Trail
 
 
 class TrailApiTests(TestCase):
@@ -42,6 +42,24 @@ class TrailApiTests(TestCase):
             town_type="town",
             population=6000,
             location=Point(-9.5167, 53.8, srid=4326),
+        )
+        self.nearby_accommodation = Accommodation.objects.create(
+            name="Trailside Stay",
+            source="manual",
+            external_id="stay-001",
+            location=Point(-6.10, 53.20, srid=4326),
+            price_per_night=120.00,
+            rating=4.6,
+            url="https://example.com/stays/trailside",
+        )
+        self.distant_accommodation = Accommodation.objects.create(
+            name="Far Away Hotel",
+            source="manual",
+            external_id="stay-002",
+            location=Point(-8.50, 54.50, srid=4326),
+            price_per_night=95.00,
+            rating=4.1,
+            url="https://example.com/stays/far-away",
         )
 
     def test_trail_list_endpoint_returns_200(self):
@@ -106,3 +124,31 @@ class TrailApiTests(TestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_nearby_accommodations_returns_only_matching_results(self):
+        response = self.client.get(
+            reverse("trails:nearby-accommodations"),
+            {"lat": 53.2, "lng": -6.1, "radius": 5},
+            secure=True,
+        )
+        payload = response.json()
+        feature_collection = payload.get("results", payload)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(feature_collection["type"], "FeatureCollection")
+        self.assertEqual(len(feature_collection["features"]), 1)
+        self.assertEqual(
+            feature_collection["features"][0]["properties"]["name"],
+            "Trailside Stay",
+        )
+
+    def test_nearby_accommodations_invalid_radius_returns_400(self):
+        response = self.client.get(
+            reverse("trails:nearby-accommodations"),
+            {"lat": 53.2, "lng": -6.1, "radius": "not-a-number"},
+            secure=True,
+        )
+        payload = response.json()
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(payload["error"], "Valid radius required")
