@@ -2,7 +2,7 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { useEffect, useState, createContext, useContext } from 'react';
 import { StatusBar, ActivityIndicator, View } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
-import { AccessibilityProvider } from '../context/AccessibilityContext';
+import { AccessibilityProvider, useAccessibility } from '../context/AccessibilityContext';
 
 
 const AuthContext = createContext({
@@ -11,6 +11,25 @@ const AuthContext = createContext({
 });
 
 export const useAuth = () => useContext(AuthContext);
+
+function AppShell({ userToken, setUserToken }) {
+  const { darkMode } = useAccessibility();
+
+  return (
+    <>
+      <StatusBar
+        backgroundColor={darkMode ? '#111827' : '#63755fff'}
+        barStyle="light-content"
+      />
+      <AuthContext.Provider value={{ userToken, setUserToken }}>
+        <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(app)" />
+            <Stack.Screen name="(auth)" />
+        </Stack>
+      </AuthContext.Provider>
+    </>
+  );
+}
 
 export default function RootLayout() {
   const [userToken, setUserToken] = useState(null);
@@ -79,13 +98,7 @@ useEffect(() => {
 
   return (
     <AccessibilityProvider>
-      <StatusBar backgroundColor="#63755fff" barStyle="light-content" />
-      <AuthContext.Provider value={{ userToken, setUserToken }}>
-        <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(app)" />
-            <Stack.Screen name="(auth)" />   
-        </Stack>
-      </AuthContext.Provider>
+      <AppShell userToken={userToken} setUserToken={setUserToken} />
     </AccessibilityProvider>
   );
 }

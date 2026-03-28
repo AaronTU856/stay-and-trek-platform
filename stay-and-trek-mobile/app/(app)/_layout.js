@@ -2,17 +2,21 @@ import { Tabs } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useAccessibility } from '../../context/AccessibilityContext';
 
 export default function AppLayout() {
+  const { darkMode } = useAccessibility();
+
   return (
-    <SafeAreaView style={styles.root}>
+    <SafeAreaView style={[styles.root, darkMode && styles.rootDark]}>
       <Tabs
         screenOptions={{
           headerShown: false,
-          tabBarActiveTintColor: '#2E7D32',
-          tabBarInactiveTintColor: '#6b7280',
-          tabBarStyle: styles.tabBar,
+          tabBarActiveTintColor: darkMode ? '#86efac' : '#2E7D32',
+          tabBarInactiveTintColor: darkMode ? '#9ca3af' : '#6b7280',
+          tabBarStyle: [styles.tabBar, darkMode && styles.tabBarDark],
           tabBarLabelStyle: styles.tabLabel,
+          sceneStyle: darkMode ? styles.sceneDark : undefined,
         }}
       >
         <Tabs.Screen
@@ -64,13 +68,21 @@ export default function AppLayout() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#63755fff' },
+  rootDark: { backgroundColor: '#111827' },
   tabBar: {
     height: 64,
     paddingTop: 6,
     paddingBottom: 8,
   },
+  tabBarDark: {
+    backgroundColor: '#111827',
+    borderTopColor: '#1f2937',
+  },
   tabLabel: {
     fontSize: 12,
     fontWeight: '600',
+  },
+  sceneDark: {
+    backgroundColor: '#111827',
   },
 });

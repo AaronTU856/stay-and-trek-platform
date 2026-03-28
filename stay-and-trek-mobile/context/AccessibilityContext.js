@@ -4,14 +4,17 @@ import { PixelRatio, Dimensions } from 'react-native';
 const AccessibilityContext = createContext({
   largeText: false,
   fontScale: 1,
+  darkMode: false,
   highContrast: false,
   toggleLargeText: () => {},
+  toggleDarkMode: () => {},
   toggleHighContrast: () => {},
 });
 
 export const AccessibilityProvider = ({ children }) => {
   const [fontScale, setFontScale] = useState(PixelRatio.getFontScale());
   const [largeText, setLargeText] = useState(fontScale > 1.2);
+  const [darkMode, setDarkMode] = useState(false);
   const [highContrast, setHighContrast] = useState(false);
 
   useEffect(() => {
@@ -29,6 +32,7 @@ export const AccessibilityProvider = ({ children }) => {
   }, []);
 
   const toggleLargeText = () => setLargeText(prev => !prev);
+  const toggleDarkMode = () => setDarkMode(prev => !prev);
   const toggleHighContrast = () => setHighContrast(prev => !prev);
 
   return (
@@ -36,8 +40,10 @@ export const AccessibilityProvider = ({ children }) => {
       value={{
         largeText,
         fontScale,
+        darkMode,
         highContrast,
         toggleLargeText,
+        toggleDarkMode,
         toggleHighContrast,
       }}
     >

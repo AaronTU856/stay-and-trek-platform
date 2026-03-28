@@ -6,10 +6,11 @@ import IconButton from '../../components/IconButton';
 import { useRouter } from 'expo-router';
 
 export default function HomeScreen() {
-  const { largeText } = useAccessibility();
+  const { largeText, darkMode } = useAccessibility();
   const { setUserToken, userToken } = useAuth();
   const router = useRouter();
   const titleFontSize = largeText ? 32 : 24;
+  const bodyFontSize = largeText ? 18 : 16;
 
   const handleLogout = async () => {
     try {
@@ -23,8 +24,8 @@ export default function HomeScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={[styles.title, { fontSize: titleFontSize }]}>Stay & Trek</Text>
+    <View style={[styles.container, darkMode && styles.containerDark]}>
+      <Text style={[styles.title, { fontSize: titleFontSize }, darkMode && styles.titleDark]}>Stay & Trek</Text>
       
       {/* SECTION A: Constant Features */}
       <View style={styles.iconRow}>
@@ -34,10 +35,10 @@ export default function HomeScreen() {
       </View>
 
         <View style={{ height: 1, backgroundColor: '#ccc', width: '80%', marginVertical: 24 }} />
-        <Text style={styles.description}>
+        <Text style={[styles.description, { fontSize: bodyFontSize }, darkMode && styles.descriptionDark]}>
           Stay and Trek helps you discover trails, find nearby stays, check the weather, and save your favourite adventures all in one place.
         </Text>
-        <Text style={styles.description}>
+        <Text style={[styles.description, { fontSize: bodyFontSize }, darkMode && styles.descriptionDark]}>
           Whether you`re a seasoned hiker or just looking for a weekend getaway, we`ve got you covered. Explore the beauty of nature with confidence and ease.
         </Text>
 
@@ -45,8 +46,8 @@ export default function HomeScreen() {
         {userToken ? (
            /* SECTION B: Logged In Quick Access */
           <View style={styles.memberDashboard}>
-            <Text style={styles.welcomeText}>Quick Access</Text>
-            <Text style={styles.subtitleText}>
+            <Text style={[styles.welcomeText, darkMode && styles.titleDark]}>Quick Access</Text>
+            <Text style={[styles.subtitleText, darkMode && styles.subtitleTextDark]}>
               You are signed in. Use the main navigation above to browse trails, stays and the map.
             </Text>
             <TouchableOpacity style={styles.secondaryButton} onPress={() => router.push('/weather')}>
@@ -75,10 +76,16 @@ const styles = StyleSheet.create({
     paddingTop: 24,
     backgroundColor: '#f5f5f5',
   },
+  containerDark: {
+    backgroundColor: '#111827',
+  },
   title: {
     fontSize: 24,
     fontWeight: '700',
     marginBottom: 24,
+  },
+  titleDark: {
+    color: '#f9fafb',
   },
   iconRow: {
     flexDirection: 'row',
@@ -108,6 +115,9 @@ const styles = StyleSheet.create({
     color: '#666',
     lineHeight: 20,
     marginBottom: 16,
+  },
+  subtitleTextDark: {
+    color: '#d1d5db',
   },
   memberDashboard: {
     width: '100%',
@@ -149,6 +159,9 @@ const styles = StyleSheet.create({
       fontWeight: '500',
       letterSpacing: 0.3,
     },
+  descriptionDark: {
+    color: '#e5e7eb',
+  },
   loginButton: {
     backgroundColor: '#2E7D32',
     paddingVertical: 12,
