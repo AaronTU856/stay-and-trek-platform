@@ -200,7 +200,7 @@
         background: #218838;
     }
     
-    /* Modal Styles */
+    /* Styles the add, edit, and delete popups. */
     .modal {
         display: none;
         position: fixed;
@@ -420,7 +420,7 @@
 
 {% block content %}
 <div class="management-container">
-    <!-- Sidebar -->
+    <!-- Sidebar for search, filtering, and picking a town. -->
     <div class="sidebar">
         <div class="sidebar-header">
             <h2>Towns</h2>
@@ -446,14 +446,13 @@
         </div>
     </div>
     
-    <!-- Main Content -->
+    <!-- Main area with the map and town actions. -->
     <div class="main-content">
-        <!-- Map -->
         <div class="map-container" id="mapContainer">
             <div id="map"></div>
         </div>
         
-        <!-- Controls -->
+        <!-- Action bar for add, edit, delete, and refresh. -->
         <div class="controls-panel">
             <button class="btn btn-primary" id="addTownBtn">
                 <i class="fas fa-plus"></i> Add New Town
@@ -473,7 +472,7 @@
     </div>
 </div>
 
-<!-- Edit Town Modal -->
+<!-- Form for updating the selected town. -->
 <div id="editTownModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -533,7 +532,7 @@
     </div>
 </div>
 
-<!-- Delete Confirmation Modal -->
+<!-- Confirms town deletion before the request is sent. -->
 <div id="deleteConfirmModal" class="modal">
     <div class="modal-content" style="max-width: 400px;">
         <div class="modal-header">
@@ -552,7 +551,7 @@
     </div>
 </div>
 
-<!-- Add Town Modal -->
+<!-- Form for creating a new town record. -->
 <div id="addTownModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -617,7 +616,7 @@
 {% block extra_js %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
-    // Initialize map
+    // Keeps track of the map, the current markers, and the selected town.
     let map;
     let markers = {};
     let selectedTownId = null;
@@ -625,11 +624,10 @@
     
     const CSRF_TOKEN = '{{ csrf_token }}';
     
+    // Builds the management map and centres it on Ireland.
     function initMap() {
-        // Keep centering on Ireland
         map = L.map('map').setView([53.3498, -6.2603], 6);
 
-        // CHANGED: Using CartoDB Voyager tiles to bypass the 403 error
         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
             subdomains: 'abcd',
@@ -637,6 +635,7 @@
         }).addTo(map);
 }
     
+    // Shows a short status message in the page or modal.
     function showMessage(message, type = 'info', targetId = 'statusMessage') {
         const messageEl = document.getElementById(targetId);
         if (messageEl) {
@@ -647,6 +646,7 @@
         }
     }
     
+    // Loads the current towns, then refreshes the list, map, and country filter.
     function loadTowns() {
         showMessage('<span class="loading"></span> Loading towns...', 'info');
         
@@ -659,7 +659,6 @@
         })
         .then(response => response.json())
         .catch(error => {
-            // Fallback: load from API endpoint
             return fetch('{% url "api:town_list" %}', {
                 method: 'GET',
                 headers: {
@@ -682,6 +681,7 @@
         });
     }
     
+    // Renders the clickable list of towns in the sidebar.
     function renderTownsList() {
         const townsList = document.getElementById('townsList');
         
@@ -700,12 +700,12 @@
             </div>
         `).join('');
         
-        // Add click listeners
         document.querySelectorAll('.town-item').forEach(item => {
             item.addEventListener('click', () => selectTown(item.dataset.townId));
         });
     }
     
+    // Marks the chosen town as selected and centres the map on it.
     function selectTown(townId) {
         selectedTownId = parseInt(townId);
         document.querySelectorAll('.town-item').forEach(item => {
@@ -715,15 +715,14 @@
         document.getElementById('editTownBtn').disabled = false;
         document.getElementById('deleteTownBtn').disabled = false;
         
-        // Center map on town
         const town = towns.find(t => t.id === selectedTownId);
         if (town && town.latitude && town.longitude) {
             map.setView([town.latitude, town.longitude], 10);
         }
     }
     
+    // Rebuilds the town markers from the latest dataset.
     function renderMap() {
-        // Clear existing markers
         Object.values(markers).forEach(marker => marker.remove());
         markers = {};
         
@@ -739,6 +738,7 @@
         });
     }
     
+    // Rebuilds the country dropdown from the loaded towns.
     function updateCountryFilter() {
         const countries = [...new Set(towns.map(t => t.country).filter(c => c))].sort();
         const select = document.getElementById('countryFilter');
@@ -746,6 +746,7 @@
             countries.map(c => `<option value="${c}">${c}</option>`).join('');
     }
     
+    // Opens the edit form with the selected town already filled in.
     function openEditModal(townId) {
         const town = towns.find(t => t.id === townId);
         if (!town) return;
@@ -762,19 +763,22 @@
         document.getElementById('editTownModal').classList.add('show');
     }
     
+    // Closes whichever modal was passed in.
     function closeModal(modalId) {
         document.getElementById(modalId).classList.remove('show');
     }
     
-    // Event Listeners
+    // Opens the add form for a new town.
     document.getElementById('addTownBtn').addEventListener('click', () => {
         document.getElementById('addTownModal').classList.add('show');
     });
     
+    // Opens the edit form for the current selection.
     document.getElementById('editTownBtn').addEventListener('click', () => {
         if (selectedTownId) openEditModal(selectedTownId);
     });
     
+    // Opens the delete confirmation for the current selection.
     document.getElementById('deleteTownBtn').addEventListener('click', () => {
         const town = towns.find(t => t.id === selectedTownId);
         if (town) {
@@ -785,6 +789,7 @@
     
     document.getElementById('refreshBtn').addEventListener('click', loadTowns);
     
+    // Filters the visible list as the user types.
     document.getElementById('searchInput').addEventListener('input', (e) => {
         const search = e.target.value.toLowerCase();
         document.querySelectorAll('.town-item').forEach(item => {
@@ -793,6 +798,7 @@
         });
     });
     
+    // Filters the visible list by country.
     document.getElementById('countryFilter').addEventListener('change', (e) => {
         const country = e.target.value;
         document.querySelectorAll('.town-item').forEach(item => {
@@ -802,14 +808,14 @@
         });
     });
     
-    // Modal close buttons
+    // Closes a modal when its close icon is clicked.
     document.querySelectorAll('.close-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.target.closest('.modal').classList.remove('show');
         });
     });
     
-    // Form submission handlers
+    // Sends the updated town details to the server.
     document.getElementById('editTownForm').addEventListener('submit', (e) => {
         e.preventDefault();
         const townId = e.target.dataset.townId;
@@ -848,6 +854,7 @@
         });
     });
     
+    // Sends a new town record to the server.
     document.getElementById('addTownForm').addEventListener('submit', (e) => {
         e.preventDefault();
         
@@ -886,6 +893,7 @@
         });
     });
     
+    // Deletes the selected town after confirmation.
     document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
         if (selectedTownId) {
             fetch(`/advanced-mapping/api/town/edit/${selectedTownId}/`, {
@@ -913,12 +921,12 @@
         }
     });
     
-    // Cancel buttons
+    // Closes each modal without saving changes.
     document.getElementById('cancelEditBtn').addEventListener('click', () => closeModal('editTownModal'));
     document.getElementById('cancelDeleteBtn').addEventListener('click', () => closeModal('deleteConfirmModal'));
     document.getElementById('cancelAddBtn').addEventListener('click', () => closeModal('addTownModal'));
     
-    // Initialize on page load
+    // Starts the map and loads the first town list when the page opens.
     document.addEventListener('DOMContentLoaded', () => {
         initMap();
         loadTowns();

@@ -1,9 +1,8 @@
-/* /static/advanced_js_mapping/js/ui-controls.js */
-
+// Sets up the results panel and workflow states beside the advanced map.
 function initializeUIControls() {
     console.log("UI Controls initialized and attached to window.");
 
-    // Cache references to key DOM elements for efficient updates
+    // Pulls the main results panel elements when the UI needs them.
     function getElements() {
         return {
             welcomeState: document.getElementById('welcomeState'),
@@ -21,12 +20,14 @@ function initializeUIControls() {
             populationDensity: document.getElementById('populationDensity')
         };
     }
-    // Utility function to show/hide elements
+
+    // Shows or hides a panel without repeating the same DOM code everywhere.
     function setVisible(element, visible, displayValue) {
         if (!element) return;
         element.style.display = visible ? (displayValue || 'block') : 'none';
     }
-    // Utility function to format numbers with commas and specified decimal places
+
+    // Formats counts and metrics for the summary cards.
     function formatNumber(value, fractionDigits) {
         return Number(value || 0).toLocaleString(undefined, {
             minimumFractionDigits: 0,
@@ -39,8 +40,9 @@ function initializeUIControls() {
     }
 
 
-    // Expose UI control functions globally
+    // Exposes the shared UI actions used by the map and search scripts.
     window.UIControls = {
+        // Resets the panel back to the starting instructions.
         showWorkflowState: function() {
             const els = getElements();
             setVisible(els.welcomeState, true);
@@ -48,6 +50,7 @@ function initializeUIControls() {
             setVisible(els.analysisSummary, false);
         },
 
+        // Switches the loading state on or off while a search is running.
         setLoadingState: function(show) {
             const els = getElements();
             if (show) {
@@ -59,6 +62,7 @@ function initializeUIControls() {
             }
         },
 
+        // Clears the last result set and returns the panel to its default state.
         clearResults: function() {
             const els = getElements();
             if (els.citiesList) els.citiesList.innerHTML = '';
@@ -71,7 +75,7 @@ function initializeUIControls() {
             this.showWorkflowState();
         },
 
-        // Main function to update the UI with new results
+        // Fills the summary cards and town list after a polygon search finishes.
         updateResultsUI: function(cities, analysis) {
             console.log("Updating UI with", cities.length, "cities");
             const els = getElements();
@@ -108,7 +112,8 @@ function initializeUIControls() {
                     ? 'The towns below are listed in the workflow panel and highlighted on the map.'
                     : 'Try a larger shape or explore another part of the map to find populated townlands.';
             }
-            // Create list items for each city
+
+            // Builds one clickable result row for each returned town.
             cities.forEach(city => {
                 const item = document.createElement('button');
                 item.type = 'button';
@@ -155,5 +160,6 @@ function initializeUIControls() {
         }
     };
 
-    window.UIControls.showWorkflowState(); // Show initial state
+    // Starts the panel in its welcome state.
+    window.UIControls.showWorkflowState();
 }

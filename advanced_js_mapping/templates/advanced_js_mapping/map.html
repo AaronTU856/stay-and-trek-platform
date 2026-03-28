@@ -5,31 +5,29 @@
 
 {% block extra_css %}
 <style>
-    /* Ensure drawing cursor is visible as crosshair while drawing polygons */
-    /* high-specificity crosshair rule for when we toggle drawing */
+    /* Keeps the crosshair visible while shapes are being drawn. */
     .leaflet-container.awmdrawing, .leaflet-container.awmdrawing *,
     .leaflet-container.leaflet-draw-drawing, .leaflet-container .leaflet-draw-draw-polygon {
         cursor: crosshair !important;
     }
-    /* Leaflet draw places an invisible mouse-marker element that can capture cursor/pointer
-       Make sure it doesn't block the crosshair cursor and doesn't intercept pointer events */
+
+    /* Stops the hidden draw marker from getting in the way of clicks. */
     .leaflet-marker-icon.leaflet-mouse-marker {
         pointer-events: none !important;
         cursor: crosshair !important;
     }
     
-    /* CRITICAL: Ensure Leaflet.Draw overlay and guides have proper pointer-events
-       so clicks pass through to the drawing handler, not blocked by other elements */
+    /* Lets the draw guides sit on top without stealing pointer events. */
     .leaflet-draw-guide, .leaflet-draw-guide-dash {
         pointer-events: none !important;
     }
     
-    /* Ensure map container itself can receive clicks during drawing mode */
+    /* Keeps the map clickable while drawing is active. */
     .leaflet-container.leaflet-draw-drawing {
         pointer-events: auto !important;
     }
     
-    /* Ensure the map panes are not blocking pointer events */
+    /* Keeps the map panes from blocking the draw flow. */
     .leaflet-pane, .leaflet-overlay-pane, .leaflet-shadow-pane {
         pointer-events: auto !important;
     }
@@ -39,32 +37,31 @@
 {% block content %}
 <div class="container-fluid">
     <div class="row">
-        <!-- Map Column -->
+        <!-- Main map area for drawing search shapes. -->
         <div class="col-lg-8">
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">🗺️ Interactive Map - Draw Polygons to Find Towns</h5>
                 </div>
                 <div class="card-body p-0">
-                    <!-- Map Container -->
                     <div id="map" style="height: 600px;"></div>
                 </div>
             </div>
         </div>
 
-        <!-- Results Panel -->
+        <!-- Side panel for instructions, totals, and returned towns. -->
         <div class="col-lg-4">
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">📊 Search Results</h5>
                 </div>
                 <div class="card-body">
-                    <!-- Search Status -->
+                    <!-- Starting instructions before a search runs. -->
                     <div id="searchStatus" class="alert alert-info">
                         <strong>Instructions:</strong> Use the polygon or square tool in the map toolbar to draw a shape. Towns and their population within your polygon will appear here. Once you complete your shape click "Finish". Select "New Search" to start over. 
                     </div>
 
-                    <!-- Analysis Summary -->
+                    <!-- Summary cards shown after the search finishes. -->
                     <div id="analysisSummary" style="display: none;">
                         <h6>Analysis Summary</h6>
                         <div class="row text-center">
@@ -93,21 +90,19 @@
                                 </div>
                             </div>
                         </div>
-                        <!-- New Search Button -->
                         <button id="newSearchBtn" class="btn btn-success btn-sm w-100 mt-3" onclick="location.reload()">
                             🔄 New Search
                         </button>
                     </div>
 
-                    <!-- Cities List -->
+                    <!-- Scrollable list of towns returned by the search. -->
                     <div id="citiesContainer" style="display: none;">
                         <h6 class="mt-3">Towns Found</h6>
                         <div id="citiesList" class="list-group" style="max-height: 300px; overflow-y: auto;">
-                            <!-- Cities will be populated here -->
                         </div>
                     </div>
 
-                    <!-- Loading Indicator -->
+                    <!-- Loading state shown while the polygon search is running. -->
                     <div id="loadingIndicator" style="display: none;" class="text-center">
                         <div class="spinner-border" role="status">
                             <span class="visually-hidden">Loading...</span>
@@ -127,14 +122,14 @@
 <script src="{% static 'advanced_js_mapping/js/ui-controls.js' %}"></script>
 
 <script>
-    // Initialize the mapping application when page loads
+    // Starts the map, search logic, and side-panel controls for this page.
     document.addEventListener('DOMContentLoaded', function() {
         console.log('Map initialization starting...');
         console.log('Leaflet available:', typeof L !== 'undefined');
         console.log('AdvancedMapping available:', typeof window.AdvancedMapping !== 'undefined');
         
         try {
-            // Initialize map with drawing tools
+            // Builds the map before any search can run.
             if (window.AdvancedMapping && window.AdvancedMapping.initializeMap) {
                 window.AdvancedMapping.initializeMap('map');
                 console.log('Map initialized successfully');
@@ -142,11 +137,11 @@
                 console.error('AdvancedMapping.initializeMap not found');
             }
 
-            // Set up spatial analysis handlers
+            // Keeps the search handler available for older code paths too.
             window.SpatialAnalysis = window.SpatialAnalysis || {};
             window.SpatialAnalysis.performSpatialSearch = window.performSpatialSearch || window.SpatialAnalysis.performSpatialSearch;
 
-            // Configure UI controls
+            // Wires up the results panel states and summary cards.
             if (typeof initializeUIControls === 'function') {
                 initializeUIControls();
                 console.log('UI controls initialized');
