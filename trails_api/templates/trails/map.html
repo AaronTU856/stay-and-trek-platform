@@ -744,86 +744,161 @@
 
 /* High Contrast Mode Styles */
 body.high-contrast-mode #map-container {
-    filter: contrast(1.2) saturate(1.3);
+    background: #ffffff !important;
+    filter: none !important;
+    border: 3px solid #111111 !important;
 }
 
 body.high-contrast-mode .navbar {
-    background-color: #1a1a2e !important;
-    border-bottom: 3px solid #00d4ff !important;
+    background-color: #000000 !important;
+    border-bottom: 3px solid #ffd400 !important;
 }
 
 body.high-contrast-mode .sidebar {
-    background-color: #0f3460 !important;
-    color: #FFFFFF !important;
-    border-right: 3px solid #00d4ff !important;
+    background-color: #111111 !important;
+    color: #ffffff !important;
+    border-right: 3px solid #ffd400 !important;
 }
 
 body.high-contrast-mode .card {
-    background-color: #16213e !important;
-    border: 2px solid #00d4ff !important;
-    color: #FFFFFF !important;
+    background-color: #ffffff !important;
+    border: 2px solid #111111 !important;
+    color: #111111 !important;
 }
 
 body.high-contrast-mode .card-header {
-    background-color: #0f3460 !important;
-    border-bottom: 2px solid #00d4ff !important;
-    color: #00d4ff !important;
+    background: #111111 !important;
+    border-bottom: 2px solid #ffd400 !important;
+    color: #ffd400 !important;
     font-weight: bold !important;
 }
 
 body.high-contrast-mode .card-body {
-    background-color: #16213e !important;
-    color: #FFFFFF !important;
+    background: #ffffff !important;
+    color: #111111 !important;
+}
+
+body.high-contrast-mode .workflow-card,
+body.high-contrast-mode .workflow-card .card-body,
+body.high-contrast-mode .helper-note {
+    background: #fff7c7 !important;
+    color: #1f1f1f !important;
+    border-color: #111111 !important;
+}
+
+body.high-contrast-mode .workflow-card .card-header {
+    background: #111111 !important;
+    color: #ffd400 !important;
+}
+
+body.high-contrast-mode .workflow-step-number {
+    background: #111111 !important;
+    color: #ffd400 !important;
+    box-shadow: none !important;
+}
+
+body.high-contrast-mode .workflow-step-text,
+body.high-contrast-mode .sidebar h6,
+body.high-contrast-mode .sidebar p,
+body.high-contrast-mode .sidebar li,
+body.high-contrast-mode .sidebar small,
+body.high-contrast-mode .sidebar medium,
+body.high-contrast-mode .sidebar .text-muted,
+body.high-contrast-mode #accommodation-count {
+    color: #1f1f1f !important;
 }
 
 body.high-contrast-mode .btn {
-    background-color: #00d4ff !important;
-    color: #000000 !important;
-    border: 2px solid #00d4ff !important;
+    background: #ffd400 !important;
+    color: #111111 !important;
+    border: 2px solid #111111 !important;
     font-weight: bold !important;
+    box-shadow: none !important;
 }
 
 body.high-contrast-mode .btn:hover {
-    background-color: #00ff88 !important;
-    color: #000000 !important;
-    border-color: #00ff88 !important;
+    background: #111111 !important;
+    color: #ffd400 !important;
+    border-color: #ffd400 !important;
+}
+
+body.high-contrast-mode .sidebar-toggle[aria-expanded="true"],
+body.high-contrast-mode .advanced-tools-toggle,
+body.high-contrast-mode .poi-toggle-button.poi-toggle-active,
+body.high-contrast-mode .accommodation-action-btn {
+    background: #111111 !important;
+    color: #ffd400 !important;
+    border-color: #ffd400 !important;
+}
+
+body.high-contrast-mode .advanced-tools-toggle:hover,
+body.high-contrast-mode .advanced-tools-toggle:focus,
+body.high-contrast-mode .poi-toggle-button.poi-toggle-active:hover,
+body.high-contrast-mode .poi-toggle-button.poi-toggle-active:focus,
+body.high-contrast-mode .accommodation-action-btn:hover,
+body.high-contrast-mode .accommodation-action-btn:focus {
+    background: #ffd400 !important;
+    color: #111111 !important;
+    border-color: #111111 !important;
 }
 
 body.high-contrast-mode label {
-    color: #FFFFFF !important;
-    font-weight: 600 !important;
+    color: #111111 !important;
+    font-weight: 700 !important;
 }
 
 body.high-contrast-mode input,
 body.high-contrast-mode select,
 body.high-contrast-mode textarea {
-    background-color: #0f3460 !important;
-    color: #FFFFFF !important;
-    border: 2px solid #00d4ff !important;
+    background: #ffffff !important;
+    color: #111111 !important;
+    border: 2px solid #111111 !important;
+    font-weight: 600 !important;
 }
 
 body.high-contrast-mode .alert {
-    background-color: #16213e !important;
-    border: 2px solid #00d4ff !important;
-    color: #FFFFFF !important;
+    background: #fff7c7 !important;
+    border: 2px solid #111111 !important;
+    color: #111111 !important;
 }
 
 body.high-contrast-mode .leaflet-control {
-    border: 2px solid #00d4ff !important;
+    background: #ffffff !important;
+    border: 2px solid #111111 !important;
+    box-shadow: none !important;
 }
 
 body.high-contrast-mode .leaflet-control-search {
-    border: 2px solid #00d4ff !important;
+    border: 2px solid #111111 !important;
 }
 
 body.high-contrast-mode .text-muted {
-    color: #CCCCCC !important;
+    color: #333333 !important;
 }
 
 body.high-contrast-mode footer {
-    background-color: #0f3460 !important;
-    border-top: 3px solid #00d4ff !important;
-    color: #FFFFFF !important;
+    background-color: #000000 !important;
+    border-top: 3px solid #ffd400 !important;
+    color: #ffffff !important;
+}
+
+body.high-contrast-mode .leaflet-control-search.search-exp,
+body.high-contrast-mode .leaflet-control-search.search-exp input[type="text"],
+body.high-contrast-mode .leaflet-control-search.search-exp input[type="search"],
+body.high-contrast-mode .leaflet-bar a,
+body.high-contrast-mode .leaflet-control-layers-toggle {
+    background: #ffffff !important;
+    color: #111111 !important;
+    border-color: #111111 !important;
+}
+
+body.high-contrast-mode .accommodation-distance-label,
+body.high-contrast-mode .accommodation-hover-tooltip .leaflet-tooltip-content,
+body.high-contrast-mode #trail-results {
+    background: #ffffff !important;
+    color: #111111 !important;
+    border: 2px solid #111111 !important;
+    box-shadow: none !important;
 }
 
 /* The keyframes for the blinking effect trails near river */
