@@ -1,7 +1,7 @@
 // Trail details screen - displays detailed information about a selected hiking trail
 // Shows information like difficulty, distance, description, and weather conditions
 
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, TextInput, Alert } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, TextInput, Alert, Share } from "react-native";
 import { useAccessibility } from "../../../context/AccessibilityContext";
 import { useAuth } from "../../_layout";
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -38,6 +38,17 @@ export default function TrailDetails() {
   const [weatherLoading, setWeatherLoading] = useState(false);
 
   const { userToken } = useAuth();
+
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: `${trail.trail_name}\nDistance: ${trail.distance_km} km\nDifficulty: ${trail.difficulty}\nStay and Trek mobile`,
+      });
+    } catch (error) {
+      console.error("Share failed", error);
+      Alert.alert("Error", "Unable to share this trail right now.");
+    }
+  };
 
   const handleContribution = async () => {
 
@@ -435,6 +446,7 @@ export default function TrailDetails() {
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.shareButton}
+          onPress={handleShare}
           accessibilityRole="button"
           accessibilityLabel="Share trail information"
         >
