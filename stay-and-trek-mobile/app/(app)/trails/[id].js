@@ -417,17 +417,28 @@ export default function TrailDetails() {
       <View style={styles.actionContainer}>
         <TouchableOpacity 
           style={styles.saveButton}
+          onPress={() =>
+            router.push({
+              pathname: '/list',
+              params: {
+                trailId: trail.id,
+                trailName: trail.trail_name,
+                difficulty: trail.difficulty,
+                distanceKm: trail.distance_km,
+              },
+            })
+          }
           accessibilityRole="button"
-          accessibilityLabel="Save trail to favorites"
+          accessibilityLabel="Plan this trail"
         >
-          <Text style={styles.buttonText}>❤️ Save Trail</Text>
+          <Text style={styles.buttonText}>Plan Trip</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.shareButton}
           accessibilityRole="button"
           accessibilityLabel="Share trail information"
         >
-          <Text style={styles.buttonText}>📤 Share</Text>
+          <Text style={styles.buttonText}>Share</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
