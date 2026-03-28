@@ -1,5 +1,3 @@
-
-
 import logging
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
@@ -37,15 +35,10 @@ from .filters import TrailFilter
 import json
 from django.contrib.auth.decorators import login_required
 
-
-# 
-# AUTHENTICATION ENDPOINTS
-#
-
+# Creates a basic user account for the app.
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register_user(request):
-    """Register a new user account."""
     print("🚀 REGISTRATION ATTEMPT RECEIVED!")
     username = request.data.get('username')
     password = request.data.get('password')
@@ -58,27 +51,20 @@ def register_user(request):
     return Response({"message": "User created"}, status=status.HTTP_201_CREATED)
 
 
-# 
-# TRAIL VIEWS
-# 
-
+# Old protected trail page hook kept for signed-in access.
 @login_required
 def trail_map(request):
-    # logic to load the trails ...
     return render(request, 'index.html')
 
-# Pagination for API results
+# Sets a larger page size for the main API lists.
 class StandardResultsSetPagination(PageNumberPagination):
-    """Custom pagination for API endpoints."""
-    page_size = 500  # Default page size for faster loading
+    page_size = 500
     page_size_query_param = 'page_size'
-    max_page_size = 2000  # Allow up to 2000 results per page
+    max_page_size = 2000
 
 
-
-# Trails list and Create
+# Lists trails for browsing and handles trail creation.
 class TrailListCreateView(generics.ListCreateAPIView):
-    """List all trails or create a new one."""
     queryset = Trail.objects.all()
     serializer_class = None
     pagination_class = StandardResultsSetPagination
@@ -86,12 +72,14 @@ class TrailListCreateView(generics.ListCreateAPIView):
     search_fields = ['trail_name', 'county', 'region']
     ordering_fields = ['trail_name', 'county', 'distance_km', 'difficulty']
     ordering = ['trail_name']
-    # Use custom filter class for advanced filtering
+
+    # Switches serializer based on whether the request is reading or creating.
     def get_serializer_class(self):
         if self.request.method == 'POST':
             return TrailCreateSerializer
         return TrailListSerializer
-    # Apply filters based on query parameters
+
+    # Applies the main trail filters from the query string.
     def get_queryset(self):
         queryset = super().get_queryset()
         min_length = self.request.query_params.get('min_length')
@@ -106,9 +94,8 @@ class TrailListCreateView(generics.ListCreateAPIView):
             queryset = queryset.filter(difficulty__iexact=difficulty)
 
         return queryset
-    # Set permissions based on request method
+    # Allows public reads and requires login for writes.
     def get_permissions(self):
-        """GET requests are open, POST requires authentication."""
         if self.request.method == 'POST':
             permission_classes = [IsAuthenticated]
         else:
@@ -116,13 +103,12 @@ class TrailListCreateView(generics.ListCreateAPIView):
         return [permission() for permission in permission_classes]
 
 
-# Town Detail, Update, Delete
+# Handles one town record at a time.
 class TownDetailView(generics.RetrieveUpdateDestroyAPIView):
-    """Retrieve, update or delete a town. PUT/PATCH/DELETE require authentication."""
     queryset = Town.objects.all()
-    # Serializer for Town details
+
+    # Allows public reads and requires login for edits.
     def get_permissions(self):
-        """GET is open, PUT/PATCH/DELETE require authentication."""
         if self.request.method in ['PUT', 'PATCH', 'DELETE']:
             permission_classes = [IsAuthenticated]
         else:
@@ -130,42 +116,36 @@ class TownDetailView(generics.RetrieveUpdateDestroyAPIView):
         return [permission() for permission in permission_classes]
 
 
-# Trail  Detail, Update, Delete
-
+# Handles one trail record at a time.
 @extend_schema(tags=["Trails"], summary="Retrieve, update or delete a trail")
 class TrailDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Trail.objects.all()
     serializer_class = TrailDetailSerializer
 
 
-# Trails within Radius
-
+# Finds nearby trails from a clicked point and search radius.
 @csrf_exempt
 @api_view(['POST'])
 @authentication_classes([])
 @permission_classes([AllowAny])
 def trails_within_radius(request):
-    """Find trails within a specified radius (km) of a given lat/lon."""
     try:
-        # Validate input
         if not request.data.get("latitude") or not request.data.get("longitude"):
             return Response(
                 {"error": "Latitude and longitude are required."},
                 status=400
             )
-        # Check for radius_km parameter
         if not request.data.get("radius_km"):
             return Response(
                 {"error": "radius_km is required."},
                 status=400
             )
-        # Extract parameters
         lat = float(request.data.get("latitude"))
         lng = float(request.data.get("longitude"))
         radius_km = float(request.data.get("radius_km", 50))
 
         user_location = Point(lng, lat, srid=4326)
-    # Query trails within radius
+
         trails = (
             Trail.objects.annotate(distance=DistanceFunction("start_point", user_location))
             .filter(distance__lte=radius_km * 1000)
@@ -197,16 +177,14 @@ def trails_within_radius(request):
         return Response({"error": str(e)}, status=500)
 
 
-# Trails in Bounding Box
+# Finds trails inside a drawn bounding box.
 @csrf_exempt
 @extend_schema(tags=["Spatial"], request=BoundingBoxSerializer, responses={200: dict})
 @api_view(['POST'])
 @authentication_classes([])
 @permission_classes([AllowAny])
 def trails_in_bounding_box(request):
-    """Find trails within a bounding box."""
     serializer = BoundingBoxSerializer(data=request.data)
-    # Validate input
     if serializer.is_valid():
         data = serializer.validated_data
         bbox = [
@@ -224,12 +202,10 @@ def trails_in_bounding_box(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# Trail Statistics
+# Returns the top-level trail numbers used in summaries and dashboards.
 @csrf_exempt
 @api_view(['GET'])
 def trail_statistics(request):
-    """Return overall statistics about trails."""
-    # Compute statistics
     stats = {
         "total_trails": Trail.objects.count(),
         "average_distance_km": Trail.objects.aggregate(avg=models.Avg("distance_km"))["avg"] or 0,
@@ -241,13 +217,9 @@ def trail_statistics(request):
     serializer = TrailSummarySerializer(stats)
     return Response(serializer.data)
 
- # Endpoint for mobile users to suggest trail descriptions
+# Saves a suggested trail description for moderation.
 @api_view(['PATCH'])
 def suggest_description(request, pk):
-    """
-    Endpoint to allow mobile users to submit a trail description.
-    Sets status to 'pending' for admin review.
-    """
     try:
         trail = Trail.objects.get(pk=pk)
         description = request.data.get('description')
@@ -267,24 +239,20 @@ def suggest_description(request, pk):
         return Response({"error": "Trail not found."}, status=status.HTTP_404_NOT_FOUND)
 
 
-# Protected template views
+# Opens the advanced mapping page for signed-in users.
 @csrf_exempt
 @login_required
 def advanced_mapping_map(request):
-    """Render the advanced mapping page."""
     return render(request, 'advanced_js_mapping/map.html')
 
-# Towns and GeoJSON Endpoints
-
+# Renders the main trails map page.
 def trail_map(request):
-    """Render main trail map - serves SEO trails data with sidebar search and rivers."""
     return render(request, 'trails/map.html')
 
+# Returns towns as GeoJSON for the map filters.
 @api_view(['GET'])
 def towns_geojson(request):
-    """Return towns as GeoJSON with optional filters."""
     towns = Town.objects.all()
-    # Apply filters based on query parameters
     min_pop = request.GET.get('min_population')
     max_pop = request.GET.get('max_population')
     town_type = request.GET.get('town_type')
@@ -304,15 +272,13 @@ def towns_geojson(request):
     )
     return HttpResponse(geojson, content_type='application/json')
 
-# Nearest Town Endpoint
+# Finds the closest town to the supplied coordinates.
 @api_view(['POST'])
 def nearest_town(request):
-    """Find the nearest town to given coordinates."""
     lat = request.data.get('latitude')
     lng = request.data.get('longitude')
     if not lat or not lng:
         return Response({'error': 'Latitude and longitude required'}, status=400)
-    # Create Point object
     user_location = Point(float(lng), float(lat), srid=4326)
     nearest = Town.objects.annotate(distance=DistanceFunction('location', user_location)).order_by('distance').first()
 
@@ -325,13 +291,11 @@ def nearest_town(request):
         'distance_km': round(nearest.distance.km, 2),
     })
 
-# Load Sample Towns from GeoJSON
+# Loads sample towns from the bundled GeoJSON file.
 @api_view(['GET'])
 def load_towns(request):
-    """Load sample towns from a GeoJSON file."""
     with open("trails_api/data/sample_towns.geojson") as f:
         data = json.load(f)
-    # Clear existing towns
     Town.objects.all().delete()
     count = 0
 
@@ -356,13 +320,9 @@ def load_towns(request):
 
     return Response({"status": f"Loaded {count} towns successfully"})
 
-
-
-# Trails GeoJSON
-
+# Returns trails as GeoJSON for the main map page.
 @api_view(['GET'])
 def trails_geojson(request):
-    """Return trails as GeoJSON with optional filters."""
     trails = Trail.objects.all()
 
     min_length = request.GET.get('min_length')
@@ -391,13 +351,9 @@ def trails_geojson(request):
     )
     return HttpResponse(geojson, content_type='application/json')
 
-
-
-# Misc / Info Views
-
+# Returns a short API summary for quick inspection.
 @api_view(['GET'])
 def api_info(request):
-    """Returns basic information about the Trails API."""
     info = {
         "api_name": "Trails API",
         "version": "1.0",
@@ -413,10 +369,9 @@ def api_info(request):
     }
     return Response(info)
 
-# Counties List Endpoint
+# Returns the available counties with their trail counts.
 @api_view(['GET'])
 def counties_list(request):
-    """Return a list of counties with trail counts."""
     counties = (
         Trail.objects
         .values('country')
@@ -425,10 +380,9 @@ def counties_list(request):
     )
     return Response(list(counties))
 
-# Simple Trail Search Endpoint
+# Runs a lightweight trail name search.
 @api_view(['GET'])
 def trail_search(request):
-    """Simple search endpoint for trail names."""
     q = request.query_params.get('q', '')
     if not q:
         return Response([], status=200)
@@ -436,7 +390,7 @@ def trail_search(request):
     trails = Trail.objects.filter(name__icontains=q)[:10]
     return Response(TrailListSerializer(trails, many=True).data)
 
-#Trail paths
+# Returns saved trail paths as GeoJSON features.
 @api_view(['GET'])
 @authentication_classes([])
 @permission_classes([AllowAny])
@@ -447,27 +401,24 @@ def trails_paths_geojson(request):
 
 
 
-# Template Views
+# Shows the small API test page.
 def api_test_page(request):
-    """Simple frontend for testing API."""
     return render(request, 'api_test.html')
 
-# Simple API Test View
+# Keeps the old API test route working.
 def api_test_view(request):
     return render(request, "api_test.html")
 
 
-#  Weather Endpoints
+# Returns live weather for a trail start point.
 @api_view(['GET'])
 def trail_weather(request, pk):
     try:
         trail = Trail.objects.get(pk=pk)
         
-        # Ensure start_point exists
         if not trail.start_point:
             return JsonResponse({'error': 'No coordinates for this trail'}, status=400)
         
-        # Extract coordinates (PointField uses x=lon, y=lat)
         lon, lat = trail.start_point.x, trail.start_point.y
 
         api_key = settings.OPENWEATHERMAP_API_KEY
@@ -483,7 +434,7 @@ def trail_weather(request, pk):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
     
-# Town Weather Endpoint 
+# Returns live weather for a selected town point.
 @api_view(['GET'])
 def town_weather(request):
     lat = request.GET.get("lat")
@@ -502,11 +453,8 @@ def town_weather(request):
     data = requests.get(url).json()
     return Response(data)
 
-
-# POI ENDPOINTS 
-
+# Lists POIs with the standard filters and search options.
 class PointOfInterestViewSet(generics.ListAPIView):
-    """Retrieve points of interest with filtering and geographic search."""
     queryset = PointOfInterest.objects.all()
     serializer_class = PointOfInterestSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
@@ -517,9 +465,8 @@ class PointOfInterestViewSet(generics.ListAPIView):
     pagination_class = StandardResultsSetPagination
     permission_classes = [AllowAny]
 
-# POIs by Type Endpoint
+# Filters POIs down to one type.
 class POIByTypeView(generics.ListAPIView):
-    """Get POIs filtered by type (parking, cafe, attraction, etc.)."""
     serializer_class = PointOfInterestSerializer
     pagination_class = StandardResultsSetPagination
     permission_classes = [AllowAny]
@@ -531,10 +478,10 @@ class POIByTypeView(generics.ListAPIView):
         return PointOfInterest.objects.all()
 
 # POIs Near Trail Endpoint
+# Returns the POIs linked to one trail.
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def pois_near_trail(request):
-    """Get all POIs near a specific trail."""
     try:
         trail_id = request.data.get('trail_id')
         if not trail_id:
@@ -542,7 +489,6 @@ def pois_near_trail(request):
         
         trail = Trail.objects.get(id=trail_id)
         
-        # Get trail's POI intersections sorted by distance
         intersections = TrailPOIIntersection.objects.filter(trail=trail).order_by('distance_meters')
         
         return Response({
@@ -559,30 +505,27 @@ def pois_near_trail(request):
     except Exception as e:
         return Response({'error': str(e)}, status=500)
 
-# POIs within Radius Endpoint
+# Finds POIs near a clicked point.
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def pois_in_radius(request):
-    """Find POIs within a radius of given coordinates."""
     try:
         lat = request.data.get('latitude')
         lng = request.data.get('longitude')
         radius_km = float(request.data.get('radius_km', 5))
-        poi_type = request.data.get('poi_type')  # Optional filter
+        poi_type = request.data.get('poi_type')
         
         if not lat or not lng:
             return Response({'error': 'Latitude and longitude required'}, status=400)
         
         user_location = Point(float(lng), float(lat), srid=4326)
         
-        # Query POIs within radius
         pois = PointOfInterest.objects.annotate(
             distance=DistanceFunction('location', user_location)
         ).filter(
             distance__lte=radius_km * 1000
         ).order_by('distance')
         
-        # Optional: filter by POI type
         if poi_type:
             pois = pois.filter(poi_type=poi_type)
         
@@ -611,11 +554,8 @@ def pois_in_radius(request):
     except Exception as e:
         return Response({'error': str(e)}, status=500)
 
-
-# GEOGRAPHIC BOUNDARY & INTERSECTION ENDPOINTS 
-
+# Lists rivers and other geographic boundaries.
 class GeographicBoundaryViewSet(generics.ListAPIView):
-    """Retrieve geographic boundaries."""
     queryset = Rivers.objects.all()
     serializer_class = GeographicBoundarySerializer
     filter_backends = [DjangoFilterBackend, SearchFilter]
@@ -624,15 +564,13 @@ class GeographicBoundaryViewSet(generics.ListAPIView):
     permission_classes = [AllowAny]
     pagination_class = StandardResultsSetPagination
 
-# Trails Crossing Boundary Endpoint
+# Returns trails that cross or sit inside one boundary.
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def trails_crossing_boundary(request, boundary_id):
-    """Get trails that cross a specific geographic boundary."""
     try:
         boundary = Rivers.objects.get(id=boundary_id)
         
-        # Get trails crossing this boundary
         trails_crossing = boundary.trails_crossing()
         trails_within = boundary.trails_within()
         
@@ -652,18 +590,16 @@ def trails_crossing_boundary(request, boundary_id):
     except Exception as e:
         return Response({'error': str(e)}, status=500)
 
-# Trails Crossing Boundary as GeoJSON (trail paths)
+# Returns crossing trail paths as GeoJSON.
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def trails_crossing_boundary_geojson(request, boundary_id):
-    """Return trails that cross a boundary as GeoJSON FeatureCollection."""
     try:
         boundary = Rivers.objects.get(id=boundary_id)
         trails_crossing = boundary.trails_crossing()
         serializer = TrailPathGeoSerializer(trails_crossing, many=True)
         features = serializer.data
         
-        # Wrap in FeatureCollection if it's just a list
         if isinstance(features, list):
             geojson_response = {
                 "type": "FeatureCollection",
@@ -678,13 +614,10 @@ def trails_crossing_boundary_geojson(request, boundary_id):
     except Exception as e:
         return Response({'error': str(e)}, status=500)
 
-# Trails near a boundary (by start point proximity) when full path is unavailable
+# Falls back to nearby start points when full paths are missing.
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def trails_near_boundary(request, boundary_id):
-    """Return trails whose start point is within N meters of the boundary geometry.
-    Query param: radius_m (default 200).
-    """
     try:
         radius_m = int(request.GET.get('radius_m', 200))
         boundary = Rivers.objects.get(id=boundary_id)
@@ -696,13 +629,11 @@ def trails_near_boundary(request, boundary_id):
     except Exception as e:
         return Response({'error': str(e)}, status=500)
 
-# Trails by County Boundary Endpoint
+# Returns trails for a county boundary or falls back to the county field.
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def trails_by_county_boundary(request, county_name):
-    """Get all trails that intersect with a county boundary."""
     try:
-        # Find boundary for this county
         boundary = Rivers.objects.get(name__iexact=county_name, boundary_type='county')
         
         trails_crossing = boundary.trails_crossing()
@@ -715,7 +646,6 @@ def trails_by_county_boundary(request, county_name):
             'total_in_area': trails_within.count() + trails_crossing.count(),
         })
     except Rivers.DoesNotExist:
-        # Fallback: just use county field
         trails = Trail.objects.filter(county__iexact=county_name)
         return Response({
             'county': county_name,
@@ -725,11 +655,10 @@ def trails_by_county_boundary(request, county_name):
     except Exception as e:
         return Response({'error': str(e)}, status=500)
 
-# Spatial Analysis Summary Endpoint
+# Summarises the main spatial datasets for reporting.
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def spatial_analysis_summary(request):
-    """Get comprehensive spatial analysis summary."""
     return Response({
         'total_trails': Trail.objects.count(),
         'total_pois': PointOfInterest.objects.count(),
@@ -748,18 +677,8 @@ def spatial_analysis_summary(request):
         }
     })
 
-
-
-
-
+# Lists accommodations with basic filtering and search.
 class AccommodationsListView(generics.ListAPIView):
-    """
-    List all accommodations with optional filtering.
-    
-    Query Parameters:
-    - source: Filter by accommodation source (airbnb, booking, trivago, manual)
-    - search: Search accommodation name
-    """
     queryset = Accommodation.objects.all()
     serializer_class = AccommodationSerializer
     pagination_class = StandardResultsSetPagination
@@ -770,7 +689,6 @@ class AccommodationsListView(generics.ListAPIView):
     permission_classes = [AllowAny]
     
     def get_queryset(self):
-        """Apply optional filters"""
         queryset = super().get_queryset()
         
         source = self.request.GET.get('source')
@@ -780,7 +698,7 @@ class AccommodationsListView(generics.ListAPIView):
             
         return queryset
 
-
+# Returns nearby accommodations as GeoJSON around a point.
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def accommodations_geojson(request):
@@ -831,22 +749,13 @@ def accommodations_geojson(request):
     except Exception as e:
         return Response({"error": str(e)}, status=500)
     
+# Finds accommodation near a trail and sorts it by route distance when possible.
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def accommodations_near_trail(request):
-    """
-    Get accommodations near a specific trail using spatial proximity.
-    
-    Query Parameters:
-    - trail_id: Required. The trail ID to search around
-    - category: Optional. Filter by 'hotel', 'hostel', 'all' (default: 'all')
-    - radius_km: Optional. Search radius in kilometers (default: 10km)
-    
-    Returns accommodations sorted by distance from trail start point.
-    """
     trail_id = request.GET.get('trail_id')
     category = request.GET.get('category', 'all').lower()
-    radius_km = float(request.GET.get('radius_km', 10))  # Default 10km search radius
+    radius_km = float(request.GET.get('radius_km', 10))
     
     if not trail_id:
         return Response({"error": "trail_id is required"}, status=400)
@@ -857,14 +766,11 @@ def accommodations_near_trail(request):
         if not trail.start_point:
             return Response({"error": "Trail has no coordinates"}, status=400)
         
-        # Convert radius (km) to meters for PostGIS queries
         radius_meters = radius_km * 1000
         
-        # Query accommodations using dwithin (better for geography fields)
         from django.contrib.gis.db.models import Value as V
         from django.contrib.gis.db.models.functions import Transform
         
-        # Use dwithin lookup which is designed for geography fields
         accommodations = list(
             Accommodation.objects.annotate(
                 distance=DistanceFunction('location', trail.start_point)
@@ -873,7 +779,6 @@ def accommodations_near_trail(request):
             ).order_by('distance')[:10]
         )
         
-        # Apply category filtering based on accommodation name
         if category and category != 'all':
             if category == 'hotel':
                 accommodations = accommodations.filter(name__icontains='hotel')
@@ -939,7 +844,6 @@ def accommodations_near_trail(request):
 
         accommodations.sort(key=road_distance_sort_key)
 
-        # Build GeoJSON response
         features = []
         for acc in accommodations:
             road_distance_m = road_distances.get(acc.id)
@@ -977,14 +881,10 @@ def accommodations_near_trail(request):
     except Exception as e:
         return Response({"error": str(e)}, status=500)
 
+# Groups accommodation counts by county.
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def accommodations_by_county(request):
-    """
-    Get accommodations grouped by county with statistics.
-    
-    Returns county-level statistics including accommodation count.
-    """
     accommodations = PointOfInterest.objects.filter(poi_type='accommodation')
     county_stats = accommodations.values('county').annotate(
         count=Count('id')
@@ -994,9 +894,8 @@ def accommodations_by_county(request):
         "total_counties": county_stats.count(),
         "total_accommodations": accommodations.count()
     })
- 
- 
-    
+
+# Returns a simple straight line for route testing.
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def route_test(request):
@@ -1025,8 +924,7 @@ def route_test(request):
 
     }
     return Response(geojson)
-
-
+# Lists the road types allowed in route searches.
 ROAD_HIGHWAY_FILTER = """
 highway IN (
 'motorway','motorway_link',
@@ -1056,6 +954,7 @@ ROUTE_RADIUS_MULTIPLIER = 1.75
 ROUTE_MAX_RADIUS_METERS = 600000
 ROUTE_MAX_SINGLE_QUERY_MS = 1200
 
+# Builds the inner road SQL used by the routing queries.
 def build_road_inner_sql(cursor, start_coords, end_coords, road_filter, bbox_buffer_deg=BBOX_BUFFER_DEG):
 
     if not road_filter:
@@ -1083,8 +982,8 @@ def build_road_inner_sql(cursor, start_coords, end_coords, road_filter, bbox_buf
         FROM routing_ways
         WHERE {road_filter}
     """
-    
-    
+
+# Finds the closest routable road node to a point.
 def get_road_node_for_point(cursor, lng, lat):
     cursor.execute("""
         SELECT id 
@@ -1097,7 +996,7 @@ def get_road_node_for_point(cursor, lng, lat):
     row = cursor.fetchone()
     return row[0] if row else None
 
-
+# Retries the route search with a wider radius until it succeeds or times out.
 def find_route_with_expanding_radius(
     cursor,
     start_lng,
@@ -1189,7 +1088,7 @@ def find_route_with_expanding_radius(
         "error": last_error or "No route found before time limit was reached",
     }
 
-
+# Builds the full trail-to-stay route, including the road connectors.
 def get_transport_route(start_coords, end_coords):
     import logging
     import json
@@ -1220,7 +1119,6 @@ def get_transport_route(start_coords, end_coords):
     with connection.cursor() as cursor:
         logger.warning(f"DEBUG coords: {start_lng},{start_lat} -> {end_lng},{end_lat}")
 
-        # Find nearest routable nodes
         start_node = get_road_node_for_point(cursor, start_lng, start_lat)
         end_node = get_road_node_for_point(cursor, end_lng, end_lat)
 
@@ -1228,13 +1126,11 @@ def get_transport_route(start_coords, end_coords):
             logger.warning("[ROUTE DEBUG] No start/end node found.")
             return {"status": "no_route_found"}
 
-        # Get snapped start/end vertices
         cursor.execute("SELECT ST_AsGeoJSON(ST_Transform(the_geom, 4326)) FROM routing_ways_vertices_pgr WHERE id = %s;", [start_node])
         start_geom_row = cursor.fetchone()
         cursor.execute("SELECT ST_AsGeoJSON(ST_Transform(the_geom, 4326)) FROM routing_ways_vertices_pgr WHERE id = %s;", [end_node])
         end_geom_row = cursor.fetchone()
 
-        # Connector: original start - snapped road node
         if start_geom_row:
             start_vertex_coords = json.loads(start_geom_row[0])["coordinates"]
             features.append({
@@ -1243,7 +1139,6 @@ def get_transport_route(start_coords, end_coords):
                 "geometry": {"type": "LineString", "coordinates": [[start_lng, start_lat], start_vertex_coords]}
             })
 
-       # --- Main road route using pgRouting (Optimized for 1.4M Rows) ---
         try:
             route_result = find_route_with_expanding_radius(
                 cursor,
@@ -1275,7 +1170,6 @@ def get_transport_route(start_coords, end_coords):
                 "routing_debug": route_result,
             }
 
-        # Connector: snapped road node -> original end
         if end_geom_row:
             end_vertex_coords = json.loads(end_geom_row[0])["coordinates"]
             features.append({
@@ -1291,16 +1185,12 @@ def get_transport_route(start_coords, end_coords):
             "route_distance_km": route_distance_km_from_features(features),
         }
 
-
-
-
-
+# Returns the full route between the selected trail and accommodation.
 @api_view(['POST'])
 @authentication_classes([])
 @permission_classes([AllowAny])
 def route_between_nodes(request):
     try:
-        # 1. Get coordinates from request
         t_lat = float(request.data.get("trail_lat"))
         t_lng = float(request.data.get("trail_lng"))
         a_lat = float(request.data.get("acc_lat"))
@@ -1308,11 +1198,8 @@ def route_between_nodes(request):
     except (TypeError, ValueError):
         return JsonResponse({"error": "Valid coordinates required"}, status=400)
 
-    # 2. Call the helper function to get the 3-segment route
-    # (This calculates connector_start, road_route, and connector_end)
     route_data = get_transport_route((t_lng, t_lat), (a_lng, a_lat))
 
-    # 3. If routing fails, provide a straight-line fallback
     if route_data.get("status") != "success_v2":
         return JsonResponse({
             "status": "fallback",
@@ -1327,13 +1214,10 @@ def route_between_nodes(request):
             }]
         })
 
-    # 4. Return the multi-segment GeoJSON
     return JsonResponse(route_data)
 
 
-
-
-        
+# Returns the nearest road node for debugging and routing checks.
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def nearest_node(request):
@@ -1350,37 +1234,27 @@ def nearest_node(request):
             WHERE component_id = 38
             ORDER BY the_geom <-> ST_Transform(ST_SetSRID(ST_Point(%s,%s),4326), 3857)
             LIMIT 1
-        """, [lng, lat])  # Ensure order is [lng, lat] for ST_Point
+        """, [lng, lat])
         row = cursor.fetchone()
 
     if row:
         return JsonResponse({"nearest_node_id": row[0]})
     return JsonResponse({"error": "No nodes found"}, status=404)
 
+# Returns the top-level accommodation numbers used in reports.
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def accommodations_statistics(request):
-    """
-    Get comprehensive accommodation statistics.
-    
-    Includes:
-    - Total accommodations count
-    - Distribution by county
-    - Geographic bounds
-    - Contact information availability
-    """
     accommodations = PointOfInterest.objects.filter(poi_type='accommodation')
     
     total = accommodations.count()
     with_phone = accommodations.exclude(phone='').exclude(phone__isnull=True).count()
     with_website = accommodations.exclude(website='').exclude(website__isnull=True).count()
     
-    # County distribution
     county_distribution = list(
         accommodations.values('county').annotate(count=Count('id')).order_by('-count')
     )
     
-    # Region distribution
     region_distribution = list(
         accommodations.values('region').annotate(count=Count('id')).order_by('-count')
     )
@@ -1399,50 +1273,40 @@ def accommodations_statistics(request):
         }
     })
     
-    
+# Lists nearby accommodation for the mobile app.
 class NearbyAccommodationView(generics.ListAPIView):
     serializer_class = AccommodationGeoJSONSerializer
-    permission_classes = [AllowAny] # Public access for mobile app
+    permission_classes = [AllowAny]
     
     def get_queryset(self):
-        # Extract lat/lng from the URL parameters
         lat = self.request.query_params.get('lat')
         lng = self.request.query_params.get('lng')
         radius_param = self.request.query_params.get('radius', 20)
 
         try:
-            radius_km = float(radius_param)  # Default 20km radius
+            radius_km = float(radius_param)
         except (ValueError, TypeError):
             raise ValidationError({"error": "Valid radius required"})
         
         if lat and lng:
             try:
-                # Create a point from user's location
                 user_location = Point(float(lng), float(lat), srid=4326)
                 
-                # Use PostGIS to calculate distance and order by it
                 return Accommodation.objects.filter(
-                    location__distance_lte=(user_location, D(km=radius_km)) # Distance filter
+                    location__distance_lte=(user_location, D(km=radius_km))
                 ).annotate(
                     distance=DistanceFunction('location', user_location)
-                ).order_by('distance')[:30] 
+                ).order_by('distance')[:30]
             except (ValueError, TypeError):
                 return Accommodation.objects.none()
             
         return Accommodation.objects.none()
     
 
-
+# Finds accommodation near a chosen town.
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def accommodations_near_town(request):
-    """
-    Get accommodations near a specific town.
-    
-    Query Parameters:
-    - town_id: Required. The town ID
-    - radius: Optional. Search radius in kilometers (default: 15)
-    """
     town_id = request.GET.get('town_id')
     radius_km = float(request.GET.get('radius', 15))
     
@@ -1454,7 +1318,6 @@ def accommodations_near_town(request):
     except Town.DoesNotExist:
         return Response({'error': f'Town {town_id} not found'}, status=status.HTTP_404_NOT_FOUND)
     
-    # Find accommodations within radius
     nearby_accommodations = PointOfInterest.objects.filter(
         poi_type='accommodation',
         location__distance_lte=(town.location, D(km=radius_km))

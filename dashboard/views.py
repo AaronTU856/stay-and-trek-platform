@@ -1,13 +1,11 @@
 from django.shortcuts import render
 
-# Create your views here.
 from django.shortcuts import render
 from trails_api.models import Trail, Town
 from django.db.models import Count, Avg, Sum
 
-# Main dashboard view
+# Builds the main dashboard with the filter options and totals.
 def index(request):
-    """Main trail dashboard view"""
     context = {
         'total_trails': Trail.objects.count(),
         'total_towns': Town.objects.count(),
@@ -18,11 +16,8 @@ def index(request):
     }
     return render(request, 'dashboard/index.html', context)
 
-# Trail analytics view
+# Builds the analytics page with trail and stay summary data.
 def analytics(request):
-    """Trail analytics page with real distribution data"""
-    
-    # 1. High-level Trail Stats
     trail_stats = {
         "total_trails": Trail.objects.count(),
         "avg_distance": Trail.objects.aggregate(avg=Avg("distance_km"))["avg"] or 0,
@@ -33,11 +28,8 @@ def analytics(request):
         "hard_count": Trail.objects.filter(difficulty="hard").count(),
     }
 
-    # 2. County Distribution (For Bar Chart: Trails per County)
-    # This groups trails by county and counts them
     county_data = Trail.objects.values('county').annotate(total=Count('id')).order_by('-total')[:5]
 
-    # 3. Accommodation Data (For the "Stay" part of StayAndTrek)
     acc_stats = {
         "total_accommodations": Accommodation.objects.count(),
         "hotels": Accommodation.objects.filter(category='hotel').count(),
@@ -48,7 +40,6 @@ def analytics(request):
         'trail_stats': trail_stats,
         'acc_stats': acc_stats,
         'total_towns': Town.objects.count(),
-        # Passing lists directly for Chart.js labels and data
         'county_labels': [item['county'] for item in county_data],
         'county_counts': [item['total'] for item in county_data],
     }

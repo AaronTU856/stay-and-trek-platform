@@ -17,10 +17,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.gis.geos import Point
 import math
 
-# Set up logging
 logger = logging.getLogger(__name__)
 
-# Advanced spatial search endpoint which finds cities within a drawn polygon.
+# Runs the polygon search used by the advanced mapping page.
 @csrf_exempt
 @require_http_methods(["POST"])
 def polygon_search(request):
@@ -272,6 +271,7 @@ def polygon_search(request):
             'details': str(e)
         }, status=500)
 
+# Shows the main advanced mapping landing page.
 def index_view(request):
     """Accommodation browsing page with simple county filtering."""
     selected_county = (request.GET.get('county') or '').strip()
@@ -399,6 +399,7 @@ def index_view(request):
 
     return render(request, 'advanced_js_mapping/index.html', context)
 
+# Shows the polygon search map page.
 def map_view(request):
     """Interactive map view"""
     context = {
@@ -406,6 +407,7 @@ def map_view(request):
     }
     return render(request, 'advanced_js_mapping/map.html', context)
 
+# Builds the analytics page with search history and summary stats.
 def analytics_view(request):
     """Analytics dashboard adapted for Town data."""
     towns = list(Town.objects.exclude(location__isnull=True).only('id', 'name', 'population', 'country', 'town_type', 'location'))
@@ -530,6 +532,7 @@ def analytics_view(request):
 
 
 @login_required
+# Shows the town management page or returns town data for it.
 def towns_management_view(request):
     """Town management interface for authenticated users"""
     context = {
@@ -541,6 +544,7 @@ def towns_management_view(request):
 @csrf_exempt
 @login_required
 @require_http_methods(["GET", "PUT", "DELETE"])
+# Updates or deletes one town record from the management page.
 def edit_town_api(request, town_id):
     """API endpoint for editing town data - requires authentication"""
     try:
@@ -643,6 +647,7 @@ def edit_town_api(request, town_id):
 # Trails API endpoint to list or create trails
 @csrf_exempt
 @require_http_methods(["GET", "POST"])
+# Returns trail data used by the advanced mapping pages.
 def trails_api(request):
     """API endpoint to list or create trails"""
     if request.method == 'GET':
@@ -676,6 +681,7 @@ def trails_api(request):
 # Distance search API endpoint      
 @csrf_exempt
 @require_http_methods(["POST"])
+# Finds towns within a distance of the selected point.
 def distance_search(request):
     """Search towns within a distance radius"""
     try:

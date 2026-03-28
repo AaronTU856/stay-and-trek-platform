@@ -936,14 +936,14 @@ body.high-contrast-mode #trail-results {
     box-shadow: none !important;
 }
 
-/* The keyframes for the blinking effect trails near river */
+/* Animates the markers used for trails near a selected river. */
 @keyframes marker-pulse {
   0% { opacity: 1; stroke-width: 3; }
   50% { opacity: 0.3; stroke-width: 6; }
   100% { opacity: 1; stroke-width: 3; }
 }
 
-/* The class we will apply to the marker */
+/* Applies the pulse animation to the highlighted marker. */
 .blinking-marker {
   animation: marker-pulse 1.5s infinite ease-in-out;
 }
@@ -954,7 +954,7 @@ body.high-contrast-mode #trail-results {
 {% block content %}
 
   {% csrf_token %}
-  <!-- ✅ Map Container with Sidebar -->
+  <!-- Main layout with the sidebar and the map. -->
   <div class="container-fluid px-0 px-lg-2">
     <div class="row g-3 main-container">
       <div class="col-12 d-lg-none">
@@ -963,13 +963,13 @@ body.high-contrast-mode #trail-results {
         </button>
       </div>
 
-      <!-- Left Sidebar -->
+      <!-- Sidebar for search, filters, and map tools. -->
       <div class="col-12 col-lg-3">
       <div id="trailsSidebar" class="collapse d-lg-block sidebar-collapse">
       <div class="sidebar">
       <h5 style="margin-bottom: 16px; color: #2c3e50;">🗺️ Search & Explore</h5>
 
-       <!-- High Contrast Mode Toggle -->
+       <!-- Accessibility reminder for the shared high-contrast toggle. -->
       <div class="card">
         <div class="card-header">♿ Accessibility</div>
         <div class="card-body">
@@ -1002,7 +1002,7 @@ body.high-contrast-mode #trail-results {
       </div>
       
 
-      <!-- Trails within radius -->
+      <!-- Search controls for nearby trails. -->
       <div class="card trails-card">
         <div class="card-header">📍 Trails within radius</div>
         <div class="card-body">
@@ -1020,7 +1020,7 @@ body.high-contrast-mode #trail-results {
         </div>
       </div>
 
-      <!-- Nearby Accommodations -->
+      <!-- Controls for loading and showing nearby accommodation. -->
       <div id="accommodation-card" class="card accommodation-card">
         <div class="card-header">Nearby Accommodation</div>
         <div class="card-body">
@@ -1047,7 +1047,7 @@ body.high-contrast-mode #trail-results {
 
       <div id="advancedToolsPanel" class="collapse">
 
-      <!-- Points of Interest -->
+      <!-- POI controls for the advanced tool panel. -->
       <div class="card">
         <div class="card-header">📍 Points of Interest</div>
         <div class="card-body" id="poi-controls">
@@ -1056,7 +1056,7 @@ body.high-contrast-mode #trail-results {
         </div>
       </div>
 
-      <!-- Rivers Info -->
+      <!-- River tools for intersecting and nearby trails. -->
       <div class="card">
         <div class="card-header">🌊 Rivers</div>
         <div class="card-body">     
@@ -1078,7 +1078,7 @@ body.high-contrast-mode #trail-results {
         </div>
       </div>
 
-      <!-- Spatial Analysis -->
+      <!-- Quick map summary tools. -->
       <div class="card">
         <div class="card-header">📊 Spatial Analysis</div>
         <div class="card-body">
@@ -1088,7 +1088,7 @@ body.high-contrast-mode #trail-results {
       </div>
       </div>
 
-      <!-- Legend -->
+      <!-- Map legend for trails, towns, rivers, and stays. -->
     <div class="card">
       <div class="card-header">🎨 Legend</div>
         <div class="card-body" style="font-size: 11px;">
@@ -1143,12 +1143,12 @@ body.high-contrast-mode #trail-results {
       </div>
       </div>
 
-    <!-- Map Container -->
+    <!-- Main map area. -->
     <div class="col-12 col-lg-9">
     <div id="map-container">
       <div id="map"></div>
 
-      <!-- Results panel (stays on map) -->
+      <!-- Floating result panel that stays on top of the map. -->
       <div id="trail-results"
            class="position-absolute bottom-0 start-0 bg-white p-2 m-3 rounded shadow"
            style="z-index:1000; max-height: 40vh; overflow-y: auto; display: none;">
@@ -1168,6 +1168,7 @@ body.high-contrast-mode #trail-results {
   <script src="{% static 'trails_api/js/pois_boundaries.js' %}"></script>
 
   <script>
+  // Keeps the map sized correctly when the mobile sidebar opens or the window changes.
   function initializeResponsiveSidebarMap() {
     const sidebar = document.getElementById('trailsSidebar');
 
@@ -1186,7 +1187,6 @@ body.high-contrast-mode #trail-results {
     });
   }
 
-  // Initialize when DOM is ready
   document.addEventListener('DOMContentLoaded', () => {
     initializeResponsiveSidebarMap();
   });

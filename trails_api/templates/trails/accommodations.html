@@ -220,13 +220,13 @@
 
 {% block content %}
 
-  <!-- Main Container -->
+  <!-- Main split layout for the sidebar and map. -->
   <div class="main-container">
-    <!-- Sidebar -->
+    <!-- Sidebar for stats, filters, and results. -->
     <div class="sidebar">
       <h4>🏨 Find Accommodations</h4>
       
-      <!-- Statistics -->
+      <!-- Quick totals and county filter. -->
       <div class="card">
         <div class="card-header">
           📊 Statistics
@@ -251,7 +251,7 @@
         </div>
       </div>
 
-      <!-- Search/Filter -->
+      <!-- Search box and reset action. -->
       <div class="card">
         <div class="card-header">
           🔍 Search & Filter
@@ -267,7 +267,7 @@
         </div>
       </div>
 
-      <!-- Results List -->
+      <!-- Scrollable list of the visible stays. -->
       <div class="card">
         <div class="card-header">
           📍 Results (<span id="result-count">0</span>)
@@ -279,7 +279,7 @@
         </div>
       </div>
 
-      <!-- Information -->
+      <!-- Short usage notes for the page. -->
       <div class="card">
         <div class="card-header">
           ℹ️ How to Use
@@ -303,13 +303,13 @@
       </div>
     </div>
 
-    <!-- Map Container -->
+    <!-- Main accommodation map. -->
     <div id="map-container">
       <div id="map"></div>
     </div>
   </div>
 
-  <!-- Footer -->
+  <!-- Page footer status line. -->
   <footer>
     <div style="display: flex; justify-content: space-between; align-items: center;">
       <small>© 2025 Stay and Trek - Hiking Accommodations Map</small>
@@ -317,24 +317,24 @@
     </div>
   </footer>
 
-  <!-- Scripts -->
+  <!-- Accommodation map logic. -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="{% static 'leaflet/leaflet.js' %}"></script>
 
   <script>
-    // Initialize map
-    let map = L.map('map').setView([53.3498, -6.2603], 6); // Center on Ireland
+    // Keeps track of the map, markers, and the loaded accommodation data.
+    let map = L.map('map').setView([53.3498, -6.2603], 6);
     let markers = [];
     let allAccommodations = [];
     let filteredAccommodations = [];
 
-    // Add tile layer
+    // Builds the base map for the accommodation page.
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors',
       maxZoom: 18
     }).addTo(map);
 
-    // Create custom marker icon
+    // Reuses one stay marker style for all accommodation points.
     const accommodationIcon = L.divIcon({
       className: 'accommodation-marker',
       html: '<div class="accommodation-marker-icon"><i class="fas fa-bed"></i></div>',
@@ -343,7 +343,7 @@
       popupAnchor: [0, -10]
     });
 
-    // Load accommodations
+    // Loads accommodation data, then refreshes the stats, filters, and map.
     async function loadAccommodations() {
       try {
         const response = await fetch('/api/accommodations/geojson/');
@@ -352,11 +352,9 @@
         allAccommodations = data.features || [];
         filteredAccommodations = [...allAccommodations];
         
-        // Update statistics
         document.getElementById('total-count').textContent = allAccommodations.length;
         document.getElementById('visible-count').textContent = allAccommodations.length;
         
-        // Populate county filter
         const counties = [...new Set(allAccommodations.map(acc => acc.properties.county))].sort();
         const countySelect = document.getElementById('county-filter');
         counties.forEach(county => {
@@ -368,7 +366,6 @@
           }
         });
         
-        // Display accommodations
         displayAccommodations();
         document.getElementById('footer-status').textContent = `Loaded ${allAccommodations.length} accommodations`;
       } catch (error) {
@@ -377,13 +374,11 @@
       }
     }
 
-    // Display accommodations on map and list
+    // Rebuilds the markers and visible result list from the current filter.
     function displayAccommodations() {
-      // Clear existing markers
       markers.forEach(marker => map.removeLayer(marker));
       markers = [];
 
-      // Add markers for filtered accommodations
       filteredAccommodations.forEach(accommodation => {
         const props = accommodation.properties;
         const coords = accommodation.geometry.coordinates;
@@ -403,7 +398,6 @@
         markers.push(marker);
       });
 
-      // Update list
       const list = document.getElementById('accommodations-list');
       const resultCount = document.getElementById('result-count');
       
@@ -429,7 +423,7 @@
       }).join('');
     }
 
-    // Filter accommodations
+    // Applies the search and county filters to the loaded stays.
     function filterAccommodations() {
       const searchTerm = document.getElementById('search-input').value.toLowerCase();
       const countyFilter = document.getElementById('county-filter').value;
@@ -449,10 +443,12 @@
       displayAccommodations();
     }
 
+    // Reuses the main filter logic when the county dropdown changes.
     function filterByCounty() {
       filterAccommodations();
     }
 
+    // Clears the current filters and shows every stay again.
     function resetFilters() {
       document.getElementById('search-input').value = '';
       document.getElementById('county-filter').value = '';
@@ -460,17 +456,19 @@
       displayAccommodations();
     }
 
+    // Centres the map on one accommodation from the list.
     function zoomToAccommodation(coords, name) {
       map.setView(coords, 12);
     }
 
+    // Zooms the map to show all current accommodation markers.
     function zoomToAll() {
       if (markers.length === 0) return;
       const group = new L.featureGroup(markers);
       map.fitBounds(group.getBounds(), { padding: [50, 50] });
     }
 
-    // Load accommodations on page load
+    // Loads the first set of accommodation data when the page opens.
     window.addEventListener('load', loadAccommodations);
   </script>
 {% endblock %}

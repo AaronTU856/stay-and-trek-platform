@@ -1,4 +1,4 @@
-// City Mapper - Main JavaScript functionality
+// Drives the older city map page, including loading, search, and add-city tools.
 
 let map;
 
@@ -8,7 +8,7 @@ let allCitiesData = [];
 
  
 
-// Initialize map when page loads
+// Starts the map page once the DOM is ready.
 
 document.addEventListener('DOMContentLoaded', function() {
 
@@ -22,15 +22,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
  
 
+// Builds the map, tile layer, and click-to-add flow.
 function initializeMap() {
 
-    // Initialize the map - Center on Europe for better view
-
-    map = L.map('map').setView([53.5, -7.7], 6); // Changed to Europe center
-
- 
-
-    // Add OpenStreetMap tiles
+    map = L.map('map').setView([53.5, -7.7], 6);
 
   
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
@@ -40,13 +35,9 @@ function initializeMap() {
     }).addTo(map);
  
 
-    // Add the markers layer group to map
-
     cityMarkers.addTo(map);
 
  
-
-    // Add map click event for adding new cities
 
     map.on('click', function(e) {
 
@@ -58,8 +49,6 @@ function initializeMap() {
 
        
 
-        // Show add city modal
-
         const modal = new bootstrap.Modal(document.getElementById('addCityModal'));
 
         modal.show();
@@ -70,6 +59,7 @@ function initializeMap() {
 
  
 
+// Loads city data from the GeoJSON endpoint and falls back if needed.
 function loadCities() {
 
     console.log('Loading cities...');
@@ -77,8 +67,6 @@ function loadCities() {
     showLoading(true);
 
    
-
-    // Try the geojson endpoint first
 
     fetch('/api/cities/geojson/')
 
@@ -108,10 +96,7 @@ function loadCities() {
 
            
 
-            // Handle different response formats
-
             if (data && data.features) {
-                // Handle both normal and nested GeoJSON structures
                 const features = Array.isArray(data.features)
                     ? data.features
                     : Array.isArray(data.features.features)
@@ -126,15 +111,9 @@ function loadCities() {
                 console.log(`Successfully loaded ${allCitiesData.length} cities`);
 
             } else if (data && data.error) {
-
-                // API returned an error
-
                 throw new Error(`API Error: ${data.error}`);
 
             } else if (Array.isArray(data)) {
-
-                // API returned array of cities, convert to GeoJSON
-
                 console.log('Converting array to GeoJSON format');
 
                 const geojsonFeatures = data.map(city => ({
@@ -162,9 +141,6 @@ function loadCities() {
                 console.log(`Successfully converted and loaded ${allCitiesData.length} cities`);
 
             } else {
-
-                // Unexpected format, try the regular API endpoint
-
                 console.warn('Unexpected API response format, trying regular endpoint');
 
                 return loadCitiesFromRegularAPI();
@@ -176,8 +152,6 @@ function loadCities() {
         .catch(error => {
 
             console.error('Error with geojson endpoint:', error);
-
-            // Fallback to regular API
 
             return loadCitiesFromRegularAPI();
 
@@ -193,6 +167,7 @@ function loadCities() {
 
  
 
+// Loads city data from the regular API when GeoJSON is not available.
 function loadCitiesFromRegularAPI() {
 
     console.log('Trying regular API endpoint...');
@@ -225,18 +200,10 @@ function loadCitiesFromRegularAPI() {
 
            
 
-            // Handle different response formats
-
             if (data && data.results && Array.isArray(data.results)) {
-
-                // Paginated response
-
                 citiesArray = data.results;
 
             } else if (Array.isArray(data)) {
-
-                // Direct array response
-
                 citiesArray = data;
 
             } else {
@@ -246,8 +213,6 @@ function loadCitiesFromRegularAPI() {
             }
 
            
-
-            // Convert to GeoJSON format
 
             const geojsonFeatures = citiesArray.map(city => ({
 
@@ -283,8 +248,6 @@ function loadCitiesFromRegularAPI() {
 
            
 
-            // Show specific error messages
-
             if (error.message.includes('404')) {
 
                 showAlert('API endpoints not found. Please check your URLs configuration.', 'danger');
@@ -311,10 +274,8 @@ function loadCitiesFromRegularAPI() {
 
  
 
+// Clears the current markers and redraws the supplied city set.
 function displayCitiesOnMap(cities) {
-
-    // Clear existing markers
-
     cityMarkers.clearLayers();
 
    
@@ -322,8 +283,6 @@ function displayCitiesOnMap(cities) {
     cities.forEach(city => {
 
         try {
-
-            // Fix: Access coordinates from geometry.coordinates
 
             const { geometry, properties } = city;
 
@@ -343,8 +302,6 @@ function displayCitiesOnMap(cities) {
 
            
 
-            // Validate coordinates
-
             if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
 
                 console.warn('Invalid coordinates for city:', properties?.name, lat, lng);
@@ -354,8 +311,6 @@ function displayCitiesOnMap(cities) {
             }
 
            
-
-            // Create custom icon based on population
 
             const populationSize = getMarkerSize(properties.population || 0);
 
@@ -373,8 +328,6 @@ function displayCitiesOnMap(cities) {
 
            
 
-            // Create marker
-
             const marker = L.marker([lat, lng], { icon: customIcon })
 
                 .bindPopup(createPopupContent(properties), {
@@ -387,8 +340,6 @@ function displayCitiesOnMap(cities) {
 
            
 
-            // Add click event to show detailed info
-
             marker.on('click', function() {
 
                 showCityInfo(properties);
@@ -396,8 +347,6 @@ function displayCitiesOnMap(cities) {
             });
 
            
-
-            // Store city data with marker for reference
 
             marker.cityData = properties;
 
@@ -416,8 +365,6 @@ function displayCitiesOnMap(cities) {
     });
 
    
-
-    // Fit map to show all markers if cities exist
 
     if (cities.length > 0) {
 
@@ -443,10 +390,8 @@ function displayCitiesOnMap(cities) {
 
  
 
+// Builds the popup content for one city marker.
 function createPopupContent(city) {
-
-    // Safely handle missing properties
-
     const name = city.name || 'Unknown City';
 
     const country = city.country || 'Unknown Country';
@@ -495,6 +440,7 @@ function createPopupContent(city) {
 
  
 
+// Runs the city search and falls back to local filtering if needed.
 function performSearch() {
 
     const query = document.getElementById('city-search').value.trim();
@@ -641,6 +587,7 @@ function performSearch() {
 
  
 
+// Chooses a marker size based on population.
 function getMarkerSize(population) {
 
     const pop = parseInt(population) || 0;
@@ -659,6 +606,7 @@ function getMarkerSize(population) {
 
  
 
+// Fills the side panel with details for the selected city.
 function showCityInfo(city) {
 
     const infoPanel = document.getElementById('city-info');
@@ -676,8 +624,6 @@ function showCityInfo(city) {
     }
 
    
-
-    // Safely handle missing properties
 
     const name = city.name || 'Unknown City';
 
@@ -791,10 +737,8 @@ function showCityInfo(city) {
 
  
 
+// Hooks the search, refresh, modal, and info-panel buttons into the page.
 function setupEventListeners() {
-
-    // Search functionality
-
     const searchBtn = document.getElementById('search-btn');
 
     const searchInput = document.getElementById('city-search');
@@ -911,6 +855,7 @@ function setupEventListeners() {
 
  
 
+// Saves a new city from the add-city form.
 function saveNewCity() {
 
     const nameInput = document.getElementById('city-name');
@@ -958,8 +903,6 @@ function saveNewCity() {
     };
 
    
-
-    // Validation
 
     if (!formData.name || !formData.country || isNaN(formData.latitude) || isNaN(formData.longitude) || isNaN(formData.population)) {
 
@@ -1015,8 +958,6 @@ function saveNewCity() {
 
        
 
-        // Close modal
-
         const modalElement = document.getElementById('addCityModal');
 
         if (modalElement) {
@@ -1033,8 +974,6 @@ function saveNewCity() {
 
        
 
-        // Reset form
-
         const form = document.getElementById('add-city-form');
 
         if (form) {
@@ -1044,8 +983,6 @@ function saveNewCity() {
         }
 
        
-
-        // Reload cities
 
         loadCities();
 
@@ -1063,8 +1000,7 @@ function saveNewCity() {
 
  
 
-// Utility functions
-
+// Zooms the map to one city from the loaded dataset.
 function zoomToCity(cityId) {
 
     const city = allCitiesData.find(c => c.properties.id === parseInt(cityId));
@@ -1085,6 +1021,7 @@ function zoomToCity(cityId) {
 
  
 
+// Opens the detail panel for one city from the loaded dataset.
 function showCityDetails(cityId) {
 
     const city = allCitiesData.find(c => c.properties.id === parseInt(cityId));
@@ -1099,6 +1036,7 @@ function showCityDetails(cityId) {
 
  
 
+// Copies a latitude and longitude pair to the clipboard.
 function copyCoordinates(lat, lng) {
 
     const coords = `${lat}, ${lng}`;
@@ -1116,8 +1054,6 @@ function copyCoordinates(lat, lng) {
         });
 
     } else {
-
-        // Fallback for older browsers
 
         const textArea = document.createElement('textarea');
 
@@ -1147,6 +1083,7 @@ function copyCoordinates(lat, lng) {
 
  
 
+// Updates the loaded-city count on the page.
 function updateCityCount(count) {
 
     const countElement = document.getElementById('city-count');
@@ -1161,6 +1098,7 @@ function updateCityCount(count) {
 
  
 
+// Switches the loading state on the search button.
 function showLoading(show) {
 
     const searchBtn = document.getElementById('search-btn');
@@ -1187,10 +1125,8 @@ function showLoading(show) {
 
  
 
+// Shows a temporary Bootstrap alert.
 function showAlert(message, type) {
-
-    // Create alert element
-
     const alertDiv = document.createElement('div');
 
     alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
@@ -1219,8 +1155,6 @@ function showAlert(message, type) {
 
    
 
-    // Auto remove after 5 seconds
-
     setTimeout(() => {
 
         if (alertDiv.parentNode) {
@@ -1235,13 +1169,8 @@ function showAlert(message, type) {
 
  
 
+// Reads the CSRF token from cookies, meta tags, or form inputs.
 function getCsrfToken() {
-
-    // Try multiple methods to get CSRF token
-
-   
-
-    // Method 1: From cookie
 
     const cookies = document.cookie.split(';');
 
@@ -1259,8 +1188,6 @@ function getCsrfToken() {
 
    
 
-    // Method 2: From meta tag
-
     const metaTag = document.querySelector('meta[name="csrf-token"]');
 
     if (metaTag) {
@@ -1270,8 +1197,6 @@ function getCsrfToken() {
     }
 
    
-
-    // Method 3: From form input
 
     const csrfInput = document.querySelector('input[name="csrfmiddlewaretoken"]');
 
@@ -1290,6 +1215,7 @@ function getCsrfToken() {
 }
 
 
+// Adds the click-to-search-nearby workflow on top of the city map.
 class ProximitySearch {
     constructor(map) {
         this.map = map;
@@ -1301,11 +1227,10 @@ class ProximitySearch {
         this.initializeProximityFeatures();
     }
    
+    // Sets up the extra controls and map click handler.
     initializeProximityFeatures() {
-        // Add proximity search toggle button
         this.addProximityControls();
-       
-        // Add click handler for proximity search
+
         this.map.on('click', (e) => {
             if (this.isProximityMode) {
                 this.performProximitySearch(e.latlng.lat, e.latlng.lng);
@@ -1313,19 +1238,17 @@ class ProximitySearch {
         });
     }
    
+    // Adds the proximity toggle and radius input to the page.
     addProximityControls() {
-        // Add toggle button to existing controls
         const proximityToggle = document.createElement('button');
         proximityToggle.id = 'proximity-toggle';
         proximityToggle.className = 'btn btn-outline-primary';
         proximityToggle.innerHTML = '📍 Proximity Search';
         proximityToggle.onclick = () => this.toggleProximityMode();
        
-        // Add to existing control panel
         const controlPanel = document.querySelector('.map-controls') || document.body;
         controlPanel.appendChild(proximityToggle);
-       
-        // Add radius input
+
         const radiusInput = document.createElement('input');
         radiusInput.id = 'radius-input';
         radiusInput.type = 'number';
@@ -1339,6 +1262,7 @@ class ProximitySearch {
         controlPanel.appendChild(radiusInput);
     }
    
+    // Turns proximity search mode on or off.
     toggleProximityMode() {
         this.isProximityMode = !this.isProximityMode;
         const toggleBtn = document.getElementById('proximity-toggle');
@@ -1359,11 +1283,10 @@ class ProximitySearch {
         }
     }
    
+    // Finds the nearest cities to the clicked point.
     async performProximitySearch(lat, lng) {
-        // Clear previous results
         this.clearProximityResults();
-       
-        // Add search marker
+
         this.searchMarker = L.marker([lat, lng], {
             icon: L.icon({
                 iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
@@ -1380,7 +1303,6 @@ class ProximitySearch {
             Lng: ${lng.toFixed(6)}
         `).openPopup();
        
-        // Show loading
         showLoading(true);
        
         try {
@@ -1409,6 +1331,7 @@ class ProximitySearch {
         }
     }
    
+    // Draws the nearest-city results on the map.
     displayNearestCities(cities) {
         cities.forEach((city, index) => {
             const marker = L.marker([city.coordinates.lat, city.coordinates.lng], {
@@ -1433,7 +1356,6 @@ class ProximitySearch {
             this.nearestCitiesLayer.addLayer(marker);
         });
        
-        // Fit map to show search point and results
         if (cities.length > 0) {
             const group = new L.featureGroup([
                 this.searchMarker,
@@ -1452,8 +1374,8 @@ class ProximitySearch {
         });
     }
    
+    // Builds or refreshes the results panel for proximity search.
     updateResultsPanel(data) {
-        // Create or update results panel
         let resultsPanel = document.getElementById('proximity-results');
         if (!resultsPanel) {
             resultsPanel = document.createElement('div');
@@ -1490,6 +1412,7 @@ class ProximitySearch {
         this.map.setView([lat, lng], 12);
     }
    
+    // Clears the current proximity search markers and panel.
     clearProximityResults() {
         if (this.searchMarker) {
             this.map.removeLayer(this.searchMarker);
@@ -1510,9 +1433,8 @@ class ProximitySearch {
     }
 }
  
-// Initialize proximity search when map loads
+// Starts proximity search after the base map has had time to appear.
 document.addEventListener('DOMContentLoaded', function() {
-    // Wait for your existing map to be initialized
     setTimeout(() => {
         if (window.map) {
             window.proximitySearch = new ProximitySearch(window.map);
@@ -1520,6 +1442,3 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 1000);
 });
  
-
-
-

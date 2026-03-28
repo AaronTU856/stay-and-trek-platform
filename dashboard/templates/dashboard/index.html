@@ -4,13 +4,12 @@
 
 {% block extra_css %}
 <style>
-/* --- Dashboard Control Panel --- */
+/* Styles the filter panel and top-level layout. */
 .control-panel {
     background: #ffffff;
     padding: 20px;
     border-radius: 15px;
-    border-top: 4px solid #FFD700; /* Gold Top Border */
-    /* Cleaned up the green glow shadow */
+    border-top: 4px solid #FFD700;
     box-shadow: 0 10px 30px rgba(48, 116, 45, 0.15);
     height: fit-content;
 }
@@ -28,10 +27,10 @@
     margin-bottom: 20px;
 }
 
-/* --- Stats Cards (The Top Overview) --- */
+/* Styles the summary card at the top of the sidebar. */
 .stats-card {
-    background: #30742d !important; /* Forest Green */
-    color: #FFD700 !important; /* Gold Text */
+    background: #30742d !important;
+    color: #FFD700 !important;
     padding: 20px;
     border-radius: 12px;
     margin-bottom: 20px;
@@ -49,7 +48,7 @@
     font-weight: 800;
 }
 
-/* --- Filter Sections --- */
+/* Styles the filter groups above the map. */
 .filter-section {
     border: 1px solid #edf2f7;
     background: #f8fafc;
@@ -69,7 +68,7 @@
     gap: 8px;
 }
 
-/* --- Map & Results --- */
+/* Styles the map area and result cards. */
 #map-container {
     width: 100%;
     position: relative;
@@ -82,11 +81,11 @@
     height: 60vh;
 }
 
-/* Bottom Metric Cards (Results Summary) */
+/* Styles the summary cards under the map. */
 .townland-card {
     border: none;
     border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(48, 116, 45, 0.1); /* Subtle Green Shadow */
+    box-shadow: 0 4px 15px rgba(48, 116, 45, 0.1);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -126,12 +125,12 @@
     background: linear-gradient(135deg, #fff8e8, #f6ebc7);
 }
 
-/* Specific result colors */
+/* Sets the highlight colours for the metric values. */
 #trails-count { color: #2E8B57 !important; font-weight: 800; }  
 #towns-count { color: #0D1B1F !important; font-weight: 800; }   
 #total-population { color: #B8860B !important; font-weight: 800; } 
 
-/* --- Action Buttons --- */
+/* Styles the main filter actions. */
 #apply-filters {
     background: #30742d !important; 
     border: 2px solid #FFD700 !important;

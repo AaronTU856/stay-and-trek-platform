@@ -1,11 +1,6 @@
-/**
- * Universal High Contrast Mode Toggle
- * Works across all pages in the application
- * Saves preference to localStorage and applies on page load
- */
-
+// Manages the shared high-contrast toggle used across the site.
 function initializeAccessibilityToggle() {
-  // Find all possible toggle buttons (support multiple instances per page)
+  // Finds every contrast toggle the current page might have.
   const toggleCandidates = Array.from(document.querySelectorAll(
     '#high-contrast-toggle, .high-contrast-toggle, [data-accessibility="toggle"]'
   ));
@@ -16,7 +11,8 @@ function initializeAccessibilityToggle() {
     console.warn('High contrast toggle button not found - accessibility features disabled');
     return;
   }
- // Function to update the toggle button label and ARIA attributes based on state
+
+  // Keeps the button text and ARIA labels in sync with the current state.
   function updateToggleLabel(toggle, isEnabled) {
     const label = isEnabled ? 'High Contrast: On' : 'High Contrast: Off';
     const helper = 'Improves text, buttons, and map controls for easier viewing.';
@@ -34,14 +30,11 @@ function initializeAccessibilityToggle() {
     }
   }
 
-  /**
-   * Enable high contrast mode
-   */
+  // Turns high contrast mode on and updates every toggle button.
   function enableHighContrast() {
     document.body.classList.add('high-contrast-mode');
     localStorage.setItem('highContrastMode', 'true');
     
-    // Update all toggle button states
     toggles.forEach((toggle) => {
       if (toggle.setAttribute) {
         toggle.setAttribute('aria-pressed', 'true');
@@ -54,14 +47,11 @@ function initializeAccessibilityToggle() {
     console.log('High contrast mode enabled');
   }
 
-  /**
-   * Disable high contrast mode
-   */
+  // Turns high contrast mode off and resets every toggle button.
   function disableHighContrast() {
     document.body.classList.remove('high-contrast-mode');
     localStorage.setItem('highContrastMode', 'false');
     
-    // Update all toggle button states
     toggles.forEach((toggle) => {
       if (toggle.setAttribute) {
         toggle.setAttribute('aria-pressed', 'false');
@@ -74,9 +64,7 @@ function initializeAccessibilityToggle() {
     console.log('High contrast mode disabled');
   }
 
-  /**
-   * Toggle high contrast mode
-   */
+  // Switches between the on and off states.
   function toggleHighContrast() {
     const isEnabled = document.body.classList.contains('high-contrast-mode');
     
@@ -87,7 +75,7 @@ function initializeAccessibilityToggle() {
     }
   }
 
-  // Load saved preference from localStorage on page load
+  // Restores the saved preference when the page loads.
   const savedPreference = localStorage.getItem('highContrastMode');
   if (savedPreference === 'true') {
     enableHighContrast();
@@ -95,7 +83,7 @@ function initializeAccessibilityToggle() {
     disableHighContrast();
   }
 
-  // Attach handlers to all toggle buttons
+  // Hooks click and keyboard handlers into each toggle.
   toggles.forEach((toggle) => {
     if (toggle.dataset && toggle.dataset.contrastInitialized === 'true') {
       return;
@@ -103,7 +91,6 @@ function initializeAccessibilityToggle() {
 
     toggle.addEventListener('click', toggleHighContrast);
 
-    // Also support keyboard activation (Enter or Space keys)
     toggle.addEventListener('keydown', function(event) {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
@@ -119,17 +106,17 @@ function initializeAccessibilityToggle() {
   console.log('Accessibility toggle initialized');
 }
 
-// Initialize when DOM is ready
+// Starts the toggle once the page is ready.
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initializeAccessibilityToggle);
 } else {
   initializeAccessibilityToggle();
 }
 
-// Also hook into template loading (for dynamic page content)
+// Re-runs the setup when the page is restored from browser cache.
 window.addEventListener('pageshow', initializeAccessibilityToggle);
 
-// Support for AJAX/dynamic page loads
+// Re-runs the setup for older AJAX-style page loads.
 if (typeof jQuery !== 'undefined') {
   jQuery(document).on('page:load', initializeAccessibilityToggle);
 }
