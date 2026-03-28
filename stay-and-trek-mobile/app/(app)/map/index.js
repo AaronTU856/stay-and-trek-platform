@@ -1,16 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, View, Linking, ActivityIndicator, Text, Platform, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../_layout';
 import { API_BASE_URL } from '../../../config/apiConfig';
 
-let MapView, Marker, Callout;
+let MapView, Marker, Callout, Polyline;
 if (Platform.OS !== 'web') {
   const maps = require('react-native-maps');
   MapView = maps.default;
   Marker = maps.Marker;
   Callout = maps.Callout;
+  Polyline = maps.Polyline;
 }
 
 const FETCH_TIMEOUT = 10000; //10 seconds
@@ -36,7 +37,9 @@ const fetchWithTimeout = (url, timeout = FETCH_TIMEOUT) => {
 export default function MapScreen() {
   const navigation = useNavigation();
   const router = useRouter();
+  const params = useLocalSearchParams();
   const { userToken } = useAuth();
+  const mapRef = useRef(null);
   
   const [trails, setTrails] = useState([]);
   const [stays, setStays] = useState([]);
@@ -45,6 +48,9 @@ export default function MapScreen() {
   const [nearbyStays, setNearbyStays] = useState([]);
   const [globalStays, setGlobalStays] = useState([]);
   const [showGlobalLayer, setShowGlobalLayer] = useState(false);
+  const [selectedTrail, setSelectedTrail] = useState(null);
+  const [routeCoordinates, setRouteCoordinates] = useState([]);
+  const [routeSummary, setRouteSummary] = useState('');
 
   const [region] = useState({
     latitude: 53.5,
@@ -77,6 +83,36 @@ export default function MapScreen() {
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    const trailLat = Number(params.trailLat);
+    const trailLng = Number(params.trailLng);
+    const accLat = Number(params.accLat);
+    const accLng = Number(params.accLng);
+
+    if (![trailLat, trailLng].some((value) => Number.isNaN(value))) {
+      setSelectedTrail({
+        latitude: trailLat,
+        longitude: trailLng,
+        name: typeof params.trailName === 'string' ? params.trailName : 'Selected trail',
+      });
+    }
+
+    if ([trailLat, trailLng, accLat, accLng].some((value) => Number.isNaN(value))) {
+      return;
+    }
+
+    loadRoute(trailLat, trailLng, accLat, accLng);
+  }, [params.trailLat, params.trailLng, params.accLat, params.accLng]);
+
+  useEffect(() => {
+    if (routeCoordinates.length > 1 && mapRef.current?.fitToCoordinates) {
+      mapRef.current.fitToCoordinates(routeCoordinates, {
+        edgePadding: { top: 80, right: 60, bottom: 140, left: 60 },
+        animated: true,
+      });
+    }
+  }, [routeCoordinates]);
 
   const toggleGlobalStays = async () => {
     const nextState = !showGlobalLayer;
@@ -128,9 +164,95 @@ export default function MapScreen() {
     }
   };
 
-  const onTrailPress = (trailId) => {
-    fetchStaysForTrail(trailId);
-    navigation.navigate('trails', { screen: '[id]', params: { id: trailId } });
+  const buildRouteCoordinates = (data) => {
+    const features = Array.isArray(data?.features) ? data.features : [];
+
+    return features.flatMap((feature) => {
+      const geometry = feature?.geometry;
+
+      if (!geometry) {
+        return [];
+      }
+
+      if (geometry.type === 'LineString') {
+        return geometry.coordinates.map(([lng, lat]) => ({
+          latitude: Number(lat),
+          longitude: Number(lng),
+        }));
+      }
+
+      if (geometry.type === 'MultiLineString') {
+        return geometry.coordinates.flatMap((segment) =>
+          segment.map(([lng, lat]) => ({
+            latitude: Number(lat),
+            longitude: Number(lng),
+          }))
+        );
+      }
+
+      return [];
+    }).filter((point) => !Number.isNaN(point.latitude) && !Number.isNaN(point.longitude));
+  };
+
+  const loadRoute = async (trailLat, trailLng, accLat, accLng) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/trails/route/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          trail_lat: trailLat,
+          trail_lng: trailLng,
+          acc_lat: accLat,
+          acc_lng: accLng,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || `HTTP ${response.status}`);
+      }
+
+      const coordinates = buildRouteCoordinates(data);
+      if (coordinates.length > 1) {
+        setRouteCoordinates(coordinates);
+        if (typeof data.route_distance_km === 'number') {
+          setRouteSummary(`Route distance: ${data.route_distance_km} km`);
+        } else if (data.status === 'fallback') {
+          setRouteSummary('Approximate route shown on map');
+        } else {
+          setRouteSummary('Route shown on map');
+        }
+      }
+    } catch (error) {
+      console.error('Route load failed:', error);
+      setRouteCoordinates([]);
+      setRouteSummary('Unable to load route');
+    }
+  };
+
+  const handleAccommodationPress = (accLat, accLng, label) => {
+    if (!selectedTrail) {
+      setRouteSummary('Select a trail marker first');
+      return;
+    }
+
+    loadRoute(selectedTrail.latitude, selectedTrail.longitude, accLat, accLng);
+    setRouteSummary(`Loading route to ${label || 'selected accommodation'}...`);
+  };
+
+  const onTrailPress = (trail) => {
+    fetchStaysForTrail(trail.id);
+    setSelectedTrail({
+      id: trail.id,
+      name: trail.trail_name,
+      latitude: parseFloat(trail.latitude),
+      longitude: parseFloat(trail.longitude),
+    });
+    setRouteCoordinates([]);
+    setRouteSummary(`Trail selected: ${trail.trail_name}. Tap an accommodation marker to draw a route.`);
   };
 
   const loadData = async () => {
@@ -189,9 +311,17 @@ export default function MapScreen() {
     <View style={styles.container}>
       {/* Single MapView with Clustering */}
       <MapView 
+        ref={mapRef}
         style={styles.map} 
         initialRegion={region}
       >
+      {Platform.OS !== 'web' && routeCoordinates.length > 1 ? (
+        <Polyline
+          coordinates={routeCoordinates}
+          strokeColor="#F97316"
+          strokeWidth={5}
+        />
+      ) : null}
 
 
       {/* Trails Markers - Green */}
@@ -209,7 +339,7 @@ export default function MapScreen() {
               key={`trail-${trail.id}`}
               coordinate={{ latitude: lat, longitude: lng }}
               pinColor="green"
-              onPress={() => onTrailPress(trail.id)} // Calls the helper function above
+              onPress={() => onTrailPress(trail)}
             >
 
               <Callout onPress={() => navigation.navigate('trails', { screen: '[id]', params: { id: trail.id } })}>
@@ -239,7 +369,7 @@ export default function MapScreen() {
               latitude: lat,
               longitude: lng
             }}
-            
+            onPress={() => handleAccommodationPress(lat, lng, name)}
             >
             {/* Custom Marker View */}
       <View style={[styles.customPin, { backgroundColor: design.color }]}>
@@ -273,6 +403,7 @@ export default function MapScreen() {
                 key={`stay-${props.id || Math.random()}`}
                 coordinate={{ latitude: lat, longitude: lng }}
                 pinColor="blue"
+                onPress={() => handleAccommodationPress(lat, lng, props.name)}
               >
                 <Callout tooltip onPress={() => props.url && handleOpenURL(props.url)}>
                   <View style={styles.calloutCard}>
@@ -308,6 +439,18 @@ export default function MapScreen() {
           <Text style={styles.btnText}>Log In for More Features</Text>
         </TouchableOpacity>
       )}
+
+      {routeSummary ? (
+        <View style={styles.routeSummaryCard}>
+          <Text style={styles.routeSummaryText}>{routeSummary}</Text>
+          <TouchableOpacity onPress={() => {
+            setRouteCoordinates([]);
+            setRouteSummary('');
+          }}>
+            <Text style={styles.clearRouteText}>Clear route</Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -445,7 +588,34 @@ const styles = StyleSheet.create({
     zIndex: 10,
     alignItems: 'center',
     },
-    btnText: { color: '#fff', fontWeight: 'bold' }
+    btnText: { color: '#fff', fontWeight: 'bold' },
+  routeSummaryCard: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    bottom: 20,
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  routeSummaryText: {
+    color: '#1f2937',
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  clearRouteText: {
+    color: '#1565C0',
+    fontSize: 13,
+    fontWeight: '600',
+  },
 
 
 });

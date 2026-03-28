@@ -380,19 +380,12 @@ export default function TrailDetails() {
           <Text style={{ color: '#666' }}>No accommodations found along this route yet.</Text>
         ) : (
           accommodation.map(place => (
-            <TouchableOpacity
+            <View
               key={place.id}
               style={styles.accommodationCard}
-              onPress={() =>
-                router.push({
-                  pathname: '/stay', // Updated to match folder structure (app)/stay.js
-                  params: { id: place.id }
-                })
-              }
             >
               <Text style={{ fontWeight: '700', fontSize: 15 }}>{place.name}</Text>
               
-              {/* Handle cases where price is 0 or null from OSM */}
               <Text style={{ color: '#666' }}>
                 {place.price_per_night && place.price_per_night > 0 
                   ? `€${place.price_per_night} per night` 
@@ -400,9 +393,26 @@ export default function TrailDetails() {
               </Text>
               
               <Text style={{ color: '#1565C0', marginTop: 4, fontSize: 12 }}>
-                Source: {place.source?.toUpperCase() || 'OSM'} • View details →
+                Source: {place.source?.toUpperCase() || 'OSM'}
               </Text>
-            </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.routeButton}
+                onPress={() =>
+                  router.push({
+                    pathname: '/map',
+                    params: {
+                      trailLat: trail.latitude,
+                      trailLng: trail.longitude,
+                      accLat: place.latitude,
+                      accLng: place.longitude,
+                    }
+                  })
+                }
+              >
+                <Text style={styles.routeButtonText}>Show Route on Map</Text>
+              </TouchableOpacity>
+            </View>
           ))
         )}
       </View>
@@ -575,6 +585,18 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 10,
     
+  },
+  routeButton: {
+    marginTop: 10,
+    backgroundColor: '#1565C0',
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  routeButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 13,
   },
 
   // Text input for user contributions
