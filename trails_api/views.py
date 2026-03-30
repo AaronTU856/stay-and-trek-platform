@@ -115,13 +115,11 @@ class TownDetailView(generics.RetrieveUpdateDestroyAPIView):
             permission_classes = [AllowAny]
         return [permission() for permission in permission_classes]
 
-
 # Handles one trail record at a time.
 @extend_schema(tags=["Trails"], summary="Retrieve, update or delete a trail")
 class TrailDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Trail.objects.all()
     serializer_class = TrailDetailSerializer
-
 
 # Finds nearby trails from a clicked point and search radius.
 @csrf_exempt
@@ -144,14 +142,19 @@ def trails_within_radius(request):
         lng = float(request.data.get("longitude"))
         radius_km = float(request.data.get("radius_km", 50))
 
+        # Represent the clicked map position as a PostGIS point so the
+        # queryset can apply spatial distance filtering directly in SQL.
         user_location = Point(lng, lat, srid=4326)
 
         trails = (
+            # Annotate each trail with its distance from the selected point,
+            # then keep only the trails that fall inside the requested radius.
             Trail.objects.annotate(distance=DistanceFunction("start_point", user_location))
             .filter(distance__lte=radius_km * 1000)
             .order_by("distance")
         )
 
+        # Return a lightweight response for the map sidebar and numbered markers.
         results = [
             {
                 "id": t.id,
@@ -279,6 +282,7 @@ def nearest_town(request):
     lng = request.data.get('longitude')
     if not lat or not lng:
         return Response({'error': 'Latitude and longitude required'}, status=400)
+    # Reuse the selected search point to rank towns by spatial distance.
     user_location = Point(float(lng), float(lat), srid=4326)
     nearest = Town.objects.annotate(distance=DistanceFunction('location', user_location)).order_by('distance').first()
 
@@ -306,6 +310,8 @@ def load_towns(request):
         population = props.get("POPULATION") or props.get("population") or 0
         town_type = props.get("TOWN_TYPE") or props.get("town_type") or "Urban"
 
+        # Convert each GeoJSON coordinate pair into a PostGIS point so the
+        # towns can be used by nearest-town lookup, filtering, and weather views.
         lon, lat = feature["geometry"]["coordinates"]
         point = Point(float(lon), float(lat), srid=4326)
 

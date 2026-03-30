@@ -1845,7 +1845,6 @@ function drawRoute(geojson) {
         };
       }
 
-
       return {
         color: "#2b74b0", // Nice blue
         weight: 6,
@@ -1854,8 +1853,6 @@ function drawRoute(geojson) {
     }
   }).addTo(window.trailsMap);
   
- 
-
   if (routeLayer && typeof routeLayer.getBounds === "function") {
     routeLayer.bringToFront(); // Moves the whole collection to the top
     
@@ -1911,8 +1908,6 @@ function tryRoute() {
   if (!selectedTrail || !selectedAccommodation) return;
 
   routingInProgress = true;
-  console.log("🚀 Requesting route...");
-
   fetch("/api/trails/route/", {
     method: "POST",
     headers: {
@@ -1927,10 +1922,9 @@ function tryRoute() {
     })
   })
   .then(response => response.json())
-
-  
+ 
   .then(data => {
-    console.log("📦 Parsed Route Data:", data);
+    console.log("Parsed Route Data:", data);
   
     if (data && ["success", "success_v2", "fallback"].includes(data.status)) {
       

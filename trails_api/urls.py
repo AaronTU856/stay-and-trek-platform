@@ -8,7 +8,6 @@ from .views import api_test_view
 
 app_name = 'trails'
 
-
 # URL patterns for trails_api app
 urlpatterns = [
     
