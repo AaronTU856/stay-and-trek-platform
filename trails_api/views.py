@@ -1094,7 +1094,8 @@ def find_route_with_expanding_radius(
         "error": last_error or "No route found before time limit was reached",
     }
 
-# Builds the full trail-to-stay route, including the road connectors.
+# Builds a hybrid route: short connector lines into the road graph plus the
+# pgRouting road path itself, returned as one GeoJSON feature collection.
 def get_transport_route(start_coords, end_coords):
     import logging
     import json
@@ -1126,7 +1127,8 @@ def get_transport_route(start_coords, end_coords):
     with connection.cursor() as cursor:
         logger.warning(f"DEBUG coords: {start_lng},{start_lat} -> {end_lng},{end_lat}")
 
-        # Snaps the trail and accommodation points to the nearest routable road nodes.
+        # Snap the trail and accommodation coordinates to the nearest routable
+        # vertices before running shortest-path search on the road network.
         start_node = get_road_node_for_point(cursor, start_lng, start_lat)
         end_node = get_road_node_for_point(cursor, end_lng, end_lat)
 
@@ -1141,7 +1143,8 @@ def get_transport_route(start_coords, end_coords):
 
         if start_geom_row:
             start_vertex_coords = json.loads(start_geom_row[0])["coordinates"]
-            # Draws a short connector from the clicked trail point to the road network.
+            # Preserve the true trailhead position by drawing a short connector
+            # from the selected point to the snapped road-network vertex.
             features.append({
                 "type": "Feature",
                 "properties": {"segment": "connector_start"},
@@ -1149,7 +1152,8 @@ def get_transport_route(start_coords, end_coords):
             })
 
         try:
-            # Looks for the shortest road route and widens the search if needed.
+            # Retry with a wider search envelope if the first pgRouting query
+            # cannot find a road connection within the initial radius.
             route_result = find_route_with_expanding_radius(
                 cursor,
                 start_lng,
@@ -1182,14 +1186,15 @@ def get_transport_route(start_coords, end_coords):
 
         if end_geom_row:
             end_vertex_coords = json.loads(end_geom_row[0])["coordinates"]
-            # Finishes the route with the short connector into the accommodation point.
+            # Finish the route with a second connector into the selected stay.
             features.append({
                 "type": "Feature",
                 "properties": {"segment": "connector_end"},
                 "geometry": {"type": "LineString", "coordinates": [end_vertex_coords, [end_lng, end_lat]]}
             })
 
-        # Sends back one feature collection the map can draw in a single step.
+        # Return one map-ready payload so the frontend can draw the full route
+        # and show the accumulated distance in a single update.
         return {
             "status": "success_v2",
             "type": "FeatureCollection",
@@ -1197,7 +1202,8 @@ def get_transport_route(start_coords, end_coords):
             "route_distance_km": route_distance_km_from_features(features),
         }
 
-# Returns the full route between the selected trail and accommodation.
+# Validates the selected trail/stay coordinates and returns a routed
+# GeoJSON response for the map interface.
 @api_view(['POST'])
 @authentication_classes([])
 @permission_classes([AllowAny])
@@ -1213,7 +1219,8 @@ def route_between_nodes(request):
     route_data = get_transport_route((t_lng, t_lat), (a_lng, a_lat))
 
     if route_data.get("status") != "success_v2":
-        # Falls back to a straight line so the route action still shows something in the demo.
+        # Fall back to a straight line if the road graph cannot produce a route,
+        # so the UI still gives the user a visible result.
         return JsonResponse({
             "status": "fallback",
             "type": "FeatureCollection",

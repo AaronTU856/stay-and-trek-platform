@@ -1807,7 +1807,8 @@ function updateAccommodations(searchLat = null, searchLng = null) {
 
 
 
-// Draws the returned route and styles the road and connector segments.
+// Draws the routed GeoJSON and uses different styles for snapped connector
+// segments versus the main road-network path.
 function drawRoute(geojson) {
 
   console.log("Total segments to draw:", geojson.features.length);
@@ -1864,6 +1865,7 @@ function drawRoute(geojson) {
     }
   }
 
+  // Keep a simple status message on the page after the map has been updated.
   const routeNote = geojson.route_note || (geojson.features[0] && geojson.features[0].properties.note);
   const routeStatus = document.getElementById("route-status");
   if (routeStatus) {
@@ -1902,7 +1904,8 @@ if (type === "success") {
 }
 
 
-// Sends the selected trail and accommodation to the routing API.
+// Requests a road route for the currently selected trail and accommodation,
+// then updates both the map and the route-distance feedback.
 function tryRoute() {
 
   if (!selectedTrail || !selectedAccommodation) return;
@@ -1950,6 +1953,8 @@ function tryRoute() {
         if (data.status === "fallback") {
           showRouteToast("Route could not be found. Showing straight-line connection.", "warning");
         } else {
+          // Reuse the returned distance in both the marker label and the
+          // sidebar summary so the route result is obvious at a glance.
           if (
             typeof data.route_distance_km === "number" &&
             selectedAccommodation &&
