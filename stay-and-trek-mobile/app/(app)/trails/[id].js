@@ -48,7 +48,7 @@ export default function TrailDetails() {
     }
   };
 
-  // Sends a suggested trail description for moderator review.
+  // Sends a suggested trail description into the backend moderation workflow.
   const handleContribution = async () => {
 
     if (!userToken) {
@@ -57,6 +57,8 @@ export default function TrailDetails() {
     }
 
     try {
+        // Submit the suggested text against the current trail so it can be
+        // reviewed later in the Django admin interface.
         const response = await fetch(`${API_BASE_URL}/api/trails/${id}/suggest_description/`, {
             method: 'PATCH',
             headers: { 
@@ -68,6 +70,7 @@ export default function TrailDetails() {
         });
 
         if (response.ok) {
+            // Reset the form once the backend accepts the contribution for review.
             setSubmitted(true);
             setNewDesc('');
             Alert.alert("Success", "Your suggestion has been sent for review!");
@@ -201,7 +204,8 @@ export default function TrailDetails() {
 
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 60 }}>
 
-      {/* Suggest Description Button - only enabled for logged in users */}
+      {/* Keep contribution behind login so the trail detail view can guide
+          anonymous users without exposing the full submission flow. */}
       <TouchableOpacity 
         disabled={!userToken} 
         style={[styles.suggestBtn, !userToken && styles.disabledBtn]}
@@ -306,6 +310,8 @@ export default function TrailDetails() {
                         : "We do not have a description yet. Help the community by adding one!"}
                 </Text>
                 
+                {/* Contributors can add missing trail text directly from the
+                    detail screen instead of leaving the mobile workflow. */}
                 <TextInput
                   style={[styles.input, !userToken && styles.disabledInput]}
                   value={newDesc}

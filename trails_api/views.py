@@ -69,6 +69,8 @@ class TrailListCreateView(generics.ListCreateAPIView):
     serializer_class = None
     pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    # Reuses the shared filter set for county, difficulty, and range filters.
+    filterset_class = TrailFilter
     search_fields = ['trail_name', 'county', 'region']
     ordering_fields = ['trail_name', 'county', 'distance_km', 'difficulty']
     ordering = ['trail_name']
@@ -449,13 +451,19 @@ def town_weather(request):
     if not lat or not lng:
         return Response({"error": "Missing coordinates"}, status=400)
 
+    # Pull the OpenWeatherMap key from configuration so credentials stay out of
+    # the client and the request can be assembled securely on the backend.
     api_key = settings.OPENWEATHERMAP_API_KEY
 
+    # Build the weather request from the selected map coordinates and ask for
+    # metric units so the frontend receives planning-ready values.
     url = (
         f"https://api.openweathermap.org/data/2.5/weather?"
         f"lat={lat}&lon={lng}&appid={api_key}&units=metric"
     )
 
+    # Return the provider response in a simple JSON form that can be displayed
+    # directly in the town popup and related weather panels.
     data = requests.get(url).json()
     return Response(data)
 

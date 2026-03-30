@@ -520,7 +520,7 @@ window.AdvancedMapping = (function() {
         });
     }
 
-    // Replaces the current town markers with the latest search results.
+    // Replaces the current town markers with the latest polygon-search results.
     function displayCitiesOnMap(cities) {
         if (window.citiesLayer) {
             window.citiesLayer.clearLayers();
@@ -536,6 +536,8 @@ window.AdvancedMapping = (function() {
 
                 const markerOpts = { cityMarker: true };
                 if (window.resultMarkerIcon) markerOpts.icon = window.resultMarkerIcon;
+                // Rebuild each returned town as a Leaflet marker so the map and
+                // results panel stay in sync after every polygon search.
                 const marker = L.marker([lat, lng], markerOpts);
                 marker.bindPopup(createTownPopupContent(city));
                 if (window.citiesLayer) {
@@ -557,7 +559,7 @@ window.AdvancedMapping = (function() {
         } catch (e) {
         }
 
-        // Falls back to simple circle markers if normal markers fail.
+        // Fall back to simple circle markers if the standard marker path fails.
         try {
             const added = window.citiesLayer ? window.citiesLayer.getLayers().length : 0;
             if (cities.length > 0 && added === 0) {

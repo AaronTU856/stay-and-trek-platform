@@ -22,10 +22,10 @@
                     </div>
                     <div class="card-body">
                         <div class="d-grid gap-2">
-                            <button class="btn btn-primary" onclick="testEndpoint('/api/trails/geojson')">
+                            <button class="btn btn-primary" onclick="testEndpoint('/api/trails/')">
                                 List Trails
                             </button>
-                            <button class="btn btn-info" onclick="testEndpoint('/api/trails/geojson/')">
+                            <button class="btn btn-info" onclick="testEndpoint('/api/trails/towns/geojson/')">
                                 List Towns
                             </button>
                             <button class="btn btn-success" onclick="testEndpoint('/api/trails/load-towns/')">
@@ -45,8 +45,14 @@
                         <hr>
                         <h6>Filters</h6>
                         <input type="text" class="form-control mb-2" id="searchInput" placeholder="Search trail name (e.g. Clara Loop)...">
-                        <select class="form-select mb-2" id="countrySelect">
+                        <select class="form-select mb-2" id="countySelect">
                             <option value="">All Counties</option>
+                        </select>
+                        <select class="form-select mb-2" id="difficultySelect">
+                            <option value="">All Difficulties</option>
+                            <option value="easy">Easy</option>
+                            <option value="moderate">Moderate</option>
+                            <option value="hard">Hard</option>
                         </select>
                         <button class="btn btn-outline-primary btn-sm" onclick="testWithFilters()">
                             Apply Filters
@@ -70,7 +76,8 @@
     </div>
 
     <script>
-        let baseURL = 'http://127.0.0.1:8000';
+        // Reuses the current host so the helper works in local and preview environments.
+        const baseURL = window.location.origin;
        
         async function testEndpoint(endpoint) {
             const startTime = performance.now();
@@ -86,33 +93,48 @@
                 document.getElementById('responseTime').textContent =
                     `Response time: ${(endTime - startTime).toFixed(2)}ms | Status: ${response.status}`;
                
-                // Populate country select if we're loading cities
-                if (endpoint === '/api/cities/' && data.results) {
-                    populateCountrySelect(data.results);
+                // Refresh the county dropdown whenever the trail list is loaded.
+                if (endpoint.startsWith('/api/trails/') && data.results) {
+                    populateCountySelect(data.results);
                 }
             } catch (error) {
                 document.getElementById('apiResult').textContent = 'Error: ' + error.message;
                 document.getElementById('responseTime').textContent = 'Error occurred';
             }
         }
-       
-    
-       
+
+        // Builds the county dropdown from the current trail response.
+        function populateCountySelect(trails) {
+            const countySelect = document.getElementById('countySelect');
+            const counties = [...new Set((trails || []).map((trail) => trail.county).filter(Boolean))].sort();
+
+            countySelect.innerHTML = '<option value="">All Counties</option>';
+            counties.forEach((county) => {
+                const option = document.createElement('option');
+                option.value = county;
+                option.textContent = county;
+                countySelect.appendChild(option);
+            });
+        }
+
+        // Replays the list endpoint with simple query-string filters applied.
         function testWithFilters() {
             const search = document.getElementById('searchInput').value;
-            const country = document.getElementById('countySelect').value;
+            const county = document.getElementById('countySelect').value;
+            const difficulty = document.getElementById('difficultySelect').value;
            
-            let endpoint = '/api/trails/geojson/?';
+            let endpoint = '/api/trails/?';
             const params = [];
            
             if (search) params.push(`search=${encodeURIComponent(search)}`);
-            if (country) params.push(`county=${encodeURIComponent(county)}`);
+            if (county) params.push(`county=${encodeURIComponent(county)}`);
             if (difficulty) params.push(`difficulty=${encodeURIComponent(difficulty)}`);
 
             endpoint += params.join('&');
             testEndpoint(endpoint);
         }
        
+        // Sends a representative radius-search payload to the spatial API.
         async function testSpatialQuery() {
             const startTime = performance.now();
             document.getElementById('apiResult').textContent = 'Loading spatial query...';
@@ -143,12 +165,13 @@
             }
         }
        
-        // Load cities on page load
+        // Preload the trail list so the filter panel has live values to work with.
         document.addEventListener('DOMContentLoaded', function() {
             testEndpoint('/api/trails/');
         });
 
 
+        // Exercises the weather proxy endpoint with a fixed Dublin example.
         async function testWeather() {
             const startTime = performance.now();
             document.getElementById('apiResult').textContent = 'Fetching weather data...';
@@ -158,7 +181,7 @@
                 const lat = 53.35; // Dublin latitude
                 const lon = -6.26; // Dublin longitude
 
-                const response = await fetch(`${baseURL}/api/weather/?lat=${lat}&lon=${lon}`);
+                const response = await fetch(`${baseURL}/api/trails/weather-town/?lat=${lat}&lng=${lon}`);
                 const data = await response.json();
                 const endTime = performance.now();
 

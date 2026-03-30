@@ -1,13 +1,16 @@
 console.log('🔬 Advanced JavaScript Mapping - Loading spatial analysis module...');
 
-// Sends the drawn polygon to the server and pushes the results into the map and UI.
+// Sends the drawn polygon to the backend search endpoint, then feeds the
+// returned towns into both the workflow panel and the Leaflet map.
 async function performSpatialSearch(polygonGeometry) {
-    console.log('🔍 performSpatialSearch called with geometry:', polygonGeometry);
+    console.log('performSpatialSearch called with geometry:', polygonGeometry);
     if (window.AdvancedMapping && typeof window.AdvancedMapping.showLoading === 'function') {
         window.AdvancedMapping.showLoading(true);
     }
 
     try {
+        // Keep the payload simple: the backend only needs the polygon geometry
+        // to run the spatial containment query.
         const searchParams = { polygon: polygonGeometry };
         const response = await fetch('/advanced-js-mapping/api/polygon-search/', {
             method: 'POST',
@@ -20,7 +23,8 @@ async function performSpatialSearch(polygonGeometry) {
         const data = await response.json();
         let cities = [];
 
-        // Normalises the API response into one town list for the rest of the UI.
+        // Normalise the response into one town list so the UI can work with a
+        // consistent structure regardless of which result branch was returned.
         if (data && data.results) {
             if (Array.isArray(data.results.cities) && data.results.cities.length > 0) {
                 cities = data.results.cities.map(c => ({
@@ -45,7 +49,7 @@ async function performSpatialSearch(polygonGeometry) {
             }
         }
 
-        // Updates the results panel with the returned towns and summary.
+        // Push the same result set into the summary cards and the map markers.
         if (window.UIControls && typeof window.UIControls.updateResultsUI === 'function') {
             window.UIControls.updateResultsUI(cities, data.results.analysis);
         }

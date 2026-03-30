@@ -98,21 +98,21 @@ class TrailSummarySerializer(serializers.Serializer):
     moderate_count = serializers.IntegerField()
     hard_count = serializers.IntegerField()
            
-# Serializer used when searching for trails within a radius
+# Validates map-click coordinates and radius values for proximity search.
 class DistanceSerializer(serializers.Serializer):
     latitude = serializers.FloatField(min_value=-90, max_value=90)
     longitude = serializers.FloatField(min_value=-180, max_value=180)
     radius_km = serializers.FloatField(min_value=0.1, max_value=20000)
 
 
-# Serializer for bounding box-based spatial searches
+# Validates the min/max coordinates sent by the bounding-box tools.
 class BoundingBoxSerializer(serializers.Serializer):
     min_latitude = serializers.FloatField(min_value=-90, max_value=90)
     min_longitude = serializers.FloatField(min_value=-180, max_value=180)
     max_latitude = serializers.FloatField(min_value=-90, max_value=90)
     max_longitude = serializers.FloatField(min_value=-180, max_value=180)
 
-# Validation ensures the bounding box coordinates make sense
+    # Reject inverted bounding boxes before the spatial query runs.
     def validate(self, data):
         if data['min_latitude'] >= data['max_latitude']:
             raise serializers.ValidationError("min_latitude must be less than max_latitude")
@@ -128,8 +128,7 @@ class TownGeoJSONSerializer(GeoFeatureModelSerializer):
         geo_field = 'location'
         fields = ('id', 'name', 'town_type', 'population', 'area')
 
-  
-  # Serializer for Trail path as GeoJSON LineString  
+# Serializer for trail path geometry returned to the map as GeoJSON.
 class TrailPathGeoSerializer(GeoFeatureModelSerializer):
     class Meta:
         model = Trail
@@ -235,6 +234,5 @@ class AccommodationGeoJSONSerializer(GeoFeatureModelSerializer):
         model = Accommodation  
         geo_field = 'location'
         fields = ('id', 'name', 'source', 'price_per_night', 'rating', 'url')
-
 
 

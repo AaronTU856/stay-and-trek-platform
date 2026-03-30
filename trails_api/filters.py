@@ -1,36 +1,46 @@
 import django_filters
 from .models import Trail
 
-# Defines filtering options for the Trail model 
+# Shared query filters for trail list endpoints and related tests.
 class TrailFilter(django_filters.FilterSet):
-    """Filter set for Trail model"""
-   # Allow case-insensitive search by name, country, or region
-    name = django_filters.CharFilter(lookup_expr='icontains')
-    country = django_filters.CharFilter(lookup_expr='icontains')
+    """Public-facing filters for trail name, location, and numeric ranges."""
+
+    # Lets the list view match partial trail names from the search UI.
+    trail_name = django_filters.CharFilter(
+        field_name='trail_name',
+        lookup_expr='icontains'
+    )
+    county = django_filters.CharFilter(lookup_expr='iexact')
+    difficulty = django_filters.CharFilter(lookup_expr='iexact')
     region = django_filters.CharFilter(lookup_expr='icontains')
-   
-   # Filters based on elevation range 
-    smallest_mountain = django_filters.NumberFilter(
-        field_name='smallest',
+
+    # Supports min/max distance filtering for list and dashboard queries.
+    min_distance_km = django_filters.NumberFilter(
+        field_name='distance_km',
         lookup_expr='gte'
     )
-    highest_mountain = django_filters.NumberFilter(
-        field_name='highest',
+    max_distance_km = django_filters.NumberFilter(
+        field_name='distance_km',
         lookup_expr='lte'
     )
-    
-   # Filters for trail length ranges
-    longest_trail = django_filters.NumberFilter(
-        field_name='longest_trail',
+
+    # Supports min/max elevation filtering without exposing raw SQL details.
+    min_elevation_gain_m = django_filters.NumberFilter(
+        field_name='elevation_gain_m',
         lookup_expr='gte'
     )
-    shortest_trail = django_filters.NumberFilter(
-        field_name='shortest_trail',
+    max_elevation_gain_m = django_filters.NumberFilter(
+        field_name='elevation_gain_m',
         lookup_expr='lte'
     )
-   
-   
-   # Meta class to specify model and fields
+
     class Meta:
         model = Trail
         fields = ['county', 'difficulty', 'region']
+
+
+
+
+
+
+
