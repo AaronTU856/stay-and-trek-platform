@@ -56,6 +56,8 @@ export default function TrailDetails() {
       return;
     }
 
+    setIsSubmitting(true);
+
     try {
         // Submit the suggested text against the current trail so it can be
         // reviewed later in the Django admin interface.
@@ -79,6 +81,8 @@ export default function TrailDetails() {
         }
     } catch (error) {
         console.error("Submission failed", error);
+    } finally {
+        setIsSubmitting(false);
     }
   };
 
