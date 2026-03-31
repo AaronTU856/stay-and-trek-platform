@@ -4,6 +4,7 @@ __pycache__/
 *.pyo
 *.pyd
 .env
+.env.local
 db.sqlite3
 *.sqlite3
 *.log
@@ -21,6 +22,8 @@ webmapping_env/
 
 # --- Testing Artifacts ---
 report_screenshots/testing/
+.coverage
+htmlcov/
 
 # --- IDE / OS Files ---
 .vscode/
@@ -43,6 +46,15 @@ stay-and-trek-mobile/android/
 stay-and-trek-mobile/npm-debug.log*
 stay-and-trek-mobile/yarn-debug.log*
 stay-and-trek-mobile/yarn-error.log*
+stay-and-trek-mobile/expo.log
+
+# --- Root Node / Expo Local Files ---
+node_modules/
+.expo/
+
+# --- Local Tools / Dumps ---
+cloud-sql-proxy
+*.dump
 
 # --- Documentation & Reference ---
 _REFERENCE_NOTES/
