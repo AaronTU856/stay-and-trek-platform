@@ -1,5 +1,5 @@
 import logging
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpResponse, JsonResponse
 from django.core.serializers import serialize
 from django.db import models, connection 
@@ -39,7 +39,6 @@ from django.contrib.auth.decorators import login_required
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register_user(request):
-    print("🚀 REGISTRATION ATTEMPT RECEIVED!")
     username = request.data.get('username')
     password = request.data.get('password')
     email = request.data.get('email')
@@ -49,12 +48,6 @@ def register_user(request):
     
     user = User.objects.create_user(username=username, email=email, password=password)
     return Response({"message": "User created"}, status=status.HTTP_201_CREATED)
-
-
-# Old protected trail page hook kept for signed-in access.
-@login_required
-def trail_map(request):
-    return render(request, 'index.html')
 
 # Sets a larger page size for the main API lists.
 class StandardResultsSetPagination(PageNumberPagination):
@@ -382,9 +375,9 @@ def api_info(request):
 def counties_list(request):
     counties = (
         Trail.objects
-        .values('country')
+        .values('county')
         .annotate(trail_count=Count('id'))
-        .order_by('country')
+        .order_by('county')
     )
     return Response(list(counties))
 
@@ -395,7 +388,7 @@ def trail_search(request):
     if not q:
         return Response([], status=200)
 
-    trails = Trail.objects.filter(name__icontains=q)[:10]
+    trails = Trail.objects.filter(trail_name__icontains=q)[:10]
     return Response(TrailListSerializer(trails, many=True).data)
 
 # Returns saved trail paths as GeoJSON features.
@@ -411,11 +404,11 @@ def trails_paths_geojson(request):
 
 # Shows the small API test page.
 def api_test_page(request):
-    return render(request, 'api_test.html')
+    return redirect(f"{settings.STATIC_URL}api_test.html")
 
 # Keeps the old API test route working.
 def api_test_view(request):
-    return render(request, "api_test.html")
+    return redirect(f"{settings.STATIC_URL}api_test.html")
 
 
 # Returns live weather for a trail start point.
