@@ -1,47 +1,45 @@
-# Stay and Trek
+# Stay & Trek
 
-Stay and Trek is a full-stack geospatial project for exploring walking trails in Ireland. The main idea is simple: a user can browse trails, view them on a map, look for nearby accommodation, generate a route between a trail and a stay, and check weather information for trail locations and towns.
+Stay & Trek is a Django and PostGIS web mapping project focused on walking trails in Ireland. The system has:
 
-The project has both a web side and a mobile side. The web app is built into the Django project and uses server-rendered templates with JavaScript for the interactive map. It is the main deployed part of the system and is live at `stay-and-trek.com`. The mobile app is a separate React Native client in the `stay-and-trek-mobile` folder and is intended to consume the same API.
+- a live web application at `stay-and-trek.com`
+- a Django admin for data moderation
+- a mobile app in `stay-and-trek-mobile/`
+- a shared backend API used by both web and mobile
 
-## Architecture overview
+The live site uses the Squarespace domain `stay-and-trek.com` and the backend is deployed to Google Cloud.
 
-The system follows a client-server structure with more than one client talking to the same backend.
+## Main features
 
-The backend is built with Django, Django REST Framework, and GeoDjango. It exposes API endpoints for trails, towns, points of interest, accommodation, weather lookups, and route generation. Spatial data is stored in PostgreSQL with PostGIS, which is used for distance, radius, bounding box, and geometry intersection queries.
-
-Routing is handled through pgRouting on top of OpenStreetMap-based road data. In practice, the application snaps trail and accommodation points to a routing network in the database and then returns a route as GeoJSON.
-
-The web frontend uses Django templates and Leaflet. The main map interface lives inside the Django project and loads data from the backend API. The mobile frontend is a separate Expo / React Native app that also talks to the backend API.
-
-## Key features
-
-The current system includes:
-
-- trail discovery and filtering
-- interactive trail and town maps
-- nearby accommodation lookups
+- trail browsing and filtering
+- nearby accommodation linked to trails
 - route generation between trails and accommodation
-- weather integration for trail and town locations
-- spatial queries such as radius search, bounding box search, and boundary analysis
+- weather lookups for trails and towns
+- mobile trail description submission and admin moderation
+- polygon-based town search in the advanced mapping section
+- town analytics and dashboard reporting
+- Django admin moderation and data management
+
+## Main workflow
+
+- `devtest` is used for testing work before deployment
+- `dev` is the branch used for the cloud deployment workflow
+- pushing to `dev` triggers the Google Cloud deployment flow
+- the cloud web app, cloud admin, and cloud database should be treated as the main production system
 
 ## Project structure
 
-The repository is a bit mixed because the project has grown over time, but the main parts are straightforward.
+- `webmapping_project/` Django project settings and URLs
+- `trails_api/` main backend models, API views, serializers, filters, and admin
+- `advanced_js_mapping/` advanced mapping section of the web app
+- `dashboard/` analytics and dashboard pages
+- `authentication/` login and signup views
+- `stay-and-trek-mobile/` Expo / React Native mobile app
+- `docker/` local Docker setup for Django, PostGIS, and nginx
 
-- `webmapping_project/` contains the main Django project configuration
-- `trails_api/` contains the core backend models, views, serializers, API routes, and geospatial logic
-- `templates/` and app template folders contain the web frontend pages
-- `stay-and-trek-mobile/` contains the separate mobile client
-- `docker/` contains the database and nginx container setup
+## Local development
 
-There are also some older or experimental modules in the repo, but `trails_api`, the web templates, and the mobile app are the main parts to focus on.
-
-## Setup
-
-The easiest way to run the project is with Docker. The application is set up to run with Docker Compose, including a PostGIS database service.
-
-Use:
+The local system runs with Docker.
 
 ```bash
 docker compose up -d --build
@@ -49,16 +47,88 @@ docker compose exec web python manage.py migrate
 docker compose exec web python manage.py collectstatic --noinput
 ```
 
-The backend service runs in the `web` container and the spatial database runs in the `db` container. The database image includes PostGIS support, which is required for the spatial queries used by the API.
+Important:
 
-## Notes and limitations
+- local Docker and cloud use different databases
+- `127.0.0.1:8000/admin` is the local admin only
+- changes seen in local admin are not the same as cloud admin unless the same action is repeated against the cloud system
 
-The main web platform is live and deployed, so this repository is not just a prototype. The Django, PostGIS, Leaflet, and routing parts form the main working system.
+## Cloud deployment
 
-The mobile client is still the prototype part of the project. It is being built as a separate companion app and some mobile UI and integration work is still in progress. There are also parts of the repo that reflect earlier development stages, so not every folder has the same importance in the final system.
+Deployment is handled through Google Cloud Build and Cloud Run.
 
-## Deployment
+- push code to `dev`
+- Google Cloud Build builds, tests, and deploys the backend
+- the deployed backend is used by the live website and cloud admin
 
-The application is deployed in containers. Docker is used for the application setup, and static files are collected through Django `collectstatic` as part of the deployment process. The web system is deployed through the project CI/CD flow and runs on the live domain `stay-and-trek.com`.
+## Database access
 
-In short, the project is a Django and PostGIS backend with two clients on top of it: a Leaflet-based web app and a separate React Native mobile app.
+To connect to the cloud database locally, use the proxy:
+
+```bash
+./cloud-sql-proxy --address 0.0.0.0 --port 8080 long-octane-477515-k6:europe-west1:stay-trek-db
+```
+
+Current database access setup:
+
+- `trek-local` in TablePlus for local Docker / local Postgres work
+- `trek-cloud` in TablePlus for the cloud database
+
+## Mobile workflow
+
+The mobile app uses the same backend API as the web application.
+
+For local API testing, the mobile app can point to the local Docker backend.
+
+For cloud testing, the mobile app must point to the cloud API, not the local Docker API. The safest way is to start Expo with an explicit base URL:
+
+```bash
+EXPO_PUBLIC_API_BASE_URL=https://stay-and-trek-service-642845720185.europe-west1.run.app npx expo start
+```
+
+This avoids mixing local mobile submissions with the cloud admin or cloud database.
+
+The main mobile features include:
+
+- trail browsing
+- trail detail views
+- nearby accommodation along route
+- weather display
+- trail description submission for moderation
+
+## Moderation workflow
+
+Trail description moderation works like this:
+
+1. A signed-in mobile user submits a trail description.
+2. The trail status becomes `Pending`.
+3. A moderator opens the trail in Django admin.
+4. The moderator reviews the description and changes the status to `Verified`.
+5. Saving the record completes the approval.
+
+Notes:
+
+- the admin status is `Verified`, not `Confirmed`
+- the right-side status list in admin is only a filter
+- approval is done from the trail change form
+
+## Main technologies
+
+- Django
+- Django REST Framework
+- GeoDjango
+- PostgreSQL / PostGIS
+- pgRouting
+- Leaflet
+- Expo / React Native
+- Docker
+- Google Cloud Run
+
+## Submission note
+
+For final verification, treat the cloud system as the source of truth:
+
+- cloud mobile/API with cloud admin
+- local mobile/API with local admin
+
+Do not mix local admin and cloud mobile results when checking moderation or database updates.

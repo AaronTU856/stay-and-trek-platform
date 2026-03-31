@@ -1,50 +1,68 @@
-# Welcome to your Expo app 👋
+# Stay & Trek Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+This folder contains the Expo / React Native mobile app for Stay & Trek.
 
-## Get started
+The mobile app is a client for the main Django backend. It is used to:
 
-1. Install dependencies
+- browse trails
+- view trail details
+- view nearby accommodation
+- view route-related trail and stay information
+- check weather data
+- submit trail descriptions for moderation
 
-   ```bash
-   npm install
-   ```
+## Run the app
 
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+Install dependencies:
 
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Start Expo:
 
-## Learn more
+```bash
+npx expo start
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+## API workflow
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+The mobile app can talk to either:
 
-## Join the community
+- the local Docker backend
+- the cloud backend
 
-Join our community of developers creating universal apps.
+For local testing, use the local backend.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+For cloud testing, start Expo with the cloud API URL:
+
+```bash
+EXPO_PUBLIC_API_BASE_URL=https://stay-and-trek-service-642845720185.europe-west1.run.app npx expo start
+```
+
+This is important because local and cloud use different databases.
+
+## Moderation workflow
+
+When a signed-in user submits a trail description:
+
+1. the submission goes to the backend API
+2. the trail status is set to `Pending`
+3. the moderator reviews it in Django admin
+4. the moderator changes the status to `Verified`
+
+The admin approval step is manual.
+
+## Main files
+
+- `app/` app screens and routing
+- `components/` reusable UI components
+- `context/` shared app context such as accessibility settings
+- `services/apiClient.js` API helper functions
+- `config/apiConfig.js` API base URL configuration
+
+## Notes
+
+- do not assume local admin and cloud admin show the same data
+- use cloud admin when testing cloud mobile submissions
+- use local admin when testing local Docker submissions
