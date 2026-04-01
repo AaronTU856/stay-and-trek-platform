@@ -958,11 +958,11 @@ BBOX_BUFFER_DEG = 2
 
 logger = logging.getLogger(__name__)
 
-ROUTE_SEARCH_TIME_LIMIT_SECONDS = 3.0
-ROUTE_INITIAL_RADIUS_METERS = 50000
+ROUTE_SEARCH_TIME_LIMIT_SECONDS = 6.0
+ROUTE_INITIAL_RADIUS_METERS = 15000
 ROUTE_RADIUS_MULTIPLIER = 1.75
-ROUTE_MAX_RADIUS_METERS = 600000
-ROUTE_MAX_SINGLE_QUERY_MS = 1200
+ROUTE_MAX_RADIUS_METERS = 300000
+ROUTE_MAX_SINGLE_QUERY_MS = 2000
 
 # Builds the inner road SQL used by the routing queries.
 def build_road_inner_sql(cursor, start_coords, end_coords, road_filter, bbox_buffer_deg=BBOX_BUFFER_DEG):
