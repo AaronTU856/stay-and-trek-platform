@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, FlatList, TouchableOpacity, SafeAreaView, ActivityIndicator, Alert } from 'react-native';
-import { useAccessibility } from "../../context/AccessibilityContext";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
 
 const IRISH_LOCATIONS = [
@@ -16,14 +14,6 @@ const IRISH_LOCATIONS = [
   { name: 'Dublin', lat: 53.3498, lon: -6.2603 },
   { name: 'Killarney', lat: 52.0599, lon: -9.5044 },
   { name: 'Cork', lat: 51.8985, lon: -8.4756 },
-];
-
-const SAMPLE_FORECAST = [
-  { day: 'Mon', highC: 12, lowC: 6, condition: 'Cloudy', icon: 'cloud-outline' },
-  { day: 'Tue', highC: 10, lowC: 4, condition: 'Rain', icon: 'rainy-outline' },
-  { day: 'Wed', highC: 14, lowC: 7, condition: 'Sunny', icon: 'sunny-outline' },
-  { day: 'Thu', highC: 11, lowC: 5, condition: 'Wind', icon: 'cloudy-night-outline' },
-  { day: 'Fri', highC: 13, lowC: 6, condition: 'Partly Cloudy', icon: 'partly-sunny-outline' },
 ];
 
 function cToF(c) { return Math.round((c * 9) / 5 + 32); }
@@ -64,7 +54,6 @@ function getIcon(condition) {
 }
 
 export default function WeatherScreen() {
-  const { largeText } = useAccessibility();
   const [selectedLocation, setSelectedLocation] = useState(IRISH_LOCATIONS[0]);
   const [weatherData, setWeatherData] = useState(null);
   const [loading, setLoading] = useState(false);

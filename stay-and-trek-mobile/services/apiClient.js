@@ -1,19 +1,12 @@
 import * as SecureStore from 'expo-secure-store';
 import { API_BASE_URL, DEFAULT_ENVIRONMENT, logApiConfig } from '../config/apiConfig';
 
-// API service for all backend communications
-// Handles configuration, error handling, request and response setup
-
-// API Base URL - auto-detect environment and platform
-// Set environment to 'docker' when Docker is running
+// Shared API helpers for the mobile app.
 const DEFAULT_TIMEOUT = 60000; // 60 seconds for slow backend responses
 
-// Log configuration on startup
+// Log the resolved backend when the app starts.
 logApiConfig(DEFAULT_ENVIRONMENT);
 
-/**
- * AUTHENTICATION: Login user and return JWT tokens
- */
 export async function login(username, password) {
   return apiCall('/api/token/', {
     method: 'POST',
@@ -21,9 +14,6 @@ export async function login(username, password) {
   });
 }
 
-/**
- * AUTHENTICATION: Refresh the access token using the refresh token
- */
 export async function refreshToken(refresh) {
   return apiCall('/api/token/refresh/', {
     method: 'POST',
@@ -31,9 +21,6 @@ export async function refreshToken(refresh) {
   });
 }
 
-/**
- * AUTHENTICATION: Register a new user
- */
 export async function register(username, email, password) {
   return apiCall('/api/trails/register/', {
     method: 'POST',
@@ -41,24 +28,18 @@ export async function register(username, email, password) {
   });
 }
 
-/** 
- * Generic fetch wrapper with error handling
- * @param {string} endpoint - API endpoint (path after base URL - '/api/trails/')
- * @param {object} options - Fetch options (method, headers, body)
- * @param {Promise} timeout response data or error 
-*/
-
+// Adds the saved token when available and keeps request errors consistent.
 async function apiCall(endpoint, options = {}){
   const url = `${API_BASE_URL}${endpoint}`;
 
-  // 1. Get the token from storage
+  // Pull the saved token from secure storage before the request is sent.
   const token = await SecureStore.getItemAsync('userToken');
 
   const defaultHeaders = {
       'Accept': 'application/json',
       'Content-Type': 'application/json',
 
-  // Add Authorization header if token exists
+  // Attach the token only when the user is signed in.
       ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
   };
 
@@ -100,31 +81,18 @@ async function apiCall(endpoint, options = {}){
   }
 }
 
-  // Trails
+// Trails
 
-  /**
- * Fetch all trails with optional filters
- * @param {object} params - Query parameters (limit, offset, difficulty, county, etc.)
- */
 export async function getTrails(params = {}) {
   const queryString = new URLSearchParams(params).toString();
   const endpoint = `/api/trails/?${queryString}`;
   return apiCall(endpoint);
 }
 
-/**
- * Fetch single trail by ID
- */
 export async function getTrailById(id) {
   return apiCall(`/api/trails/${id}/`);
 }
 
-/**
- * Search trails within a radius
- * @param {number} lat - Latitude
- * @param {number} lng - Longitude
- * @param {number} radiusKm - Radius in kilometers
- */
 export async function getTrailsWithinRadius(lat, lng, radiusKm) {
   return apiCall('/api/trails/within-radius/', {
     method: 'POST',
@@ -136,18 +104,11 @@ export async function getTrailsWithinRadius(lat, lng, radiusKm) {
   });
 }
 
-/**
- * Get all trails as GeoJSON (for map)
- */
 export async function getTrailsGeoJSON() {
   return apiCall('/api/trails/geojson/');
 }
 
 // Accommodation
-
-/**
- * Fetch all accommodations
- */
 
 export async function getAccommodations(params = {}) {
     const queryString = new URLSearchParams(params).toString();
@@ -155,16 +116,10 @@ export async function getAccommodations(params = {}) {
     return apiCall(endpoint);
 }
 
-/**
- * Fetch accommodations near a trail
- */
 export async function getAccommodationsNearTrail(trailId) {
   return apiCall(`/api/trails/accommodations/near-trail/?trail_id=${trailId}`);
 }
 
-/**
- * Get accommodations as GeoJSON (for map)
- */
 export async function getAccommodationsGeoJSON(params = {}) {
   const queryString = new URLSearchParams(params).toString();
   const suffix = queryString ? `?${queryString}` : '';
@@ -173,34 +128,22 @@ export async function getAccommodationsGeoJSON(params = {}) {
 
 // Weather
 
-/**
- * Get weather for a specific trail by ID
- */
 export async function getTrailWeather(trailId) {
   return apiCall(`/api/trails/weather/${trailId}/`);
 }
 
-/**
- * Get weather for a town/location
- */
 export async function getTownWeather(townName) {
   return apiCall(`/api/trails/weather-town/?location=${encodeURIComponent(townName)}`);
 }
 
 // Towns
 
-/**
- * Get all towns
- */
 export async function getTowns(params = {}) {
   const queryString = new URLSearchParams(params).toString();
   const endpoint = `/api/towns/?${queryString}`;
   return apiCall(endpoint);
 }
 
-/**
- * Get nearest town to coordinates
- */
 export async function getNearestTown(lat, lng) {
   return apiCall('/api/nearest-town/', {
     method: 'POST',
@@ -208,34 +151,22 @@ export async function getNearestTown(lat, lng) {
   });
 }
 
-// POI (Points of Interest)
+// Points of interest
 
-/**
- * Fetch points of interest (cafes, parking, attractions, etc.)
- */
 export async function getPOIs(params = {}) {
   const queryString = new URLSearchParams(params).toString();
   const endpoint = `/api/pois/?${queryString}`;
   return apiCall(endpoint);
 }
 
-/**
- * Get POIs by type (e.g., 'parking', 'cafe', 'attraction')
- */
 export async function getPOIsByType(poiType) {
   return apiCall(`/api/pois/type/${poiType}/`);
 }
 
-/**
- * Get POIs near a trail
- */
 export async function getPOIsNearTrail(trailId) {
   return apiCall(`/api/pois/near-trail/?trail_id=${trailId}`);
 }
 
-/**
- * Get POIs within a radius
- */
 export async function getPOIsInRadius(lat, lng, radiusKm) {
   return apiCall('/api/pois/radius-search/', {
     method: 'POST',
@@ -243,31 +174,21 @@ export async function getPOIsInRadius(lat, lng, radiusKm) {
   });
 }
 
-// Geographic Boundaries (Rivers, etc.)
+// Geographic boundaries
 
-/**
- * Get all geographic boundaries
- */
 export async function getBoundaries(params = {}) {
   const queryString = new URLSearchParams(params).toString();
   const endpoint = `/api/boundaries/?${queryString}`;
   return apiCall(endpoint);
 }
 
-/**
- * Get trails crossing a specific boundary
- */
 export async function getTrailsCrossingBoundary(boundaryId) {
   return apiCall(`/api/boundaries/${boundaryId}/trails-crossing/`);
 }
 
-/**
- * Get spatial analysis summary
- */
 export async function getSpatialAnalysisSummary() {
   return apiCall('/api/spatial-analysis/summary/');
 }
 
 export { API_BASE_URL };
-
 

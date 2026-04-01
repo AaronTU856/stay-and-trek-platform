@@ -4,14 +4,12 @@ from django.contrib.gis.geos import Point
 from .models import Trail, Town, PointOfInterest, TrailPOIIntersection, Rivers, Accommodation  
 
 
-# Serializer for listing basic trail info in lists
+# Trail data used in list endpoints.
 class TrailListSerializer(serializers.ModelSerializer):
-    """Serializer for listing basic trail information in list views"""
     latitude = serializers.ReadOnlyField()
     longitude = serializers.ReadOnlyField()
     
     class Meta:
-        """Meta configuration specifying model and fields to serialize"""
         model = Trail
         fields = [
             'id', 'trail_name', 'county', 'region', 'distance_km',
@@ -20,9 +18,8 @@ class TrailListSerializer(serializers.ModelSerializer):
         ]
 
 
-# Serializer for detailed trail view
+# Full trail record for detail views.
 class TrailDetailSerializer(serializers.ModelSerializer):
-    """Detailed serializer for individual trail"""
     latitude = serializers.ReadOnlyField()
     longitude = serializers.ReadOnlyField()
     
@@ -35,14 +32,12 @@ class TrailDetailSerializer(serializers.ModelSerializer):
         ]
  
         
-# Serializer for GeoJSON representation of trails
+# Trail output for the map in GeoJSON format.
 class TrailGeoJSONSerializer(GeoFeatureModelSerializer):
-    """Serializer for rendering trails in GeoJSON format with geographic coordinates"""
     latitude = serializers.SerializerMethodField()
     longitude = serializers.SerializerMethodField()
 
     class Meta:
-        """Meta configuration specifying model and fields for GeoJSON output"""
         model = Trail
         geo_field = 'start_point'
         fields = (
@@ -53,22 +48,18 @@ class TrailGeoJSONSerializer(GeoFeatureModelSerializer):
         )
  
     def get_latitude(self, obj):
-        """Extract latitude from the start_point geometry field"""
         return obj.start_point.y if obj.start_point else None
   
     def get_longitude(self, obj):
-        """Extract longitude from the start_point geometry field"""
         return obj.start_point.x if obj.start_point else None
    
         
-# Serializer for creating new trails via API
+# Writable trail serializer for create requests.
 class TrailCreateSerializer(serializers.ModelSerializer):
-    """Serializer for validating and creating new trail records via POST requests"""
     latitude = serializers.FloatField(write_only=True)
     longitude = serializers.FloatField(write_only=True)
 
     class Meta:
-        """Meta configuration specifying Trail model and writable fields"""
         model = Trail
         fields = [
             'trail_name', 'county', 'region', 'distance_km',
@@ -78,19 +69,16 @@ class TrailCreateSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, data):
-        """Validate incoming trail data before creation"""
         return data
 
     def create(self, validated_data):
-        """Convert latitude/longitude to GeoDjango Point and create the trail"""
         latitude = validated_data.pop('latitude')
         longitude = validated_data.pop('longitude')
         validated_data['start_point'] = Point(longitude, latitude, srid=4326)
         return super().create(validated_data)
 
-# Serializer for returning summary statistics about trails       
+# Summary figures used by dashboards and quick stats.
 class TrailSummarySerializer(serializers.Serializer):
-    """Serializer for aggregated statistics about trails in the database"""
     total_trails = serializers.IntegerField()
     average_distance_km = serializers.FloatField()
     max_elevation_gain = serializers.FloatField()
@@ -121,7 +109,7 @@ class BoundingBoxSerializer(serializers.Serializer):
         return data
     
     
-# Serializer for converting Town data into GeoJSON
+# Town output for map layers.
 class TownGeoJSONSerializer(GeoFeatureModelSerializer):
     class Meta:
         model = Town
@@ -136,9 +124,8 @@ class TrailPathGeoSerializer(GeoFeatureModelSerializer):
         fields = ('id', 'trail_name', 'county', 'distance_km', 'difficulty')
 
 
-#  NEW POI SERIALIZERS 
+# POI serializers.
 class PointOfInterestSerializer(serializers.ModelSerializer):
-    """Serializer for Points of Interest"""
     latitude = serializers.ReadOnlyField()
     longitude = serializers.ReadOnlyField()
     
@@ -151,7 +138,6 @@ class PointOfInterestSerializer(serializers.ModelSerializer):
 
 
 class PointOfInterestGeoJSONSerializer(GeoFeatureModelSerializer):
-    """GeoJSON serializer for POIs for map display"""
     class Meta:
         model = PointOfInterest
         geo_field = 'location'
@@ -161,7 +147,6 @@ class PointOfInterestGeoJSONSerializer(GeoFeatureModelSerializer):
 
 
 class TrailPOIIntersectionSerializer(serializers.ModelSerializer):
-    """Serializer for trail-POI relationships"""
     poi = PointOfInterestSerializer(read_only=True)
     trail_name = serializers.CharField(source='trail.trail_name', read_only=True)
     
@@ -174,7 +159,6 @@ class TrailPOIIntersectionSerializer(serializers.ModelSerializer):
 
 
 class TrailWithPOISerializer(serializers.ModelSerializer):
-    """Detailed trail serializer including nearby POIs"""
     latitude = serializers.ReadOnlyField()
     longitude = serializers.ReadOnlyField()
     nearby_pois = TrailPOIIntersectionSerializer(many=True, read_only=True)
@@ -189,7 +173,6 @@ class TrailWithPOISerializer(serializers.ModelSerializer):
 
 
 class GeographicBoundarySerializer(serializers.ModelSerializer):
-    """Serializer for geographic boundaries"""
     class Meta:
         model = Rivers
         fields = [
@@ -198,7 +181,6 @@ class GeographicBoundarySerializer(serializers.ModelSerializer):
 
 
 class BoundaryTrailIntersectionSerializer(serializers.Serializer):
-    """Serializer for boundary-trail intersection results"""
     boundary = GeographicBoundarySerializer(read_only=True)
     trails_crossing = TrailListSerializer(many=True, read_only=True)
     trails_within = TrailListSerializer(many=True, read_only=True)
@@ -206,9 +188,7 @@ class BoundaryTrailIntersectionSerializer(serializers.Serializer):
     
     
 class AccommodationSerializer(serializers.ModelSerializer):
-    """
-    Serializer for accommodations using the PointOfInterest model.
-    """
+    # Accommodation data returned to list and detail views.
     latitude = serializers.ReadOnlyField()
     longitude = serializers.ReadOnlyField()
     distance_km = serializers.SerializerMethodField()
@@ -221,18 +201,15 @@ class AccommodationSerializer(serializers.ModelSerializer):
         ]
 
     def get_distance_km(self, obj):
-        # Picks up 'distance' from the .annotate() in the view
+        # Uses the annotated distance added in the view when it is available.
         if hasattr(obj, 'distance') and obj.distance:
             return round(obj.distance.km, 2)
         return None
 
 class AccommodationGeoJSONSerializer(GeoFeatureModelSerializer):
-    """
-    GeoJSON output for Accommodation table.
-    """
+    # Accommodation output for the mobile and web maps.
     class Meta:
         model = Accommodation  
         geo_field = 'location'
         fields = ('id', 'name', 'source', 'price_per_night', 'rating', 'url')
-
 

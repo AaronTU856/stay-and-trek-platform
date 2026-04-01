@@ -1,5 +1,6 @@
 import { Tabs } from "expo-router";
 
+// Keeps the older tab layout script readable while it remains in the repo.
 export default function Layout() {
   return (
     <Tabs

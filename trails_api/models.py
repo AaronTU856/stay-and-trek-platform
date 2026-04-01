@@ -6,40 +6,43 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.conf import settings
 
 
-# CUSTOM MANAGER FOR TRAIL 
+# Spatial helpers used by the trail queryset.
 class TrailManager(models.Manager):
     """Custom manager for trail model with spatial queries"""
-    # Search trails within a radius of a point on the map
+
+    # Return trails whose start point falls inside the chosen radius.
     def within_radius(self, center_point, radius_km):
         """Find trails within a specified radius of a point."""
         return self.filter(
             start_point__distance_lte=(center_point, Distance(km=radius_km))
         )
-    # Search trails within a bounding box
+
+    # Return trails whose start point lies inside the map bounds.
     def in_bounding_box(self, bbox):
         """Find trails within a bounding box."""
         min_lng, min_lat, max_lng, max_lat = bbox
-        # Create Polygon from bbox
+        # Build the search polygon from the supplied bounding box values.
         bbox_polygon = Polygon.from_bbox((min_lng, min_lat, max_lng, max_lat))
         return self.filter(start_point__within=bbox_polygon)
-    # Find nearest trails to a given point
+
+    # Return the nearest trails to the selected point.
     def nearest_to_point(self, point, limit=10):
         """Find nearest trails to a point."""
-        # Import Distance function here to avoid circular import issues
+        # Import here to avoid circular imports during model loading.
         from django.contrib.gis.db.models.functions import Distance as DistanceFunction
-        # Annotate distance and order by it
+        # Add the computed distance so the closest trails appear first.
         return self.annotate(
             distance=DistanceFunction('start_point', point)
         ).order_by('distance')[:limit]
 
 
-# TRAIL MODEL 
+# Main trail record used by the API, admin, and mobile app.
 class Trail(models.Model):
     """Main Trail model containing spatial and descriptive data."""
     
-    # Trail Description - Added Complexity and Status Fields
+    # Description content and moderation notes.
     description = models.TextField(blank=True, null=True)
-    # Field to explain why a description was rejected (for admin use only)
+    # Stores the reason a description was rejected in admin.
     admin_notes = models.TextField(blank=True, null=True, help_text="Internal notes for rejection reason")
 
     DIFFICULTY_CHOICES = [
@@ -49,7 +52,7 @@ class Trail(models.Model):
     ]
     
     
-    # New Status Field
+    # Tracks whether a description is approved, missing, or waiting for review.
     STATUS_CHOICES = [
         ('verified', 'Verified'),      # Pre-populated or Admin Approved
         ('scraped', 'Auto-Scraped'),   # From Wiki/SportsIreland
@@ -72,10 +75,9 @@ class Trail(models.Model):
     )
 
     def save(self, *args, **kwargs):
-        # If status is 'rejected', we clear the description 
-        # so it doesn't accidentally leak to the frontend in the future.
+        # Move rejected text out of the public field before saving.
         if self.status == 'rejected' and self.description:
-            # Move description to notes before clearing so you don't lose the record
+            # Keep the rejected text in admin notes for review.
             self.admin_notes = f"Rejected content: {self.description}"
             self.description = ""
             
@@ -83,18 +85,17 @@ class Trail(models.Model):
     
     
     
-    # Core Information
+    # Core information.
     trail_name = models.CharField(max_length=200, db_index=True)
-    #description = models.TextField(blank=True, null=True)
     activity = models.CharField(max_length=100, blank=True)
     source_url = models.URLField(max_length=500, null=True, blank=True)
     
-    # Location
+    # Location.
     county = models.CharField(max_length=100, db_index=True)
     region = models.CharField(max_length=200, blank=True)
     nearest_town = models.CharField(max_length=100, blank=True)
     
-    # Trail Characteristics
+    # Trail characteristics.
     distance_km = models.DecimalField(
         max_digits=20,
         decimal_places=2,
@@ -112,14 +113,14 @@ class Trail(models.Model):
         help_text="Total elevation gain in meters"
     )
     
-    # Spatial Data
+    # Spatial data.
     start_point = gis_models.PointField(
         srid=4326,
         help_text="Trail start coordinates (longitude, latitude)",
     )
     path = gis_models.MultiLineStringField(srid=4326, null=True, blank=True)
     
-    # Amenities & Features
+    # Amenities and visitor features.
     dogs_allowed = models.BooleanField(default=True, null=True, blank=True) # Whether dogs are allowed on the trail
     parking_available = models.CharField(max_length=100, blank=True) # Parking information
     public_transport = models.TextField(blank=True) # Public transport options (Not Implemented)
@@ -128,14 +129,14 @@ class Trail(models.Model):
     
     
     
-    # Metadata
+    # Metadata.
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
-    # Use custom manager
+    # Custom manager with reusable spatial filters.
     objects = TrailManager()
     
-    # Meta information for the Trail model
+    # Admin and database defaults.
     class Meta:
         verbose_name = 'Trail'
         verbose_name_plural = "Trails"
@@ -147,7 +148,8 @@ class Trail(models.Model):
     
     def __str__(self):
         return self.trail_name
-    # Properties to extract latitude and longitude from start_point
+
+    # Convenience accessors for serialisers and GeoJSON output.
     @property
     def latitude(self):
         """Return latitude coordinate."""
@@ -157,7 +159,7 @@ class Trail(models.Model):
     def longitude(self):
         """Return longitude coordinate."""
         return self.start_point.x if self.start_point else None
-    # co-ordinates property for GeoJSON compatibility
+    # GeoJSON-style coordinate pair.
     @property
     def coordinates(self):
         """Return coordinates as [longitude, latitude] for GeoJSON."""
@@ -173,7 +175,7 @@ class Trail(models.Model):
         return round(float(self.distance_km) / speed, 1)
 
 
-# TOWN MODEL 
+# Town record used for map filters and nearest-town lookup.
 class Town(models.Model):
     """Town/City with location and demographic data."""
 
@@ -184,7 +186,7 @@ class Town(models.Model):
         ('village', 'Village'),
     ]
 
-    # Core Information
+    # Core information.
     name = models.CharField(max_length=100, db_index=True)
     country = models.CharField(max_length=100, db_index=True, default='Ireland')
     town_type = models.CharField(
@@ -196,10 +198,10 @@ class Town(models.Model):
     )
     is_capital = models.BooleanField(default=False, db_index=True)
     
-    # Spatial Data 
+    # Spatial data.
     location = gis_models.PointField(srid=4326)
     
-    # Demographics
+    # Demographics.
     population = models.IntegerField(
         blank=True, 
         null=True,
@@ -213,7 +215,7 @@ class Town(models.Model):
         help_text="Area in km²"
     )
     
-    # Optional Fields (for enhanced analytics)
+    # Optional analytics fields.
     elevation_m = models.IntegerField(null=True, blank=True)
     gdp_per_capita = models.DecimalField(
         max_digits=12, 
@@ -222,18 +224,18 @@ class Town(models.Model):
         blank=True
     )
     
-    # Socioeconomic Data not implemented
+    # Additional socioeconomic data.
     unemployment_rate = models.FloatField(
         null=True, 
         blank=True,
         validators=[MinValueValidator(0), MaxValueValidator(100)]
     )
     
-    # Metadata
+    # Metadata.
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    # Meta information for the Town model
+    # Admin and database defaults.
     class Meta:
         verbose_name = 'Town'
         verbose_name_plural = 'Towns'
@@ -264,7 +266,7 @@ class Town(models.Model):
         return None
 
 
-# POINT OF INTEREST MODEL
+# Points of interest shown near trails and towns.
 class PointOfInterest(models.Model):
     """Model for Points of Interest (POIs) near trails: parking, cafes, attractions, etc."""
     
@@ -286,14 +288,14 @@ class PointOfInterest(models.Model):
     description = models.TextField(blank=True, null=True)
     location = gis_models.PointField(geography=True, db_index=True)
     
-    # Additional info
+    # Visitor details.
     county = models.CharField(max_length=100, blank=True, db_index=True)
     region = models.CharField(max_length=100, blank=True)
     phone = models.CharField(max_length=20, blank=True)
     website = models.URLField(blank=True, null=True)
     opening_hours = models.CharField(max_length=200, blank=True)
     
-    # Metadata
+    # Metadata.
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -320,20 +322,20 @@ class PointOfInterest(models.Model):
         return self.location.distance(point).km
 
 
-# TRAIL-POI INTERSECTION MODEL
+# Links trails to nearby points of interest.
 class TrailPOIIntersection(models.Model):
     """Model to track POIs near trails and their distance/relationship."""
     
     trail = models.ForeignKey(Trail, on_delete=models.CASCADE, related_name='nearby_pois')
     poi = models.ForeignKey(PointOfInterest, on_delete=models.CASCADE, related_name='nearby_trails')
     
-    # Distance from trail to POI in meters
+    # Distance from the trail to the POI in metres.
     distance_meters = models.IntegerField()
     
-    # Whether POI is directly on the trail route
+    # Marks POIs that sit directly on the trail geometry.
     on_trail_route = models.BooleanField(default=False)
     
-    # Proximity category
+    # Simple bucket used in filtering and display.
     PROXIMITY_CHOICES = [
         ('at_start', 'At Trail Start'),
         ('at_end', 'At Trail End'),
@@ -385,10 +387,10 @@ class Accommodation(models.Model):
     source = models.CharField(max_length=50, choices=ACCOMMODATION_SOURCE_CHOICES, db_index=True)
     external_id = models.CharField(max_length=100, unique=True, help_text="Unique ID from external source")
     
-    # Core Spatial data
+    # Core spatial data.
     location = gis_models.PointField(geography=True, db_index=True)
     
-    # Pricing and Info
+    # Pricing and listing details.
     price_per_night = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     rating = models.FloatField(null=True, blank=True)
     url = models.URLField(max_length=500, blank=True)
@@ -409,7 +411,7 @@ class Accommodation(models.Model):
         return self.location.x
 
 
-# GEOGRAPHIC BOUNDARY MODEL
+# Geographic boundaries used in the spatial analysis views.
 class Rivers(models.Model):
     """Model to represent geographic boundaries (counties, regions, protected areas, rivers)."""
     
@@ -426,7 +428,7 @@ class Rivers(models.Model):
     
     name = models.CharField(max_length=200, db_index=True)
     boundary_type = models.CharField(max_length=50, choices=BOUNDARY_TYPE_CHOICES)
-    # Use GeometryField to support both Polygon and LineString
+    # Supports both polygon and line-based boundary data.
     geom = gis_models.GeometryField(geography=True, db_index=True)
     
     description = models.TextField(blank=True)

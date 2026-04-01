@@ -84,7 +84,7 @@ useEffect(() => {
       console.log('🛡️ Authenticated: Redirecting to Home');
       router.replace('/');
   }
-}, [userToken, segments, isLoading]);
+}, [userToken, segments, isLoading, router]);
 
   if (isLoading) {
     return (

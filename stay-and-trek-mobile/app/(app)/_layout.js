@@ -4,6 +4,7 @@ import { StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAccessibility } from '../../context/AccessibilityContext';
 
+// Defines the main tab bar used after the root auth check.
 export default function AppLayout() {
   const { darkMode } = useAccessibility();
 

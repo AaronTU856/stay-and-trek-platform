@@ -2,6 +2,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useAccessibility } from "../../context/AccessibilityContext";
 
+// Shows the saved trail summary and quick planning shortcuts.
 export default function List() {
   const router = useRouter();
   const { trailId, trailName, difficulty, distanceKm } = useLocalSearchParams();

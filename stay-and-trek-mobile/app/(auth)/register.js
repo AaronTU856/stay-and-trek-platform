@@ -1,10 +1,7 @@
 import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, Text, StyleSheet, Alert, ScrollView, ActivityIndicator } from 'react-native';
+import { TextInput, TouchableOpacity, Text, StyleSheet, Alert, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import axios from 'axios'; // Or use your apiClient
-import { API_BASE_URL } from '../../services/apiClient'; 
 import { register } from '../../services/apiClient'; // Import the register function
-import { KeyboardAvoidingView, Platform } from 'react-native';
 
 const Register = () => {
   const router = useRouter();
@@ -31,7 +28,7 @@ const Register = () => {
     setLoading(true);
 
     try {
-        const data = await register(formData.username, formData.email, formData.password);
+        await register(formData.username, formData.email, formData.password);
 
         Alert.alert("Success", "Account created! You can now log in.");
         router.replace('/(auth)/login');

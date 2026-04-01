@@ -10,6 +10,7 @@ from .models import (
     TrailPOIIntersection,
 )
 
+# Admin configuration for the main trails, towns, stays, and POI models.
 
 @admin.register(Trail)
 class TrailAdmin(LeafletGeoAdmin):

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { StyleSheet, View, Linking, ActivityIndicator, Text, Platform, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -45,7 +45,6 @@ export default function MapScreen() {
   const [stays, setStays] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showStays, setShowStays] = useState(true);
-  const [nearbyStays, setNearbyStays] = useState([]);
   const [globalStays, setGlobalStays] = useState([]);
   const [showGlobalLayer, setShowGlobalLayer] = useState(false);
   const [selectedTrail, setSelectedTrail] = useState(null);
@@ -84,6 +83,75 @@ export default function MapScreen() {
     loadData();
   }, []);
 
+  const buildRouteCoordinates = (data) => {
+    const features = Array.isArray(data?.features) ? data.features : [];
+
+    return features.flatMap((feature) => {
+      const geometry = feature?.geometry;
+
+      if (!geometry) {
+        return [];
+      }
+
+      if (geometry.type === 'LineString') {
+        return geometry.coordinates.map(([lng, lat]) => ({
+          latitude: Number(lat),
+          longitude: Number(lng),
+        }));
+      }
+
+      if (geometry.type === 'MultiLineString') {
+        return geometry.coordinates.flatMap((segment) =>
+          segment.map(([lng, lat]) => ({
+            latitude: Number(lat),
+            longitude: Number(lng),
+          }))
+        );
+      }
+
+      return [];
+    }).filter((point) => !Number.isNaN(point.latitude) && !Number.isNaN(point.longitude));
+  };
+
+  const loadRoute = useCallback(async (trailLat, trailLng, accLat, accLng) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/trails/route/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          trail_lat: trailLat,
+          trail_lng: trailLng,
+          acc_lat: accLat,
+          acc_lng: accLng,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || `HTTP ${response.status}`);
+      }
+
+      const coordinates = buildRouteCoordinates(data);
+      if (coordinates.length > 1) {
+        setRouteCoordinates(coordinates);
+        if (typeof data.route_distance_km === 'number') {
+          setRouteSummary(`Route distance: ${data.route_distance_km} km`);
+        } else if (data.status === 'fallback') {
+          setRouteSummary('Approximate route shown on map');
+        } else {
+          setRouteSummary('Route shown on map');
+        }
+      }
+    } catch (error) {
+      console.error('Route load failed:', error);
+      setRouteCoordinates([]);
+      setRouteSummary('Unable to load route');
+    }
+  }, []);
+
   useEffect(() => {
     const trailLat = Number(params.trailLat);
     const trailLng = Number(params.trailLng);
@@ -103,7 +171,7 @@ export default function MapScreen() {
     }
 
     loadRoute(trailLat, trailLng, accLat, accLng);
-  }, [params.trailLat, params.trailLng, params.accLat, params.accLng]);
+  }, [params.trailLat, params.trailLng, params.accLat, params.accLng, params.trailName, loadRoute]);
 
   useEffect(() => {
     if (routeCoordinates.length > 1 && mapRef.current?.fitToCoordinates) {
@@ -161,75 +229,6 @@ export default function MapScreen() {
       }
     } catch (err) {
       console.error("Error fetching nearby stays:", err);
-    }
-  };
-
-  const buildRouteCoordinates = (data) => {
-    const features = Array.isArray(data?.features) ? data.features : [];
-
-    return features.flatMap((feature) => {
-      const geometry = feature?.geometry;
-
-      if (!geometry) {
-        return [];
-      }
-
-      if (geometry.type === 'LineString') {
-        return geometry.coordinates.map(([lng, lat]) => ({
-          latitude: Number(lat),
-          longitude: Number(lng),
-        }));
-      }
-
-      if (geometry.type === 'MultiLineString') {
-        return geometry.coordinates.flatMap((segment) =>
-          segment.map(([lng, lat]) => ({
-            latitude: Number(lat),
-            longitude: Number(lng),
-          }))
-        );
-      }
-
-      return [];
-    }).filter((point) => !Number.isNaN(point.latitude) && !Number.isNaN(point.longitude));
-  };
-
-  const loadRoute = async (trailLat, trailLng, accLat, accLng) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/trails/route/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          trail_lat: trailLat,
-          trail_lng: trailLng,
-          acc_lat: accLat,
-          acc_lng: accLng,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data?.error || `HTTP ${response.status}`);
-      }
-
-      const coordinates = buildRouteCoordinates(data);
-      if (coordinates.length > 1) {
-        setRouteCoordinates(coordinates);
-        if (typeof data.route_distance_km === 'number') {
-          setRouteSummary(`Route distance: ${data.route_distance_km} km`);
-        } else if (data.status === 'fallback') {
-          setRouteSummary('Approximate route shown on map');
-        } else {
-          setRouteSummary('Route shown on map');
-        }
-      }
-    } catch (error) {
-      console.error('Route load failed:', error);
-      setRouteCoordinates([]);
-      setRouteSummary('Unable to load route');
     }
   };
 

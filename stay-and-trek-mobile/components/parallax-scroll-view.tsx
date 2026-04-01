@@ -18,6 +18,7 @@ type Props = PropsWithChildren<{
   headerBackgroundColor: { dark: string; light: string };
 }>;
 
+// Reuses the animated header pattern on screens that need a parallax intro.
 export default function ParallaxScrollView({
   children,
   headerImage,

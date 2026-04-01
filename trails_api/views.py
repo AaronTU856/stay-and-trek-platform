@@ -19,7 +19,7 @@ from rest_framework.decorators import api_view, authentication_classes, permissi
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from drf_spectacular.utils import extend_schema, OpenApiExample
+from drf_spectacular.utils import extend_schema
 from django_filters.rest_framework import DjangoFilterBackend
 
 import requests
@@ -33,7 +33,6 @@ from .serializers import (
 from .serializers import TrailPathGeoSerializer
 from .filters import TrailFilter
 import json
-from django.contrib.auth.decorators import login_required
 
 # Creates a basic user account for the app.
 @api_view(['POST'])
@@ -957,7 +956,6 @@ highway IN (
 BBOX_BUFFER_DEG = 2 
 
 
-import logging
 logger = logging.getLogger(__name__)
 
 ROUTE_SEARCH_TIME_LIMIT_SECONDS = 3.0
@@ -1104,10 +1102,6 @@ def find_route_with_expanding_radius(
 # Builds a hybrid route: short connector lines into the road graph plus the
 # pgRouting road path itself, returned as one GeoJSON feature collection.
 def get_transport_route(start_coords, end_coords):
-    import logging
-    import json
-    from django.db import connection
-
     features = []
     start_lng, start_lat = start_coords
     end_lng, end_lat = end_coords
@@ -1171,7 +1165,7 @@ def get_transport_route(start_coords, end_coords):
                 end_node,
             )
         except Exception as e:
-            logging.error(f"ROUTING SQL ERROR: {e}")
+            logger.error(f"ROUTING SQL ERROR: {e}")
             return {"status": "error", "message": str(e)}
 
         if route_result["ok"]:

@@ -30,7 +30,7 @@ def polygon_search(request):
     """
     start_time = time.time() # Start timer for performance measurement
 
-    # dump raw request body for polygon POST (temporary — remove after debugging)
+    # Log the raw polygon payload while tracing incoming requests.
     try:
         raw_body = request.body.decode('utf-8')
     except Exception:
@@ -202,7 +202,7 @@ def polygon_search(request):
         # Calculate execution time
         execution_time_ms = int((time.time() - start_time) * 1000)
 
-        # Log a brief summary for debugging: how many cities found and sample names
+        # Log a short summary of the result set.
         try:
             sample_names = [c['name'] for c in cities][:10]
             logger.info(f"Polygon search found {len(cities)} cities (sample: {sample_names}) in {execution_time_ms}ms")
@@ -250,7 +250,7 @@ def polygon_search(request):
             }
         }
 
-        # DEBUG: log the response payload (truncated) to help trace client/server mismatch
+        # Log a truncated copy of the response while tracing request issues.
         try:
             logger.info(f"Polygon search response (truncated): {json.dumps(response_data)[:2000]}")
         except Exception:

@@ -1,31 +1,7 @@
-/**
- * API Configuration Helper
- * 
- * This file helps manage API endpoints across different environments.
- * 
- * IMPORTANT: iOS Simulator cannot reach localhost:8000
- * ───────────────────────────────────────────────────────
- * The iOS Simulator runs in a virtualized network environment that 
- * cannot access the host machine's loopback interface (localhost).
- * 
- * SOLUTION: Use your Mac's actual IP address for all environments
- * 
- * When Docker is running:
- * - iOS Simulator: Use your Mac's IP (e.g., http://192.168.1.83:8000)
- * - Android Emulator: Use 10.0.2.2:8000 (special Android alias)
- * - Physical Device: Use your Mac's IP address
- * 
- * To find your Mac's IP:
- *   ifconfig | grep "inet " | grep -v 127.0.0.1
- * 
- * Or use this command in Terminal:
- *   ipconfig getifaddr en0  (for WiFi)
- *   ipconfig getifaddr en1  (for Ethernet)
- */
-
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
+// Resolves the backend base URL for simulators, devices, and production builds.
 // Default LAN fallback if Expo cannot infer the host automatically.
 // You can override this with EXPO_PUBLIC_API_BASE_URL or EXPO_PUBLIC_API_HOST.
 const FALLBACK_MAC_LOCAL_IP = '192.168.1.83';
@@ -71,31 +47,27 @@ function getLanBaseUrl() {
 const LAN_BASE_URL = getLanBaseUrl();
 
 const API_CONFIGS = {
-  // Development with Docker running
+  // Local development through Docker.
   docker: {
     simulator: LAN_BASE_URL,
     device: LAN_BASE_URL,
     androidEmulator: 'http://10.0.2.2:8000',
   },
   
-  // Development with Python runserver (deprecated)
+  // Local development with Django's built-in server.
   runserver: {
     simulator: LAN_BASE_URL,
     device: LAN_BASE_URL,
     androidEmulator: 'http://10.0.2.2:8000',
   },
   
-  // Production (Cloud Run)
+  // Deployed API.
   production: {
     all: 'https://stay-and-trek-service-xxx.a.run.app',
   },
 };
 
-/**
- * Get the correct API base URL based on environment
- * @param {string} environment - 'docker', 'runserver', or 'production'
- * @returns {string} API base URL
- */
+// Chooses the correct API host for the current environment and device type.
 export function getApiBaseUrl(environment = 'docker') {
   const config = API_CONFIGS[environment];
   
@@ -121,9 +93,7 @@ export function getApiBaseUrl(environment = 'docker') {
 export const DEFAULT_ENVIRONMENT = 'docker';
 export const API_BASE_URL = getApiBaseUrl(DEFAULT_ENVIRONMENT);
 
-/**
- * Debugging helper - log current configuration
- */
+// Prints the resolved API target during development.
 export function logApiConfig(environment = 'docker') {
   const url = getApiBaseUrl(environment);
   

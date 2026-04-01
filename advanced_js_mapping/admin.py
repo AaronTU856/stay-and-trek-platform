@@ -3,6 +3,7 @@ from leaflet.admin import LeafletGeoAdmin
 
 from .models import AdvancedCity, PolygonAnalysis, SearchSession
 
+# Admin setup for the advanced mapping data and saved polygon searches.
 
 @admin.register(AdvancedCity)
 class AdvancedCityAdmin(LeafletGeoAdmin):

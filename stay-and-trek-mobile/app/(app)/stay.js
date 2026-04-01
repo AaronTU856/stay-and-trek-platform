@@ -9,7 +9,6 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
-  ScrollView,
 } from 'react-native';
 import { useAccessibility } from '../../context/AccessibilityContext';
 import { API_BASE_URL } from '../../config/apiConfig';
@@ -95,11 +94,6 @@ export default function StayScreen() {
     return s.name.toLowerCase().includes(q);
   });
 }, [stays, query, filter]);
-
-  function handleBook(item) {
-    // lightweight prototype action
-    Alert.alert('Booking', `Pretend booking for ${item.name} at €${item.price}/night`);
-  }
 
   function renderItem({ item }) {
     const cardFontSize = largeText ? 18 : 16;
