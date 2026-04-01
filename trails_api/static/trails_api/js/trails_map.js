@@ -1663,7 +1663,7 @@ function onTrailClick(e) {
 
 // Loads accommodation near the selected search area or trail.
 function updateAccommodations(searchLat = null, searchLng = null) {
-  console.log("🏨 updateAccommodations called");
+  console.log("updateAccommodations called");
   
   if (!window.trailsMap) {
     console.error("❌ trailsMap not initialized");
@@ -1691,7 +1691,7 @@ function updateAccommodations(searchLat = null, searchLng = null) {
 
   const requestId = ++accommodationRequestId;
 
-  console.log(`🏨 Fetching accommodations for lat=${lat}, lng=${lng}`);
+  console.log(`Fetching accommodations for lat=${lat}, lng=${lng}`);
 
       if (countEl) {
         countEl.textContent = "Searching the current map area for nearby accommodations...";
@@ -1704,7 +1704,7 @@ function updateAccommodations(searchLat = null, searchLng = null) {
   
   fetch(`/api/trails/accommodations/nearby/?lat=${lat}&lng=${lng}&radius=10`)
     .then(res => {
-      console.log("🏨 Response status:", res.status);
+      console.log("Response status:", res.status);
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       return res.json();
     })
@@ -1712,17 +1712,17 @@ function updateAccommodations(searchLat = null, searchLng = null) {
       if (requestId !== accommodationRequestId) {
         return;
       }
-      console.log("🏨 API Response:", data);
+      console.log("API Response:", data);
       
       console.log("RAW DATA:", JSON.stringify(data, null, 2));
 
       const features = data.results?.features || data.features || [];
 
-      console.log("🏨 Features extracted:", features);
+      console.log("Features extracted:", features);
 
       window.accommodationLayer.clearLayers();
       selectedAccommodation = null;
-      console.log("🏨 Cleared old accommodation markers");
+      console.log("Cleared old accommodation markers");
 
       let addedCount = 0;
       features.forEach((feature) => {
@@ -1773,7 +1773,7 @@ function updateAccommodations(searchLat = null, searchLng = null) {
         addedCount += 1;
       });
 
-      console.log(`🏨 Added ${addedCount} accommodation markers`);
+      console.log(`Added ${addedCount} accommodation markers`);
 
         if (typeof window.accommodationLayer.bringToFront === "function") {
           window.accommodationLayer.bringToFront();
@@ -1838,10 +1838,10 @@ function drawRoute(geojson) {
       if  (segmentType == 'connector_start' || segmentType == 'connector_end') {
         return {
           color: "#118240", // A vibrant green
-          weight: 4,
-          dashArray: "5, 10",
+          weight: 5,
+          dashArray: "10, 10",
           lineCap: "round",
-          opacity: 0.8
+          opacity: 0.9
         };
       }
 

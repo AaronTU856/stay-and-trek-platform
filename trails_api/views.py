@@ -963,6 +963,9 @@ ROUTE_INITIAL_RADIUS_METERS = 15000
 ROUTE_RADIUS_MULTIPLIER = 1.75
 ROUTE_MAX_RADIUS_METERS = 450000
 ROUTE_MAX_SINGLE_QUERY_MS = 2500
+ROUTE_END_NODE_CANDIDATE_LIMIT = 3
+ROUTE_PRIMARY_NODE_BUDGET_SECONDS = 4.0
+ROUTE_ALTERNATE_NODE_BUDGET_SECONDS = 2.0
 
 # Builds the inner road SQL used by the routing queries.
 def build_road_inner_sql(cursor, start_coords, end_coords, road_filter, bbox_buffer_deg=BBOX_BUFFER_DEG):
@@ -994,18 +997,33 @@ def build_road_inner_sql(cursor, start_coords, end_coords, road_filter, bbox_buf
         WHERE {road_filter}
     """
 
-# Finds the closest routable road node to a point.
-def get_road_node_for_point(cursor, lng, lat):
+# Finds the closest routable road nodes to a point.
+def get_road_nodes_for_point(cursor, lng, lat, limit=1):
     cursor.execute("""
-        SELECT id 
+        SELECT id
         FROM routing_ways_vertices_pgr
         WHERE component_id = 38
         ORDER BY the_geom <-> ST_Transform(ST_SetSRID(ST_Point(%s, %s), 4326), 3857)
-        LIMIT 1;
-    """, [lng, lat])
-    
+        LIMIT %s;
+    """, [lng, lat, limit])
+
+    return [row[0] for row in cursor.fetchall()]
+
+
+# Finds the closest routable road node to a point.
+def get_road_node_for_point(cursor, lng, lat):
+    nodes = get_road_nodes_for_point(cursor, lng, lat, limit=1)
+    return nodes[0] if nodes else None
+
+
+# Loads one snapped road vertex geometry so connector lines can be drawn.
+def get_road_node_geometry(cursor, node_id):
+    cursor.execute(
+        "SELECT ST_AsGeoJSON(ST_Transform(the_geom, 4326)) FROM routing_ways_vertices_pgr WHERE id = %s;",
+        [node_id],
+    )
     row = cursor.fetchone()
-    return row[0] if row else None
+    return json.loads(row[0])["coordinates"] if row and row[0] else None
 
 # Retries the route search with a wider radius until it succeeds or times out.
 def find_route_with_expanding_radius(
@@ -1126,6 +1144,8 @@ def get_transport_route(start_coords, end_coords):
         return round(total_meters / 1000, 2)
 
     with connection.cursor() as cursor:
+        import time
+
         logger.warning(f"DEBUG coords: {start_lng},{start_lat} -> {end_lng},{end_lat}")
 
         # Snap the trail and accommodation coordinates to the nearest routable
@@ -1137,13 +1157,9 @@ def get_transport_route(start_coords, end_coords):
             logger.warning("[ROUTE DEBUG] No start/end node found.")
             return {"status": "no_route_found"}
 
-        cursor.execute("SELECT ST_AsGeoJSON(ST_Transform(the_geom, 4326)) FROM routing_ways_vertices_pgr WHERE id = %s;", [start_node])
-        start_geom_row = cursor.fetchone()
-        cursor.execute("SELECT ST_AsGeoJSON(ST_Transform(the_geom, 4326)) FROM routing_ways_vertices_pgr WHERE id = %s;", [end_node])
-        end_geom_row = cursor.fetchone()
+        start_vertex_coords = get_road_node_geometry(cursor, start_node)
 
-        if start_geom_row:
-            start_vertex_coords = json.loads(start_geom_row[0])["coordinates"]
+        if start_vertex_coords:
             # Preserve the true trailhead position by drawing a short connector
             # from the selected point to the snapped road-network vertex.
             features.append({
@@ -1152,46 +1168,90 @@ def get_transport_route(start_coords, end_coords):
                 "geometry": {"type": "LineString", "coordinates": [[start_lng, start_lat], start_vertex_coords]}
             })
 
-        try:
-            # Retry with a wider search envelope if the first pgRouting query
-            # cannot find a road connection within the initial radius.
-            route_result = find_route_with_expanding_radius(
-                cursor,
-                start_lng,
-                start_lat,
-                end_lng,
-                end_lat,
-                start_node,
-                end_node,
-            )
-        except Exception as e:
-            logger.error(f"ROUTING SQL ERROR: {e}")
-            return {"status": "error", "message": str(e)}
+        overall_started = time.monotonic()
+        route_result = None
+        selected_end_coords = None
+        selected_candidate_index = 1
 
-        if route_result["ok"]:
+        # Keep the current nearest-node route search first, then try a couple
+        # of alternate destination nodes if that first snapped target times out.
+        end_node_candidates = [end_node]
+        for candidate in get_road_nodes_for_point(
+            cursor,
+            end_lng,
+            end_lat,
+            limit=ROUTE_END_NODE_CANDIDATE_LIMIT,
+        ):
+            if candidate not in end_node_candidates:
+                end_node_candidates.append(candidate)
+
+        for candidate_index, candidate_end_node in enumerate(end_node_candidates, start=1):
+            remaining_seconds = ROUTE_SEARCH_TIME_LIMIT_SECONDS - (time.monotonic() - overall_started)
+            if remaining_seconds <= 0:
+                break
+
+            candidate_budget = min(
+                remaining_seconds,
+                ROUTE_PRIMARY_NODE_BUDGET_SECONDS
+                if candidate_index == 1
+                else ROUTE_ALTERNATE_NODE_BUDGET_SECONDS,
+            )
+            if candidate_budget <= 0:
+                break
+
+            try:
+                route_result = find_route_with_expanding_radius(
+                    cursor,
+                    start_lng,
+                    start_lat,
+                    end_lng,
+                    end_lat,
+                    start_node,
+                    candidate_end_node,
+                    max_total_seconds=candidate_budget,
+                )
+            except Exception as e:
+                logger.error(f"ROUTING SQL ERROR: {e}")
+                return {"status": "error", "message": str(e)}
+
+            if route_result["ok"]:
+                selected_end_coords = get_road_node_geometry(cursor, candidate_end_node)
+                selected_candidate_index = candidate_index
+                break
+
+        if route_result and route_result["ok"]:
             features.append({
                 "type": "Feature",
                 "properties": {
                     "segment": "road_route",
                     "radius_used": route_result["radius_used"],
                     "attempts": route_result["attempts"],
+                    "end_node_candidate": selected_candidate_index,
                 },
                 "geometry": json.loads(route_result["geojson"])
             })
         else:
+            routing_debug = route_result or {
+                "ok": False,
+                "geojson": None,
+                "radius_used": None,
+                "attempts": 0,
+                "elapsed_seconds": round(time.monotonic() - overall_started, 3),
+                "error": "No route found before time limit was reached",
+            }
+            routing_debug["end_node_candidates_tried"] = len(end_node_candidates)
             return {
                 "status": "no_route_found",
-                "error": route_result["error"],
-                "routing_debug": route_result,
+                "error": routing_debug["error"],
+                "routing_debug": routing_debug,
             }
 
-        if end_geom_row:
-            end_vertex_coords = json.loads(end_geom_row[0])["coordinates"]
+        if selected_end_coords:
             # Finish the route with a second connector into the selected stay.
             features.append({
                 "type": "Feature",
                 "properties": {"segment": "connector_end"},
-                "geometry": {"type": "LineString", "coordinates": [end_vertex_coords, [end_lng, end_lat]]}
+                "geometry": {"type": "LineString", "coordinates": [selected_end_coords, [end_lng, end_lat]]}
             })
 
         # Return one map-ready payload so the frontend can draw the full route

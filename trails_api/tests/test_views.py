@@ -245,3 +245,63 @@ class TrailViewTests(TestCase):
         self.assertIn("route_distance_km", payload)
         self.assertIsInstance(payload["route_distance_km"], (int, float))
         self.assertGreater(payload["route_distance_km"], 0)
+
+    @patch("trails_api.views.connection.cursor")
+    @patch("trails_api.views.get_road_nodes_for_point")
+    @patch("trails_api.views.find_route_with_expanding_radius")
+    @patch("trails_api.views.get_road_node_for_point")
+    def test_route_between_nodes_tries_alternate_end_nodes_when_first_fails(
+        self,
+        mock_get_road_node_for_point,
+        mock_find_route_with_expanding_radius,
+        mock_get_road_nodes_for_point,
+        mock_connection_cursor,
+    ):
+        mock_get_road_node_for_point.side_effect = [101, 202]
+        mock_get_road_nodes_for_point.return_value = [202, 303]
+        mock_find_route_with_expanding_radius.side_effect = [
+            {
+                "ok": False,
+                "geojson": None,
+                "radius_used": 140680,
+                "attempts": 4,
+                "elapsed_seconds": 1.9,
+                "error": "No route found before time limit was reached",
+            },
+            {
+                "ok": True,
+                "geojson": """
+                    {
+                        "type": "LineString",
+                        "coordinates": [[-6.09, 53.21], [-6.07, 53.23], [-6.05, 53.24]]
+                    }
+                """,
+                "radius_used": 15000,
+                "attempts": 1,
+                "elapsed_seconds": 0.42,
+            },
+        ]
+
+        mock_cursor = MagicMock()
+        mock_cursor.fetchone.side_effect = [
+            ('{"type":"Point","coordinates":[-6.09,53.21]}',),
+            ('{"type":"Point","coordinates":[-6.05,53.24]}',),
+        ]
+        mock_connection_cursor.return_value.__enter__.return_value = mock_cursor
+
+        response = self.client.post(
+            reverse("trails:route-between-nodes"),
+            {
+                "trail_lat": 53.2,
+                "trail_lng": -6.1,
+                "acc_lat": 53.25,
+                "acc_lng": -6.04,
+            },
+            format="json",
+            secure=True,
+        )
+
+        payload = response.json()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(payload["status"], "success_v2")
+        self.assertEqual(payload["features"][1]["properties"]["end_node_candidate"], 2)
