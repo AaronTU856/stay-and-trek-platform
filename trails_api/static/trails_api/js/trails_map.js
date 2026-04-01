@@ -26,13 +26,26 @@ function getAccommodationTooltipHtml(details) {
 
   if (details.price_per_night) {
     parts.push(
-      `<div class="accommodation-tooltip-meta">€${details.price_per_night}/night</div>`
+      `<div class="accommodation-tooltip-meta">From €${details.price_per_night} per night</div>`
     );
   }
 
   if (details.rating) {
     parts.push(
-      `<div class="accommodation-tooltip-meta">Rating: ${details.rating}</div>`
+      `<div class="accommodation-tooltip-meta">Guest rating: ${details.rating}/5</div>`
+    );
+  }
+
+  if (details.source) {
+    const sourceLabels = {
+      booking: "Booking.com",
+      airbnb: "Airbnb",
+      trivago: "Trivago",
+      manual: "Local listing"
+    };
+
+    parts.push(
+      `<div class="accommodation-tooltip-meta">${sourceLabels[details.source] || "Stay listing"}</div>`
     );
   }
 
@@ -751,9 +764,9 @@ function displayTrailsOnMap(trails) {
 
         const countEl = document.getElementById("accommodation-count");
         if (countEl) {
-          countEl.textContent = "Trail selected. Choose an accommodation next.";
+          countEl.textContent = "Trail selected. Choose a stay to preview the road route.";
         }
-        showRouteToast("Trail selected. Choose an accommodation next.", "info");
+        showRouteToast("Trail selected. Choose a stay to preview the road route.", "info");
 
        
     })
@@ -1108,14 +1121,14 @@ function setupEventListeners() {
 
         const hasLoadedAccommodations = window.accommodationLayer.getLayers().length > 0;
         if (countEl && !hasLoadedAccommodations) {
-          countEl.textContent = "Use Load nearby accommodation to load results for the current map view.";
+          countEl.textContent = "Use Find nearby stays to load options for the current map view.";
         }
       } else {
         if (window.trailsMap.hasLayer(window.accommodationLayer)) {
           window.trailsMap.removeLayer(window.accommodationLayer);
         }
         if (countEl) {
-          countEl.textContent = "Accommodation markers are hidden. Turn Show accommodation on map back on to view loaded results.";
+          countEl.textContent = "Stay markers are hidden. Turn Show stays on map back on to view loaded results.";
         }
       }
     });
@@ -1771,12 +1784,12 @@ function updateAccommodations(searchLat = null, searchLng = null) {
   console.log(`Fetching accommodations for lat=${lat}, lng=${lng}`);
 
       if (countEl) {
-        countEl.textContent = "Searching the current map area for nearby accommodations...";
+        countEl.textContent = "Searching for nearby stays around your selected area...";
       }
 
       if (fetchBtn) {
         fetchBtn.disabled = true;
-        fetchBtn.textContent = "Searching...";
+        fetchBtn.textContent = "Searching stays...";
   }
   
   fetch(`/api/trails/accommodations/nearby/?lat=${lat}&lng=${lng}&radius=10`)
@@ -1808,12 +1821,13 @@ function updateAccommodations(searchLat = null, searchLng = null) {
           return;
         }
         const [accLng, accLat] = coords;
-        const props = feature.properties || {};
-        const tooltipDetails = {
-          name: props.name || "Accommodation",
-          price_per_night: props.price_per_night,
-          rating: props.rating
-        };
+      const props = feature.properties || {};
+      const tooltipDetails = {
+        name: props.name || "Accommodation",
+        price_per_night: props.price_per_night,
+        rating: props.rating,
+        source: props.source
+      };
 
         const marker = L.marker([accLat, accLng], {
             icon: window.hotelIcon
@@ -1865,20 +1879,20 @@ function updateAccommodations(searchLat = null, searchLng = null) {
 
         if (countEl) {
           countEl.textContent = features.length > 0
-            ? `Found ${features.length} accommodations nearby`
-            : "No nearby accommodations found in the current map area.";
+            ? `Showing ${features.length} nearby stays. Select one to map the route.`
+            : "No nearby stays found in the current map area.";
         }
     })
     .catch(err => {
       console.error("❌ API Error:", err);
       if (countEl) {
-        countEl.textContent = "❌ Error loading accommodations";
+        countEl.textContent = "Unable to load nearby stays.";
       }
     })
     .finally(() => {
       if (fetchBtn) {
         fetchBtn.disabled = false;
-        fetchBtn.textContent = "Load nearby accommodation";
+        fetchBtn.textContent = "Find nearby stays";
       }
     });
 }
