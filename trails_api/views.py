@@ -1224,6 +1224,8 @@ def route_between_nodes(request):
         # so the UI still gives the user a visible result.
         return JsonResponse({
             "status": "fallback",
+            "route_error": route_data.get("error"),
+            "routing_debug": route_data.get("routing_debug"),
             "type": "FeatureCollection",
             "features": [{
                 "type": "Feature",

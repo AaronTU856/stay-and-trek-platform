@@ -192,6 +192,8 @@ class TrailViewTests(TestCase):
         payload = response.json()
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(payload["status"], "fallback")
+        self.assertEqual(payload["route_error"], "No route found within search radius")
+        self.assertIsNone(payload["routing_debug"])
         self.assertEqual(payload["type"], "FeatureCollection")
         self.assertEqual(payload["features"][0]["properties"]["segment"], "straight_line")
         self.assertNotIn("route_distance_km", payload)
