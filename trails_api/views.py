@@ -287,6 +287,8 @@ def nearest_town(request):
         'name': nearest.name,
         'town_type': nearest.town_type,
         'distance_km': round(nearest.distance.km, 2),
+        'latitude': nearest.location.y,
+        'longitude': nearest.location.x,
     })
 
 # Loads sample towns from the bundled GeoJSON file.

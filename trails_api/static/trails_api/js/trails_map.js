@@ -13,6 +13,8 @@ let selectedTrail = null;
 let selectedAccommodation = null;
 let routeLayer = null;
 let routingInProgress = false;
+let proximityTownPopup = null;
+let proximityTownPopupTimer = null;
 
 // Builds the hover tooltip shown on accommodation markers.
 function getAccommodationTooltipHtml(details) {
@@ -1352,6 +1354,43 @@ function getCsrfToken() {
   return "";
 }
 
+function clearProximityTownPopup() {
+  if (proximityTownPopupTimer) {
+    clearTimeout(proximityTownPopupTimer);
+    proximityTownPopupTimer = null;
+  }
+
+  if (window.trailsMap && proximityTownPopup) {
+    window.trailsMap.closePopup(proximityTownPopup);
+    proximityTownPopup = null;
+  }
+}
+
+async function fetchTownWeather(lat, lng) {
+  const response = await fetch(`/api/trails/weather-town/?lat=${lat}&lng=${lng}`);
+  if (!response.ok) {
+    throw new Error(`Weather request failed with ${response.status}`);
+  }
+  return response.json();
+}
+
+function buildTownWeatherHtml(weather) {
+  const description = weather.weather?.[0]?.description || "Unavailable";
+  const temp = weather.main?.temp ?? "N/A";
+  const feelsLike = weather.main?.feels_like ?? "N/A";
+  const wind = weather.wind?.speed ?? "N/A";
+
+  return `
+    <div class="mt-2 p-2 rounded" style="background:#f8f9fa; font-size:12px;">
+      <div><strong>Live weather</strong></div>
+      <div>${description}</div>
+      <div>Temp: ${temp} °C</div>
+      <div>Feels like: ${feelsLike} °C</div>
+      <div>Wind: ${wind} m/s</div>
+    </div>
+  `;
+}
+
 console.log("✅ trails_map.js fully loaded");
 
 // Turns the click-to-search mode on and off.
@@ -1447,16 +1486,16 @@ async function performProximitySearch(lat, lng) {
     if (!data.nearest_trails?.length) {
       showAlert(`⚠️ No trails found within ${radiusKm} km.`, "warning");
       // Still shows the nearest town even when no trails are returned.
-      await findNearestTown(lat, lng);
+      const town = await findNearestTown(lat, lng);
+      await updateResultsPanel(data, town);
       return;
     }
 
     displayNearestTrails(data.nearest_trails);
     updateAccommodations(lat, lng); // Passes the orange search marker location
-    updateResultsPanel(data);
+    const town = await findNearestTown(lat, lng);
+    await updateResultsPanel(data, town);
     showAlert(`✅ Found ${data.nearest_trails.length} trails`, "success");
-
-    await findNearestTown(lat, lng);
   } catch (err) {
     console.error("❌ Proximity search failed:", err);
     showAlert("Error performing proximity search.", "danger");
@@ -1479,7 +1518,8 @@ async function performProximitySearch(lat, lng) {
       if (!response.ok) throw new Error("Request failed");
       const town = await response.json();
 
-      L.popup()
+      clearProximityTownPopup();
+      proximityTownPopup = L.popup()
         .setLatLng([lat, lng])
         .setContent(
           `🏙️ <strong>${town.name}</strong><br>
@@ -1488,9 +1528,15 @@ async function performProximitySearch(lat, lng) {
         )
         .openOn(window.trailsMap);
 
+      proximityTownPopupTimer = setTimeout(() => {
+        clearProximityTownPopup();
+      }, 4000);
+
       console.log("Nearest town:", town);
+      return town;
     } catch (err) {
       console.error("Nearest town error:", err);
+      return null;
     }
   }
 }
@@ -1534,6 +1580,7 @@ function displayNearestTrails(trails) {
 
         // Stores the selected trail so the next accommodation click can route from it.
         marker.on("click", function () {
+        clearProximityTownPopup();
         selectedTrail = {
           lat: lat,
           lng: lng,
@@ -1570,7 +1617,7 @@ function getNumberedIcon(number) {
 }
 
 // Fills the floating results panel with the latest nearby trails.
-function updateResultsPanel(data) {
+async function updateResultsPanel(data, town = null) {
   let resultsPanel = document.getElementById("proximity-results");
   if (!resultsPanel) {
     resultsPanel = document.createElement("div");
@@ -1583,6 +1630,34 @@ function updateResultsPanel(data) {
     ...t,
     distanceFromSearch: t.distance_from_point_km || 0,
   }));
+
+  let townSummaryHtml = "";
+  if (town) {
+    let weatherHtml = `
+      <div class="mt-2 p-2 rounded" style="background:#f8f9fa; font-size:12px;">
+        <div><strong>Live weather</strong></div>
+        <div>Weather unavailable.</div>
+      </div>
+    `;
+
+    if (typeof town.latitude === "number" && typeof town.longitude === "number") {
+      try {
+        const weather = await fetchTownWeather(town.latitude, town.longitude);
+        weatherHtml = buildTownWeatherHtml(weather);
+      } catch (err) {
+        console.error("Nearest town weather error:", err);
+      }
+    }
+
+    townSummaryHtml = `
+      <div class="mb-3 p-2 rounded border" style="background:#fffdf5;">
+        <div><strong>Nearest town:</strong> ${town.name}</div>
+        <div><small>${town.distance_km} km away • ${town.town_type || "N/A"}</small></div>
+        ${weatherHtml}
+      </div>
+    `;
+  }
+
   resultsPanel.innerHTML = `
         <div class="card shadow">
             <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
@@ -1594,6 +1669,7 @@ function updateResultsPanel(data) {
                   4
                 )}, ${data.search_point.lng.toFixed(4)}</p>
                 <p><strong>Found:</strong> ${trails.length}</p>
+                ${townSummaryHtml}
                 ${trails
                   .map(
                     (trail, i) => `
@@ -1624,6 +1700,7 @@ function updateResultsPanel(data) {
 
 // Clears the search point, nearby trail markers, and results panel.
 function clearProximityResults() {
+  clearProximityTownPopup();
   if (window.searchMarker) {
     window.trailsMap.removeLayer(window.searchMarker);
     window.searchMarker = null;
@@ -1746,6 +1823,7 @@ function updateAccommodations(searchLat = null, searchLng = null) {
         bindAccommodationHoverTooltip(marker, tooltipDetails);
 
         marker.on("click", function () {
+          clearProximityTownPopup();
           if (
             selectedAccommodation &&
             selectedAccommodation.marker &&
