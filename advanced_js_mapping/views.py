@@ -5,7 +5,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.contrib.gis.geos import GEOSGeometry, Polygon
 from django.contrib.gis.measure import Distance
-from django.db.models import Count, Avg, Sum
+from django.db.models import Count, Avg, Sum, Q
 from django.utils import timezone
 from django.core.paginator import Paginator
 import json
@@ -18,6 +18,52 @@ from django.contrib.gis.geos import Point
 import math
 
 logger = logging.getLogger(__name__)
+
+
+def build_accommodation_type_query(raw_type):
+    """Translate the advanced accommodations filter into a queryset clause."""
+    selected_type = (raw_type or '').strip().lower()
+    if not selected_type or selected_type == 'all':
+        return None
+
+    if selected_type == 'hotel':
+        return Q(external_id__istartswith='HHS') | Q(name__icontains='hotel')
+    if selected_type == 'bed_and_breakfast':
+        return (
+            Q(external_id__istartswith='BBL')
+            | Q(name__icontains='b&b')
+            | Q(name__icontains='bed and breakfast')
+            | Q(name__icontains='farmhouse')
+            | Q(name__icontains='guesthouse')
+            | Q(name__icontains='guest lodge')
+        )
+    if selected_type == 'camping':
+        return (
+            Q(external_id__istartswith='CCS')
+            | Q(name__icontains='camping')
+            | Q(name__icontains='campsite')
+            | Q(name__icontains='caravan')
+            | Q(name__icontains='holiday park')
+            | Q(name__icontains='glamping')
+            | Q(name__icontains='pod')
+        )
+    if selected_type == 'self_catering':
+        return (
+            Q(external_id__istartswith='SCL')
+            | Q(external_id__istartswith='SCS')
+            | Q(name__icontains='cottage')
+            | Q(name__icontains='holiday home')
+            | Q(name__icontains='self catering')
+        )
+    if selected_type == 'apartment':
+        return Q(name__icontains='apartment')
+    if selected_type == 'hostel':
+        return Q(name__icontains='hostel')
+    if selected_type == 'lodge':
+        return Q(name__icontains='lodge')
+    if selected_type == 'welcome_standard':
+        return Q(external_id__istartswith='WSL')
+    return None
 
 # Runs the polygon search used by the advanced mapping page.
 @csrf_exempt
@@ -275,6 +321,7 @@ def polygon_search(request):
 def index_view(request):
     """Accommodation browsing page with simple county filtering."""
     selected_county = (request.GET.get('county') or '').strip()
+    selected_type = (request.GET.get('type') or '').strip()
     fallback_images = [
         '/static/images/accommodation.jpeg',
         '/static/images/accommodation_1.jpg',
@@ -322,6 +369,10 @@ def index_view(request):
 
     if selected_county:
         accommodations_qs = accommodations_qs.filter(nearby_trails__county__iexact=selected_county).distinct()
+
+    type_query = build_accommodation_type_query(selected_type)
+    if type_query is not None:
+        accommodations_qs = accommodations_qs.filter(type_query).distinct()
 
     paginator = Paginator(accommodations_qs, 24)
     page_number = request.GET.get('page')
@@ -375,6 +426,8 @@ def index_view(request):
             'name': accommodation.name,
             'county': county,
             'county_label': county_label,
+            'type': accommodation.category,
+            'type_label': accommodation.category_label,
             'description': description,
             'price_per_night': accommodation.price_per_night,
             'price_label': price_label,
@@ -391,6 +444,17 @@ def index_view(request):
         'page_obj': page_obj,
         'county_options': county_options,
         'selected_county': selected_county,
+        'type_options': [
+            ('hotel', 'Hotel'),
+            ('bed_and_breakfast', 'B&B'),
+            ('camping', 'Camping'),
+            ('self_catering', 'Self Catering'),
+            ('apartment', 'Apartment'),
+            ('lodge', 'Lodge'),
+            ('hostel', 'Hostel'),
+            ('welcome_standard', 'Welcome Standard'),
+        ],
+        'selected_type': selected_type,
         'accommodation_count': paginator.count,
         'current_page': 'accommodations',
     }

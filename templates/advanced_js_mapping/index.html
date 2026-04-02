@@ -120,11 +120,18 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="col-12 col-md-6 col-lg-4 d-flex gap-2">
+                        <div class="col-12 col-md-6 col-lg-4">
+                            <label for="type-filter" class="form-label fw-bold">Stay Type</label>
+                            <select id="type-filter" name="type" class="form-select">
+                                <option value="">All Types</option>
+                                {% for type_value, type_label in type_options %}
+                                <option value="{{ type_value }}" {% if selected_type == type_value %}selected{% endif %}>{{ type_label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12 col-lg-4 d-flex gap-2 justify-content-lg-end">
                             <button type="submit" class="btn btn-success px-4">Filter</button>
                             <a href="{% url 'advanced_js_mapping:index' %}" class="btn btn-outline-secondary px-4">Reset</a>
-                        </div>
-                        <div class="col-12 col-lg-4 d-flex justify-content-lg-end align-items-center">
                             <span class="pill-badge">{{ accommodation_count }} accommodation{{ accommodation_count|pluralize }}</span>
                         </div>
                     </form>
@@ -161,14 +168,27 @@
                     </div>
                     <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
                         <p class="small text-muted mb-0">{{ accommodation.county_label }}</p>
-                        <span class="accommodation-badge">{{ accommodation.badge }}</span>
+                        <span class="accommodation-badge">{{ accommodation.type_label }}</span>
                     </div>
+                    <div class="small text-muted mb-2">{{ accommodation.badge }}</div>
                     <p class="card-text text-muted flex-grow-1">{{ accommodation.description }}</p>
                     <div class="d-flex justify-content-between align-items-center mt-3">
                         <div>
                             <div class="fw-bold text-success">{{ accommodation.price_label }}</div>
                         </div>
-                        <a href="#" class="btn btn-outline-success">View on Map</a>
+                        <button
+                            type="button"
+                            class="btn btn-outline-success view-on-map-btn"
+                            {% if accommodation.latitude and accommodation.longitude %}
+                            data-lat="{{ accommodation.latitude }}"
+                            data-lng="{{ accommodation.longitude }}"
+                            data-name="{{ accommodation.name|escapejs }}"
+                            {% else %}
+                            disabled
+                            {% endif %}
+                        >
+                            View on Map
+                        </button>
                     </div>
                 </div>
             </div>
@@ -220,6 +240,7 @@ document.addEventListener('DOMContentLoaded', function () {
         {
             name: '{{ accommodation.name|escapejs }}',
             county: '{{ accommodation.county_label|escapejs }}',
+            typeLabel: '{{ accommodation.type_label|escapejs }}',
             description: '{{ accommodation.description|escapejs }}',
             price: '{{ accommodation.price_label|escapejs }}',
             lat: {{ accommodation.latitude }},
@@ -263,6 +284,7 @@ document.addEventListener('DOMContentLoaded', function () {
             '<div style="min-width: 200px;">' +
             '<strong>' + accommodation.name + '</strong><br>' +
             '<span style="color:#6c757d;">' + accommodation.county + '</span><br>' +
+            '<span style="display:inline-block; margin:4px 0; font-weight:700; color:#23624A;">' + accommodation.typeLabel + '</span><br>' +
             '<span style="font-weight:700; color:#2E8B57;">' + accommodation.price + '</span><br>' +
             '<span>' + accommodation.description + '</span><br>' +
             '<small style="color:#6c757d;">View on Page</small>' +
@@ -283,6 +305,29 @@ document.addEventListener('DOMContentLoaded', function () {
             const lat = parseFloat(card.dataset.lat);
             const lng = parseFloat(card.dataset.lng);
             map.flyTo([lat, lng], 12, { duration: 1.2 });
+        });
+    });
+
+    document.querySelectorAll('.view-on-map-btn[data-lat][data-lng]').forEach(function (button) {
+        button.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            const lat = parseFloat(button.dataset.lat);
+            const lng = parseFloat(button.dataset.lng);
+            const name = button.dataset.name || 'Accommodation';
+            map.flyTo([lat, lng], 13, { duration: 1.1 });
+
+            markers.forEach(function (marker) {
+                const markerLatLng = marker.getLatLng();
+                if (Math.abs(markerLatLng.lat - lat) < 0.00001 && Math.abs(markerLatLng.lng - lng) < 0.00001) {
+                    marker.openPopup();
+                }
+            });
+
+            const targetCard = button.closest('.accommodation-card');
+            if (targetCard) {
+                targetCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
         });
     });
 
