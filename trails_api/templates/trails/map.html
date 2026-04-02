@@ -1104,6 +1104,27 @@ body.high-contrast-mode #trail-results {
         </div>
       </div>
 
+      <div id="route-summary-card" class="card route-summary-card" aria-live="polite">
+        <div class="route-summary-header">Route Summary</div>
+        <div class="route-summary-body">
+          <div id="route-summary-destination" class="route-summary-destination"></div>
+          <div class="route-summary-metrics">
+            <div class="route-summary-metric">
+              <span class="route-summary-label">Distance</span>
+              <span id="route-summary-distance" class="route-summary-value"></span>
+            </div>
+            <div class="route-summary-metric">
+              <span class="route-summary-label">Estimated walk</span>
+              <span id="route-summary-walk" class="route-summary-value"></span>
+            </div>
+            <div class="route-summary-metric">
+              <span class="route-summary-label">Estimated drive</span>
+              <span id="route-summary-drive" class="route-summary-value"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Controls for loading and showing nearby accommodation. -->
       <div id="accommodation-card" class="card accommodation-card">
         <div class="card-header">Nearby Stays</div>
@@ -1115,26 +1136,6 @@ body.high-contrast-mode #trail-results {
           </div>
           <button id="fetch-stays-btn" class="btn btn-sm w-100 accommodation-action-btn">Find nearby stays</button>
           <div id="accommodation-count" class="text-muted mt-2" style="font-size: 11px;"></div>
-          <div id="route-summary-card" class="route-summary-card" aria-live="polite">
-            <div class="route-summary-header">Route Summary</div>
-            <div class="route-summary-body">
-              <div id="route-summary-destination" class="route-summary-destination"></div>
-              <div class="route-summary-metrics">
-                <div class="route-summary-metric">
-                  <span class="route-summary-label">Distance</span>
-                  <span id="route-summary-distance" class="route-summary-value"></span>
-                </div>
-                <div class="route-summary-metric">
-                  <span class="route-summary-label">Estimated walk</span>
-                  <span id="route-summary-walk" class="route-summary-value"></span>
-                </div>
-                <div class="route-summary-metric">
-                  <span class="route-summary-label">Estimated drive</span>
-                  <span id="route-summary-drive" class="route-summary-value"></span>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
