@@ -251,6 +251,68 @@
       margin-bottom: 10px;
     }
 
+    .route-summary-card {
+      display: none;
+      margin-top: 12px;
+      border: 1px solid #b8d6c3;
+      border-left: 4px solid #5b8a72;
+      border-radius: 10px;
+      background: linear-gradient(180deg, #f6fbf8 0%, #edf7f1 55%, #e7f0fb 100%);
+      box-shadow: 0 6px 14px rgba(91, 138, 114, 0.12);
+      overflow: hidden;
+    }
+
+    .route-summary-header {
+      background: linear-gradient(135deg, #5b8a72 0%, #7aa694 55%, #9ec2b4 100%);
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 0.02em;
+      padding: 8px 10px;
+    }
+
+    .route-summary-body {
+      padding: 10px 12px;
+      color: #2d4639;
+    }
+
+    .route-summary-destination {
+      font-weight: 700;
+      color: #6e4f2e;
+      margin-bottom: 8px;
+    }
+
+    .route-summary-metrics {
+      display: grid;
+      gap: 8px;
+    }
+
+    .route-summary-metric {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.68);
+      border: 1px solid rgba(122, 166, 148, 0.28);
+    }
+
+    .route-summary-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #4a6a58;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .route-summary-value {
+      font-size: 13px;
+      font-weight: 700;
+      color: #23372d;
+      text-align: right;
+    }
+
     .poi-toggle-button {
       font-weight: 700;
       transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
@@ -804,8 +866,30 @@ body.high-contrast-mode .sidebar li,
 body.high-contrast-mode .sidebar small,
 body.high-contrast-mode .sidebar medium,
 body.high-contrast-mode .sidebar .text-muted,
-body.high-contrast-mode #accommodation-count {
+body.high-contrast-mode #accommodation-count,
+body.high-contrast-mode .route-summary-body,
+body.high-contrast-mode .route-summary-label,
+body.high-contrast-mode .route-summary-value,
+body.high-contrast-mode .route-summary-destination {
     color: #1f1f1f !important;
+}
+
+body.high-contrast-mode .route-summary-card {
+    background: #ffffff !important;
+    border: 2px solid #111111 !important;
+    border-left: 4px solid #111111 !important;
+    box-shadow: none !important;
+}
+
+body.high-contrast-mode .route-summary-header {
+    background: #111111 !important;
+    color: #ffd400 !important;
+    border-bottom: 2px solid #ffd400 !important;
+}
+
+body.high-contrast-mode .route-summary-metric {
+    background: #fff7c7 !important;
+    border: 2px solid #111111 !important;
 }
 
 body.high-contrast-mode .btn {
@@ -1031,6 +1115,26 @@ body.high-contrast-mode #trail-results {
           </div>
           <button id="fetch-stays-btn" class="btn btn-sm w-100 accommodation-action-btn">Find nearby stays</button>
           <div id="accommodation-count" class="text-muted mt-2" style="font-size: 11px;"></div>
+          <div id="route-summary-card" class="route-summary-card" aria-live="polite">
+            <div class="route-summary-header">Route Summary</div>
+            <div class="route-summary-body">
+              <div id="route-summary-destination" class="route-summary-destination"></div>
+              <div class="route-summary-metrics">
+                <div class="route-summary-metric">
+                  <span class="route-summary-label">Distance</span>
+                  <span id="route-summary-distance" class="route-summary-value"></span>
+                </div>
+                <div class="route-summary-metric">
+                  <span class="route-summary-label">Estimated walk</span>
+                  <span id="route-summary-walk" class="route-summary-value"></span>
+                </div>
+                <div class="route-summary-metric">
+                  <span class="route-summary-label">Estimated drive</span>
+                  <span id="route-summary-drive" class="route-summary-value"></span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

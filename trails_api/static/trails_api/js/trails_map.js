@@ -1594,6 +1594,7 @@ function displayNearestTrails(trails) {
         // Stores the selected trail so the next accommodation click can route from it.
         marker.on("click", function () {
         clearProximityTownPopup();
+        hideRouteSummary();
         selectedTrail = {
           lat: lat,
           lng: lng,
@@ -1714,6 +1715,7 @@ async function updateResultsPanel(data, town = null) {
 // Clears the search point, nearby trail markers, and results panel.
 function clearProximityResults() {
   clearProximityTownPopup();
+  hideRouteSummary();
   if (window.searchMarker) {
     window.trailsMap.removeLayer(window.searchMarker);
     window.searchMarker = null;
@@ -1727,6 +1729,41 @@ function clearProximityResults() {
   if (accommodationCard) {
     accommodationCard.style.display = "block";
   }
+}
+
+function hideRouteSummary() {
+  const summaryCard = document.getElementById("route-summary-card");
+  const destinationEl = document.getElementById("route-summary-destination");
+  const distanceEl = document.getElementById("route-summary-distance");
+  const walkEl = document.getElementById("route-summary-walk");
+  const driveEl = document.getElementById("route-summary-drive");
+
+  if (summaryCard) {
+    summaryCard.style.display = "none";
+  }
+  if (destinationEl) destinationEl.textContent = "";
+  if (distanceEl) distanceEl.textContent = "";
+  if (walkEl) walkEl.textContent = "";
+  if (driveEl) driveEl.textContent = "";
+}
+
+function showRouteSummary(accommodationName, routeDistanceKm, estimatedTimes = null) {
+  const summaryCard = document.getElementById("route-summary-card");
+  const destinationEl = document.getElementById("route-summary-destination");
+  const distanceEl = document.getElementById("route-summary-distance");
+  const walkEl = document.getElementById("route-summary-walk");
+  const driveEl = document.getElementById("route-summary-drive");
+
+  if (!summaryCard || !destinationEl || !distanceEl || !walkEl || !driveEl) {
+    return;
+  }
+
+  destinationEl.textContent = `To: ${accommodationName || "Selected stay"}`;
+  distanceEl.textContent =
+    typeof routeDistanceKm === "number" ? `${routeDistanceKm} km` : "Unavailable";
+  walkEl.textContent = estimatedTimes?.walking_label || "Unavailable";
+  driveEl.textContent = estimatedTimes?.driving_label || "Unavailable";
+  summaryCard.style.display = "block";
 }
 
 // Shows weather details for a clicked trail marker.
@@ -1754,6 +1791,7 @@ function onTrailClick(e) {
 // Loads accommodation near the selected search area or trail.
 function updateAccommodations(searchLat = null, searchLng = null) {
   console.log("updateAccommodations called");
+  hideRouteSummary();
   
   if (!window.trailsMap) {
     console.error("❌ trailsMap not initialized");
@@ -2037,6 +2075,7 @@ function tryRoute() {
         drawRoute(geojson);
 
         if (data.status === "fallback") {
+          hideRouteSummary();
           showRouteToast("Route could not be found. Showing straight-line connection.", "warning");
         } else {
           // Reuse the returned distance in both the marker label and the
@@ -2050,24 +2089,23 @@ function tryRoute() {
               selectedAccommodation.marker,
               data.route_distance_km
             );
-            // If available, also shows the estimated travel times walking/driving for more context around the route.
-            const timeSummary =
-              data.estimated_times &&
-              data.estimated_times.walking_label &&
-              data.estimated_times.driving_label
-                ? ` • Estimated Walking Time: ${data.estimated_times.walking_label} • Estimated Driving Time: ${data.estimated_times.driving_label}`
-                : "";
-
             const countEl = document.getElementById("accommodation-count");
             if (countEl) {
-              countEl.textContent = `Route distance to ${selectedAccommodation.name}: ${data.route_distance_km} km${timeSummary}`;
+              countEl.textContent = "Route ready. Review the summary below.";
             }
 
+            showRouteSummary(
+              selectedAccommodation.name,
+              data.route_distance_km,
+              data.estimated_times
+            );
+
             showRouteToast(
-              `Shortest road route shown. Distance: ${data.route_distance_km} km${timeSummary}.`,
+              `Shortest road route shown. Distance: ${data.route_distance_km} km.`,
               "success"
             );
           } else {
+            hideRouteSummary();
             showRouteToast("Shortest road route to your accommodation shown.", "success");
           }
         }
