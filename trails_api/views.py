@@ -38,6 +38,68 @@ ROUTE_ESTIMATE_WALKING_SPEED_KMH = 4.5
 ROUTE_ESTIMATE_DRIVING_SPEED_KMH = 60.0
 
 
+def normalize_accommodation_category(raw_category):
+    """Map UI filter values onto one internal category key."""
+    category = (raw_category or "").strip().lower()
+    aliases = {
+        "b&b": "bed_and_breakfast",
+        "bb": "bed_and_breakfast",
+        "bed-and-breakfast": "bed_and_breakfast",
+        "bed_and_breakfast": "bed_and_breakfast",
+        "self-catering": "self_catering",
+        "self_catering": "self_catering",
+        "welcome-standard": "welcome_standard",
+        "welcome_standard": "welcome_standard",
+    }
+    return aliases.get(category, category)
+
+
+def build_accommodation_category_query(raw_category):
+    """Translate a category filter into the safest DB query approximation."""
+    category = normalize_accommodation_category(raw_category)
+    if not category or category == "all":
+        return None
+
+    if category == "hotel":
+        return Q(external_id__istartswith="HHS") | Q(name__icontains="hotel")
+    if category == "bed_and_breakfast":
+        return (
+            Q(external_id__istartswith="BBL")
+            | Q(name__icontains="b&b")
+            | Q(name__icontains="bed and breakfast")
+            | Q(name__icontains="farmhouse")
+            | Q(name__icontains="guesthouse")
+            | Q(name__icontains="guest lodge")
+        )
+    if category == "camping":
+        return (
+            Q(external_id__istartswith="CCS")
+            | Q(name__icontains="camping")
+            | Q(name__icontains="campsite")
+            | Q(name__icontains="caravan")
+            | Q(name__icontains="holiday park")
+            | Q(name__icontains="glamping")
+            | Q(name__icontains="pod")
+        )
+    if category == "self_catering":
+        return (
+            Q(external_id__istartswith="SCL")
+            | Q(external_id__istartswith="SCS")
+            | Q(name__icontains="cottage")
+            | Q(name__icontains="holiday home")
+            | Q(name__icontains="self catering")
+        )
+    if category == "apartment":
+        return Q(name__icontains="apartment")
+    if category == "hostel":
+        return Q(name__icontains="hostel")
+    if category == "lodge":
+        return Q(name__icontains="lodge")
+    if category == "welcome_standard":
+        return Q(external_id__istartswith="WSL")
+    return None
+
+
 def format_estimated_minutes(total_minutes):
     """Render integer minutes as a compact user-facing estimate label."""
     if total_minutes is None:
@@ -743,9 +805,13 @@ class AccommodationsListView(generics.ListAPIView):
         queryset = super().get_queryset()
         
         source = self.request.GET.get('source')
+        category = self.request.GET.get('category')
         
         if source:
             queryset = queryset.filter(source__iexact=source)
+        category_query = build_accommodation_category_query(category)
+        if category_query is not None:
+            queryset = queryset.filter(category_query)
             
         return queryset
 
@@ -786,6 +852,8 @@ def accommodations_geojson(request):
                         "id": acc.id,
                         "name": acc.name,
                         "source": acc.source,
+                        "category": acc.category,
+                        "category_label": acc.category_label,
                         "price_per_night": float(acc.price_per_night) if acc.price_per_night else None,
                         "rating": acc.rating or 0,
                         "url": acc.url,
@@ -805,7 +873,7 @@ def accommodations_geojson(request):
 @permission_classes([AllowAny])
 def accommodations_near_trail(request):
     trail_id = request.GET.get('trail_id')
-    category = request.GET.get('category', 'all').lower()
+    category = request.GET.get('category', 'all')
     radius_km = float(request.GET.get('radius_km', 10))
     
     if not trail_id:
@@ -823,24 +891,19 @@ def accommodations_near_trail(request):
         from django.contrib.gis.db.models.functions import Transform
         
         # Starts with the closest stays around the trail start point.
-        accommodations = list(
+        accommodations_qs = (
             Accommodation.objects.annotate(
                 distance=DistanceFunction('location', trail.start_point)
             ).filter(
                 location__dwithin=(trail.start_point, D(m=radius_meters))
-            ).order_by('distance')[:10]
+            )
         )
-        
-        if category and category != 'all':
-            if category == 'hotel':
-                accommodations = accommodations.filter(name__icontains='hotel')
-            elif category == 'hostel':
-                accommodations = accommodations.filter(name__icontains='hostel')
-            elif category == 'b&b' or category == 'bb':
-                accommodations = accommodations.filter(
-                    Q(name__icontains='b&b') | Q(name__icontains='bed and breakfast')
-                )
-        
+
+        category_query = build_accommodation_category_query(category)
+        if category_query is not None:
+            accommodations_qs = accommodations_qs.filter(category_query)
+
+        accommodations = list(accommodations_qs.order_by('distance')[:10])
         accommodations = [acc for acc in accommodations if acc.location]
 
         # Tries to rank stays by road distance so the list feels more realistic in the demo.
@@ -914,6 +977,8 @@ def accommodations_near_trail(request):
                     "id": acc.id,
                     "name": acc.name,
                     "source": acc.source,
+                    "category": acc.category,
+                    "category_label": acc.category_label,
                     "price_per_night": float(acc.price_per_night) if acc.price_per_night else None,
                     "rating": acc.rating,
                     "distance_km": round(acc.distance.km, 2),
@@ -1413,6 +1478,7 @@ class NearbyAccommodationView(generics.ListAPIView):
         lat = self.request.query_params.get('lat')
         lng = self.request.query_params.get('lng')
         radius_param = self.request.query_params.get('radius', 20)
+        category = self.request.query_params.get('category')
 
         try:
             radius_km = float(radius_param)
@@ -1423,11 +1489,15 @@ class NearbyAccommodationView(generics.ListAPIView):
             try:
                 user_location = Point(float(lng), float(lat), srid=4326)
                 
-                return Accommodation.objects.filter(
+                queryset = Accommodation.objects.filter(
                     location__distance_lte=(user_location, D(km=radius_km))
                 ).annotate(
                     distance=DistanceFunction('location', user_location)
-                ).order_by('distance')[:30]
+                )
+                category_query = build_accommodation_category_query(category)
+                if category_query is not None:
+                    queryset = queryset.filter(category_query)
+                return queryset.order_by('distance')[:30]
             except (ValueError, TypeError):
                 return Accommodation.objects.none()
             

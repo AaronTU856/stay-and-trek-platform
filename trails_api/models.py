@@ -375,6 +375,18 @@ class TrailPOIIntersection(models.Model):
         
 class Accommodation(models.Model):
     """Model for accommodations near trails: hotels, hostels, B&Bs, campsites, etc."""
+
+    ACCOMMODATION_CATEGORY_LABELS = {
+        'hotel': 'Hotel',
+        'bed_and_breakfast': 'B&B',
+        'camping': 'Camping',
+        'self_catering': 'Self Catering',
+        'apartment': 'Apartment',
+        'hostel': 'Hostel',
+        'lodge': 'Lodge',
+        'welcome_standard': 'Welcome Standard',
+        'other': 'Stay',
+    }
     
     ACCOMMODATION_SOURCE_CHOICES = [
         ('airbnb', 'Airbnb'),
@@ -400,7 +412,48 @@ class Accommodation(models.Model):
     
     def __str__(self):
         return f"{self.name} ({self.source})"
-    
+
+    @staticmethod
+    def infer_category(external_id="", name=""):
+        external_id = (external_id or "").upper()
+        name_lower = (name or "").lower()
+
+        if external_id.startswith("HHS"):
+            return "hotel"
+        if external_id.startswith("BBL"):
+            return "bed_and_breakfast"
+        if external_id.startswith("CCS"):
+            return "camping"
+        if external_id.startswith(("SCL", "SCS")):
+            if "apartment" in name_lower:
+                return "apartment"
+            return "self_catering"
+        if external_id.startswith("WSL"):
+            return "welcome_standard"
+
+        if "hotel" in name_lower:
+            return "hotel"
+        if "hostel" in name_lower:
+            return "hostel"
+        if any(term in name_lower for term in ("b&b", "bed and breakfast", "farmhouse", "guesthouse", "guest lodge")):
+            return "bed_and_breakfast"
+        if any(term in name_lower for term in ("camping", "campsite", "caravan", "holiday park", "pod", "glamping")):
+            return "camping"
+        if "apartment" in name_lower:
+            return "apartment"
+        if any(term in name_lower for term in ("cottage", "cottages", "holiday home", "holiday homes", "self catering")):
+            return "self_catering"
+        if "lodge" in name_lower:
+            return "lodge"
+        return "other"
+
+    @property
+    def category(self):
+        return self.infer_category(self.external_id, self.name)
+
+    @property
+    def category_label(self):
+        return self.ACCOMMODATION_CATEGORY_LABELS.get(self.category, "Stay")
     
     @property
     def latitude(self):

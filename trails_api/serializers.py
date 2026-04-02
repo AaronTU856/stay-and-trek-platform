@@ -192,12 +192,15 @@ class AccommodationSerializer(serializers.ModelSerializer):
     latitude = serializers.ReadOnlyField()
     longitude = serializers.ReadOnlyField()
     distance_km = serializers.SerializerMethodField()
+    category = serializers.ReadOnlyField()
+    category_label = serializers.ReadOnlyField()
 
     class Meta:
         model = Accommodation
         fields = [
             'id', 'name', 'source', 'price_per_night', 
-            'rating', 'url', 'image_url', 'latitude', 'longitude', 'distance_km'
+            'rating', 'url', 'image_url', 'latitude', 'longitude',
+            'distance_km', 'category', 'category_label'
         ]
 
     def get_distance_km(self, obj):
@@ -208,8 +211,13 @@ class AccommodationSerializer(serializers.ModelSerializer):
 
 class AccommodationGeoJSONSerializer(GeoFeatureModelSerializer):
     # Accommodation output for the mobile and web maps.
+    category = serializers.ReadOnlyField()
+    category_label = serializers.ReadOnlyField()
+
     class Meta:
         model = Accommodation  
         geo_field = 'location'
-        fields = ('id', 'name', 'source', 'price_per_night', 'rating', 'url')
-
+        fields = (
+            'id', 'name', 'source', 'price_per_night', 'rating', 'url',
+            'category', 'category_label'
+        )

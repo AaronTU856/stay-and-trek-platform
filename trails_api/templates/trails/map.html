@@ -1134,6 +1134,20 @@ body.high-contrast-mode #trail-results {
             <input class="form-check-input" type="checkbox" id="toggle-accommodations">
             <label class="form-check-label" for="toggle-accommodations">Show stays on map</label>
           </div>
+          <div class="mb-2">
+            <label class="form-label small" for="accommodation-type-filter">Stay type</label>
+            <select id="accommodation-type-filter" class="form-select form-select-sm">
+              <option value="all">All stays</option>
+              <option value="hotel">Hotels</option>
+              <option value="bed_and_breakfast">B&amp;Bs</option>
+              <option value="camping">Camping</option>
+              <option value="self_catering">Self catering</option>
+              <option value="apartment">Apartments</option>
+              <option value="lodge">Lodges</option>
+              <option value="hostel">Hostels</option>
+              <option value="welcome_standard">Welcome Standard</option>
+            </select>
+          </div>
           <button id="fetch-stays-btn" class="btn btn-sm w-100 accommodation-action-btn">Find nearby stays</button>
           <div id="accommodation-count" class="text-muted mt-2" style="font-size: 11px;"></div>
         </div>

@@ -36,6 +36,12 @@ function getAccommodationTooltipHtml(details) {
     );
   }
 
+  if (details.category_label) {
+    parts.push(
+      `<div class="accommodation-tooltip-meta">${details.category_label}</div>`
+    );
+  }
+
   if (details.source) {
     const sourceLabels = {
       booking: "Booking.com",
@@ -45,7 +51,7 @@ function getAccommodationTooltipHtml(details) {
     };
 
     parts.push(
-      `<div class="accommodation-tooltip-meta">${sourceLabels[details.source] || "Stay listing"}</div>`
+      `<div class="accommodation-tooltip-meta">Source: ${sourceLabels[details.source] || "Stay listing"}</div>`
     );
   }
 
@@ -1818,6 +1824,8 @@ function updateAccommodations(searchLat = null, searchLng = null) {
   const fetchBtn = document.getElementById("fetch-stays-btn");
 
   const requestId = ++accommodationRequestId;
+  const typeFilterEl = document.getElementById("accommodation-type-filter");
+  const category = typeFilterEl ? typeFilterEl.value : "all";
 
   console.log(`Fetching accommodations for lat=${lat}, lng=${lng}`);
 
@@ -1830,7 +1838,7 @@ function updateAccommodations(searchLat = null, searchLng = null) {
         fetchBtn.textContent = "Searching stays...";
   }
   
-  fetch(`/api/trails/accommodations/nearby/?lat=${lat}&lng=${lng}&radius=10`)
+  fetch(`/api/trails/accommodations/nearby/?lat=${lat}&lng=${lng}&radius=10&category=${encodeURIComponent(category)}`)
     .then(res => {
       console.log("Response status:", res.status);
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -1864,7 +1872,8 @@ function updateAccommodations(searchLat = null, searchLng = null) {
         name: props.name || "Accommodation",
         price_per_night: props.price_per_night,
         rating: props.rating,
-        source: props.source
+        source: props.source,
+        category_label: props.category_label
       };
 
         const marker = L.marker([accLat, accLng], {

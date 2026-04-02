@@ -243,9 +243,9 @@
             </div>
           </div>
           <div style="margin-bottom: 8px;">
-            <strong style="font-size: 13px;">By County:</strong>
-            <select id="county-filter" class="form-select form-select-sm" onchange="filterByCounty()">
-              <option value="">All Counties</option>
+            <strong style="font-size: 13px;">By Stay Type:</strong>
+            <select id="type-filter" class="form-select form-select-sm" onchange="filterAccommodations()">
+              <option value="">All Types</option>
             </select>
           </div>
         </div>
@@ -287,7 +287,7 @@
         <div class="card-body">
           <small>
             <p>
-              <strong>🔍 Search:</strong> Use the search box to find accommodations by name or location.
+              <strong>🔍 Search:</strong> Use the search box to find accommodations by name or stay type.
             </p>
             <p>
               <strong>📍 Click Map:</strong> Click accommodation markers on the map for details.
@@ -328,6 +328,16 @@
     let allAccommodations = [];
     let filteredAccommodations = [];
 
+    function getSourceLabel(source) {
+      const labels = {
+        booking: 'Booking.com',
+        airbnb: 'Airbnb',
+        trivago: 'Trivago',
+        manual: 'Local listing'
+      };
+      return labels[source] || 'Stay listing';
+    }
+
     // Builds the base map for the accommodation page.
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors',
@@ -346,23 +356,33 @@
     // Loads accommodation data, then refreshes the stats, filters, and map.
     async function loadAccommodations() {
       try {
-        const response = await fetch('/api/accommodations/geojson/');
+        const response = await fetch('/api/trails/accommodations/?page_size=2000');
         const data = await response.json();
-        
-        allAccommodations = data.features || [];
+
+        const items = data.results || data || [];
+        allAccommodations = items
+          .filter(acc => Number.isFinite(acc.longitude) && Number.isFinite(acc.latitude))
+          .map(acc => ({
+            type: 'Feature',
+            geometry: {
+              type: 'Point',
+              coordinates: [acc.longitude, acc.latitude]
+            },
+            properties: acc
+          }));
         filteredAccommodations = [...allAccommodations];
         
         document.getElementById('total-count').textContent = allAccommodations.length;
         document.getElementById('visible-count').textContent = allAccommodations.length;
         
-        const counties = [...new Set(allAccommodations.map(acc => acc.properties.county))].sort();
-        const countySelect = document.getElementById('county-filter');
-        counties.forEach(county => {
-          if (county) {
+        const categories = [...new Set(allAccommodations.map(acc => acc.properties.category_label))].sort();
+        const typeSelect = document.getElementById('type-filter');
+        categories.forEach(category => {
+          if (category) {
             const option = document.createElement('option');
-            option.value = county;
-            option.textContent = county;
-            countySelect.appendChild(option);
+            option.value = category;
+            option.textContent = category;
+            typeSelect.appendChild(option);
           }
         });
         
@@ -387,10 +407,11 @@
           .bindPopup(`
             <div style="font-size: 13px;">
               <strong>${props.name}</strong><br>
-              <small>${props.county}, Ireland</small><br>
-              ${props.description ? '<small>' + props.description + '</small><br>' : ''}
-              ${props.phone ? '<small>📞 ' + props.phone + '</small><br>' : ''}
-              ${props.website ? '<small><a href="' + props.website + '" target="_blank">🌐 Website</a></small>' : ''}
+              <small>${props.category_label || 'Stay'} in Ireland</small><br>
+              ${props.rating ? '<small>⭐ ' + props.rating + '/5</small><br>' : ''}
+              ${props.price_per_night ? '<small>From €' + props.price_per_night + ' per night</small><br>' : ''}
+              <small>${getSourceLabel(props.source)}</small><br>
+              ${props.url ? '<small><a href="' + props.url + '" target="_blank" rel="noopener">🌐 View listing</a></small>' : ''}
             </div>
           `)
           .addTo(map);
@@ -415,9 +436,11 @@
         return `
           <div class="accommodation-item" onclick="zoomToAccommodation([${acc.geometry.coordinates[1]}, ${acc.geometry.coordinates[0]}], '${props.name.replace(/'/g, "\\'")}')">
             <h6><i class="fas fa-bed"></i> ${props.name}</h6>
-            <small><strong>${props.county}</strong></small>
-            ${props.phone ? '<small>📞 ' + props.phone + '</small>' : ''}
-            ${props.website ? '<small><a href="' + props.website + '" target="_blank">🌐 Website</a></small>' : ''}
+            <small><strong>${props.category_label || 'Stay'}</strong></small>
+            <small>${getSourceLabel(props.source)}</small>
+            ${props.rating ? '<small>⭐ ' + props.rating + '/5</small>' : ''}
+            ${props.url ? '<small><a href="' + props.url + '" target="_blank" rel="noopener">🌐 View listing</a></small>' : ''}
+            <small><a href="#" onclick="event.stopPropagation(); zoomToAccommodation([${acc.geometry.coordinates[1]}, ${acc.geometry.coordinates[0]}], '${props.name.replace(/'/g, "\\'")}')">🗺️ View on map</a></small>
           </div>
         `;
       }).join('');
@@ -426,32 +449,27 @@
     // Applies the search and county filters to the loaded stays.
     function filterAccommodations() {
       const searchTerm = document.getElementById('search-input').value.toLowerCase();
-      const countyFilter = document.getElementById('county-filter').value;
+      const typeFilter = document.getElementById('type-filter').value;
 
       filteredAccommodations = allAccommodations.filter(acc => {
         const props = acc.properties;
         const matchesSearch = !searchTerm || 
           props.name.toLowerCase().includes(searchTerm) ||
-          props.county.toLowerCase().includes(searchTerm) ||
-          (props.description && props.description.toLowerCase().includes(searchTerm));
+          (props.category_label && props.category_label.toLowerCase().includes(searchTerm)) ||
+          (props.source && getSourceLabel(props.source).toLowerCase().includes(searchTerm));
         
-        const matchesCounty = !countyFilter || props.county === countyFilter;
+        const matchesType = !typeFilter || props.category_label === typeFilter;
         
-        return matchesSearch && matchesCounty;
+        return matchesSearch && matchesType;
       });
 
       displayAccommodations();
     }
 
-    // Reuses the main filter logic when the county dropdown changes.
-    function filterByCounty() {
-      filterAccommodations();
-    }
-
     // Clears the current filters and shows every stay again.
     function resetFilters() {
       document.getElementById('search-input').value = '';
-      document.getElementById('county-filter').value = '';
+      document.getElementById('type-filter').value = '';
       filteredAccommodations = [...allAccommodations];
       displayAccommodations();
     }
