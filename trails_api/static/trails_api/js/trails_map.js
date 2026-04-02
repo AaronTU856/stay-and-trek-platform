@@ -2055,7 +2055,7 @@ function tryRoute() {
               data.estimated_times &&
               data.estimated_times.walking_label &&
               data.estimated_times.driving_label
-                ? ` • Estimated Walking Distance: ${data.estimated_times.walking_label} • Estimated Driving Distance: ${data.estimated_times.driving_label}`
+                ? ` • Estimated Walking Time: ${data.estimated_times.walking_label} • Estimated Driving Time: ${data.estimated_times.driving_label}`
                 : "";
 
             const countEl = document.getElementById("accommodation-count");
