@@ -243,8 +243,13 @@ class TrailViewTests(TestCase):
         payload = response.json()
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("route_distance_km", payload)
+        self.assertIn("estimated_times", payload)
         self.assertIsInstance(payload["route_distance_km"], (int, float))
         self.assertGreater(payload["route_distance_km"], 0)
+        self.assertIsInstance(payload["estimated_times"]["walking_minutes"], int)
+        self.assertIsInstance(payload["estimated_times"]["driving_minutes"], int)
+        self.assertTrue(payload["estimated_times"]["walking_label"])
+        self.assertTrue(payload["estimated_times"]["driving_label"])
 
     @patch("trails_api.views.connection.cursor")
     @patch("trails_api.views.get_road_nodes_for_point")
@@ -305,3 +310,4 @@ class TrailViewTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(payload["status"], "success_v2")
         self.assertEqual(payload["features"][1]["properties"]["end_node_candidate"], 2)
+        self.assertIn("estimated_times", payload)

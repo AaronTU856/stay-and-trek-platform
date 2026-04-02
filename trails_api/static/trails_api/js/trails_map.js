@@ -2050,14 +2050,21 @@ function tryRoute() {
               selectedAccommodation.marker,
               data.route_distance_km
             );
+            // If available, also shows the estimated travel times walking/driving for more context around the route.
+            const timeSummary =
+              data.estimated_times &&
+              data.estimated_times.walking_label &&
+              data.estimated_times.driving_label
+                ? ` • Estimated Walking Distance: ${data.estimated_times.walking_label} • Estimated Driving Distance: ${data.estimated_times.driving_label}`
+                : "";
 
             const countEl = document.getElementById("accommodation-count");
             if (countEl) {
-              countEl.textContent = `Route distance to ${selectedAccommodation.name}: ${data.route_distance_km} km`;
+              countEl.textContent = `Route distance to ${selectedAccommodation.name}: ${data.route_distance_km} km${timeSummary}`;
             }
 
             showRouteToast(
-              `Shortest road route shown. Distance: ${data.route_distance_km} km.`,
+              `Shortest road route shown. Distance: ${data.route_distance_km} km${timeSummary}.`,
               "success"
             );
           } else {

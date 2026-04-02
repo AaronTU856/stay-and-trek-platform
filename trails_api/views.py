@@ -34,6 +34,49 @@ from .serializers import TrailPathGeoSerializer
 from .filters import TrailFilter
 import json
 
+ROUTE_ESTIMATE_WALKING_SPEED_KMH = 4.5
+ROUTE_ESTIMATE_DRIVING_SPEED_KMH = 60.0
+
+
+def format_estimated_minutes(total_minutes):
+    """Render integer minutes as a compact user-facing estimate label."""
+    if total_minutes is None:
+        return None
+
+    total_minutes = int(max(0, total_minutes))
+    hours, minutes = divmod(total_minutes, 60)
+
+    if hours and minutes:
+        return f"{hours} hr {minutes} min"
+    if hours:
+        return f"{hours} hr"
+    return f"{minutes} min"
+
+
+def estimate_route_times(route_distance_km):
+    """Estimate basic walking and driving times from an existing route distance."""
+    if route_distance_km in (None, ""):
+        return None
+
+    try:
+        distance_km = float(route_distance_km)
+    except (TypeError, ValueError):
+        return None
+
+    if distance_km < 0:
+        return None
+
+    walking_minutes = round((distance_km / ROUTE_ESTIMATE_WALKING_SPEED_KMH) * 60)
+    driving_minutes = round((distance_km / ROUTE_ESTIMATE_DRIVING_SPEED_KMH) * 60)
+
+    return {
+        "walking_minutes": walking_minutes,
+        "driving_minutes": driving_minutes,
+        "walking_label": format_estimated_minutes(walking_minutes),
+        "driving_label": format_estimated_minutes(driving_minutes),
+    }
+
+
 # Creates a basic user account for the app.
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -1258,11 +1301,14 @@ def get_transport_route(start_coords, end_coords):
 
         # Return one map-ready payload so the frontend can draw the full route
         # and show the accumulated distance in a single update.
+        route_distance_km = route_distance_km_from_features(features)
+
         return {
             "status": "success_v2",
             "type": "FeatureCollection",
             "features": features,
-            "route_distance_km": route_distance_km_from_features(features),
+            "route_distance_km": route_distance_km,
+            "estimated_times": estimate_route_times(route_distance_km),
         }
 
 # Validates the selected trail/stay coordinates and returns a routed
