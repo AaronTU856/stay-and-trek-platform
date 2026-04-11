@@ -1,45 +1,50 @@
 # Stay & Trek
 
-Stay & Trek is a Django and PostGIS web mapping project focused on walking trails in Ireland. The system has:
+Stay & Trek is a web mapping project for exploring walking trails in Ireland. It combines a Django and PostGIS backend, a Leaflet-based web map, supporting analytics pages, and an optional Expo / React Native mobile client that uses the same API.
 
-- a live web application at `stay-and-trek.com`
-- a Django admin for data moderation
-- a mobile app in `stay-and-trek-mobile/`
-- a shared backend API used by both web and mobile
+## What The System Does
 
-The live site uses the Squarespace domain `stay-and-trek.com` and the backend is deployed to Google Cloud.
+- displays trail start points and trail paths on an interactive map
+- supports radius search, bounding-box search, and county filtering
+- shows nearby accommodation and route planning between trails and stays
+- provides weather lookups for trails and towns
+- includes POI and river/boundary exploration tools
+- supports admin moderation of trail description submissions
 
-## Main features
+## Main Components
 
-- trail browsing and filtering
-- nearby accommodation linked to trails
-- route generation between trails and accommodation
-- weather lookups for trails and towns
-- mobile trail description submission and admin moderation
-- polygon-based town search in the advanced mapping section
-- town analytics and dashboard reporting
-- Django admin moderation and data management
+- `webmapping_project/` Django project settings, URLs, and shared configuration
+- `trails_api/` core models, serializers, API views, admin, tests, and map assets
+- `advanced_js_mapping/` advanced spatial exploration pages and views
+- `dashboard/` analytics and reporting pages
+- `authentication/` login, signup, and profile views
+- `maps/` additional map-related pages and app wiring
+- `stay-and-trek-mobile/` optional mobile client using the same backend API
+- `docker/` local Docker configuration for Django, PostGIS, and nginx
+- `tests/` supporting test notes, scripts, and evidence material
 
-## Main workflow
+## Dependencies
 
-- `devtest` is used for testing work before deployment
-- `dev` is the branch used for the cloud deployment workflow
-- pushing to `dev` triggers the Google Cloud deployment flow
-- the cloud web app, cloud admin, and cloud database should be treated as the main production system
+The local web system is intended to run with Docker.
 
-## Project structure
+Required for the web application:
 
-- `webmapping_project/` Django project settings and URLs
-- `trails_api/` main backend models, API views, serializers, filters, and admin
-- `advanced_js_mapping/` advanced mapping section of the web app
-- `dashboard/` analytics and dashboard pages
-- `authentication/` login and signup views
-- `stay-and-trek-mobile/` Expo / React Native mobile app
-- `docker/` local Docker setup for Django, PostGIS, and nginx
+- Docker Desktop or Docker Engine
+- Docker Compose
 
-## Local development
+Useful for development outside Docker:
 
-The local system runs with Docker.
+- Python 3
+- PostgreSQL with PostGIS
+
+Optional for the mobile client:
+
+- Node.js and npm
+- Expo CLI / Expo Go
+
+## Run Locally
+
+Start the web stack:
 
 ```bash
 docker compose up -d --build
@@ -47,72 +52,66 @@ docker compose exec web python manage.py migrate
 docker compose exec web python manage.py collectstatic --noinput
 ```
 
-Important:
+Open the local system at:
 
-- local Docker and cloud use different databases
-- `127.0.0.1:8000/admin` is the local admin only
-- changes seen in local admin are not the same as cloud admin unless the same action is repeated against the cloud system
+- `http://127.0.0.1:8000/`
+- `http://127.0.0.1:8000/admin/`
 
-## Cloud deployment
-
-Deployment is handled through Google Cloud Build and Cloud Run.
-
-- push code to `dev`
-- Google Cloud Build builds, tests, and deploys the backend
-- the deployed backend is used by the live website and cloud admin
-
-## Database access
-
-To connect to the cloud database locally, use the proxy:
+Run the Django tests:
 
 ```bash
-./cloud-sql-proxy --address 0.0.0.0 --port 8080 long-octane-477515-k6:europe-west1:stay-trek-db
+docker compose exec web python manage.py test
 ```
 
-Current database access setup:
+## Mobile Client
 
-- `trek-local` in TablePlus for local Docker / local Postgres work
-- `trek-cloud` in TablePlus for the cloud database
-
-## Mobile workflow
-
-The mobile app uses the same backend API as the web application.
-
-For local API testing, the mobile app can point to the local Docker backend.
-
-For cloud testing, the mobile app must point to the cloud API, not the local Docker API. The safest way is to start Expo with an explicit base URL:
-
-```bash
-EXPO_PUBLIC_API_BASE_URL=https://stay-and-trek-service-642845720185.europe-west1.run.app npx expo start
-```
-
-This avoids mixing local mobile submissions with the cloud admin or cloud database.
-
-The main mobile features include:
+The mobile app in `stay-and-trek-mobile/` is an optional companion application. It uses the same backend API and supports:
 
 - trail browsing
 - trail detail views
-- nearby accommodation along route
+- nearby accommodation
 - weather display
-- trail description submission for moderation
+- trail description submission
 
-## Moderation workflow
+See `stay-and-trek-mobile/README.md` for local mobile setup.
 
-Trail description moderation works like this:
+## Submission Scope
 
-1. A signed-in mobile user submits a trail description.
-2. The trail status becomes `Pending`.
-3. A moderator opens the trail in Django admin.
-4. The moderator reviews the description and changes the status to `Verified`.
-5. Saving the record completes the approval.
+Included in the academic project:
 
-Notes:
+- Django web application and templates
+- REST and GeoJSON API endpoints
+- spatial search, POI, boundary, and routing logic
+- automated tests in `trails_api/tests/`
+- documentation and test evidence folders
+- optional mobile client source code
 
-- the admin status is `Verified`, not `Confirmed`
-- the right-side status list in admin is only a filter
-- approval is done from the trail change form
+Not intended as core submission material:
 
-## Main technologies
+- local virtual environments
+- dependency caches and `node_modules`
+- collected static build artefacts
+- coverage output, runtime logs, and editor/system files
+- private environment files and machine-specific settings
+
+## Suggested Exclusions From Final Hand-In
+
+These should normally be excluded from the final submission package:
+
+- `.git/`
+- `.venv/`
+- `__pycache__/`
+- `.pytest_cache/`
+- `.vscode/`
+- `stay-and-trek-mobile/node_modules/`
+- `stay-and-trek-mobile/.expo/`
+- `stay-and-trek-mobile/dist/`
+- `htmlcov/`
+- `server.log`
+- `.DS_Store`
+- `staticfiles/` unless specifically required as deployment evidence
+
+## Main Technologies
 
 - Django
 - Django REST Framework
@@ -120,15 +119,5 @@ Notes:
 - PostgreSQL / PostGIS
 - pgRouting
 - Leaflet
-- Expo / React Native
 - Docker
-- Google Cloud Run
-
-## Submission note
-
-For final verification, treat the cloud system as the source of truth:
-
-- cloud mobile/API with cloud admin
-- local mobile/API with local admin
-
-Do not mix local admin and cloud mobile results when checking moderation or database updates.
+- Expo / React Native

@@ -1,3 +1,16 @@
+"""Core template and API views for the Stay & Trek application.
+
+The file is intentionally broad because the web map, mobile app, and admin
+workflow all depend on the same domain objects. The most important design
+assumptions to keep in mind when reading it are:
+
+- trail proximity searches use the stored trail start point as the anchor
+- POI and boundary endpoints are shaped for direct use by the Leaflet frontend
+- routing returns a hybrid GeoJSON route made of connector segments plus the
+  snapped road-network path, so the user sees both exact selected locations and
+  the routed travel line
+"""
+
 import logging
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, JsonResponse
@@ -38,6 +51,7 @@ ROUTE_ESTIMATE_WALKING_SPEED_KMH = 4.5
 ROUTE_ESTIMATE_DRIVING_SPEED_KMH = 60.0
 
 
+# Shared helpers used by the stay-planning and routing responses.
 def normalize_accommodation_category(raw_category):
     """Map UI filter values onto one internal category key."""
     category = (raw_category or "").strip().lower()
@@ -220,6 +234,9 @@ class TrailDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Trail.objects.all()
     serializer_class = TrailDetailSerializer
 
+
+# --- Spatial search and map data endpoints ----------------------------------
+
 # Finds nearby trails from a clicked point and search radius.
 @csrf_exempt
 @api_view(['POST'])
@@ -289,6 +306,8 @@ def trails_in_bounding_box(request):
     serializer = BoundingBoxSerializer(data=request.data)
     if serializer.is_valid():
         data = serializer.validated_data
+        # The queryset helper expects the bounding box in the canonical
+        # [min_lng, min_lat, max_lng, max_lat] order used throughout the app.
         bbox = [
             data['min_longitude'], data['min_latitude'],
             data['max_longitude'], data['max_latitude']
@@ -502,6 +521,9 @@ def trail_search(request):
 @authentication_classes([])
 @permission_classes([AllowAny])
 def trails_paths_geojson(request):
+    # This endpoint deliberately exposes full route geometry separately from the
+    # lighter marker endpoint so the frontend can choose between fast marker
+    # loading and more expensive path rendering.
     qs = Trail.objects.exclude(path__isnull=True)
     serializer = TrailPathGeoSerializer(qs, many=True)
     return Response(serializer.data)
@@ -516,6 +538,8 @@ def api_test_page(request):
 def api_test_view(request):
     return redirect(f"{settings.STATIC_URL}api_test.html")
 
+
+# --- Weather proxy endpoints -------------------------------------------------
 
 # Returns live weather for a trail start point.
 @api_view(['GET'])
@@ -566,6 +590,9 @@ def town_weather(request):
     data = requests.get(url).json()
     return Response(data)
 
+
+# --- POI and geographic-boundary endpoints ----------------------------------
+
 # Lists POIs with the standard filters and search options.
 class PointOfInterestViewSet(generics.ListAPIView):
     queryset = PointOfInterest.objects.all()
@@ -602,6 +629,8 @@ def pois_near_trail(request):
         
         trail = Trail.objects.get(id=trail_id)
         
+        # Trail/POI relationships are pre-computed and stored as intersections.
+        # That keeps this endpoint predictable and fast for repeated map clicks.
         intersections = TrailPOIIntersection.objects.filter(trail=trail).order_by('distance_meters')
         
         return Response({
@@ -631,6 +660,8 @@ def pois_in_radius(request):
         if not lat or not lng:
             return Response({'error': 'Latitude and longitude required'}, status=400)
         
+        # Radius search is centered on an arbitrary map click rather than a
+        # trail, which makes the endpoint reusable for exploratory map work.
         user_location = Point(float(lng), float(lat), srid=4326)
         
         pois = PointOfInterest.objects.annotate(
@@ -734,6 +765,8 @@ def trails_near_boundary(request, boundary_id):
     try:
         radius_m = int(request.GET.get('radius_m', 200))
         boundary = Rivers.objects.get(id=boundary_id)
+        # This uses trail start points as a practical fallback for "near this
+        # river/boundary" rather than buffering full trail geometry on demand.
         qs = Trail.objects.filter(start_point__distance_lte=(boundary.geom, D(m=radius_m)))
         qs = qs.annotate(distance=DistanceFunction('start_point', boundary.geom)).order_by('distance')
         return Response(TrailListSerializer(qs, many=True).data)
@@ -790,6 +823,9 @@ def spatial_analysis_summary(request):
         }
     })
 
+
+# --- Accommodation and stay-planning endpoints ------------------------------
+
 # Lists accommodations with basic filtering and search.
 class AccommodationsListView(generics.ListAPIView):
     queryset = Accommodation.objects.all()
@@ -828,6 +864,8 @@ def accommodations_geojson(request):
     if not lat or not lng:
         return Response({"error": "lat and lng required"}, status=400)
 
+    # The calling UI may use either the selected trail location or a free map
+    # click as the search origin, so the endpoint stays point-based on purpose.
     point = Point(float(lng), float(lat), srid=4326)
 
     try:
@@ -890,7 +928,8 @@ def accommodations_near_trail(request):
         from django.contrib.gis.db.models import Value as V
         from django.contrib.gis.db.models.functions import Transform
         
-        # Starts with the closest stays around the trail start point.
+        # Starts with the closest stays around the trail start point. The
+        # frontend uses the trailhead as the stay-planning origin throughout.
         accommodations_qs = (
             Accommodation.objects.annotate(
                 distance=DistanceFunction('location', trail.start_point)
@@ -906,7 +945,8 @@ def accommodations_near_trail(request):
         accommodations = list(accommodations_qs.order_by('distance')[:10])
         accommodations = [acc for acc in accommodations if acc.location]
 
-        # Tries to rank stays by road distance so the list feels more realistic in the demo.
+        # Tries to rank stays by road distance so the list feels more realistic
+        # than a simple straight-line ordering when routing data is available.
         road_distances = {}
         if accommodations:
             with connection.cursor() as cursor:
@@ -1077,6 +1117,9 @@ ROUTE_END_NODE_CANDIDATE_LIMIT = 3
 ROUTE_PRIMARY_NODE_BUDGET_SECONDS = 4.0
 ROUTE_ALTERNATE_NODE_BUDGET_SECONDS = 2.0
 
+
+# --- Road-network routing helpers -------------------------------------------
+
 # Builds the inner road SQL used by the routing queries.
 def build_road_inner_sql(cursor, start_coords, end_coords, road_filter, bbox_buffer_deg=BBOX_BUFFER_DEG):
 
@@ -1158,6 +1201,8 @@ def find_route_with_expanding_radius(
     attempt = 0
     last_error = None
 
+    # Increase the routing search envelope gradually so slow areas of the graph
+    # do not block the page with one large, unbounded pgRouting query.
     while radius <= int(max_radius):
         elapsed = time.monotonic() - started
         remaining_ms = int((max_total_seconds - elapsed) * 1000)
@@ -1259,7 +1304,9 @@ def get_transport_route(start_coords, end_coords):
         logger.warning(f"DEBUG coords: {start_lng},{start_lat} -> {end_lng},{end_lat}")
 
         # Snap the trail and accommodation coordinates to the nearest routable
-        # vertices before running shortest-path search on the road network.
+        # vertices before running shortest-path search on the road network. The
+        # original coordinates are still preserved as connector segments so the
+        # returned route starts and ends exactly where the user clicked.
         start_node = get_road_node_for_point(cursor, start_lng, start_lat)
         end_node = get_road_node_for_point(cursor, end_lng, end_lat)
 
@@ -1285,6 +1332,8 @@ def get_transport_route(start_coords, end_coords):
 
         # Keep the current nearest-node route search first, then try a couple
         # of alternate destination nodes if that first snapped target times out.
+        # This gives the route search a second chance near sparse graph edges
+        # without changing the user-facing selection model.
         end_node_candidates = [end_node]
         for candidate in get_road_nodes_for_point(
             cursor,

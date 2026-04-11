@@ -1,8 +1,8 @@
 # Stay & Trek Mobile
 
-This folder contains the Expo / React Native mobile app for Stay & Trek.
+This folder contains the optional Expo / React Native mobile client for Stay & Trek. It connects to the same Django backend used by the web application.
 
-The mobile app is a client for the main Django backend. It is used to:
+## What The Mobile App Does
 
 - browse trails
 - view trail details
@@ -11,7 +11,13 @@ The mobile app is a client for the main Django backend. It is used to:
 - check weather data
 - submit trail descriptions for moderation
 
-## Run the app
+## Dependencies
+
+- Node.js
+- npm
+- Expo CLI / Expo Go
+
+## Run Locally
 
 Install dependencies:
 
@@ -19,32 +25,23 @@ Install dependencies:
 npm install
 ```
 
-Start Expo:
+Start the Expo development server:
 
 ```bash
 npx expo start
 ```
 
-## API workflow
-
-The mobile app can talk to either:
-
-- the local Docker backend
-- the cloud backend
-
-For local testing, use the local backend.
-
-For cloud testing, start Expo with the cloud API URL:
+If you need to point the app at a specific backend:
 
 ```bash
-EXPO_PUBLIC_API_BASE_URL=https://stay-and-trek-service-642845720185.europe-west1.run.app npx expo start
+EXPO_PUBLIC_API_BASE_URL=<backend-url> npx expo start
 ```
 
-This is important because local and cloud use different databases.
+For local development, use the local Django backend started from the project root.
 
 ## Moderation workflow
 
-When a signed-in user submits a trail description:
+When a signed-in user submits a trail description from the app:
 
 1. the submission goes to the backend API
 2. the trail status is set to `Pending`
@@ -53,7 +50,7 @@ When a signed-in user submits a trail description:
 
 The admin approval step is manual.
 
-## Main files
+## Main Folders
 
 - `app/` app screens and routing
 - `components/` reusable UI components
@@ -61,8 +58,18 @@ The admin approval step is manual.
 - `services/apiClient.js` API helper functions
 - `config/apiConfig.js` API base URL configuration
 
-## Notes
+## Submission Scope
 
-- do not assume local admin and cloud admin show the same data
-- use cloud admin when testing cloud mobile submissions
-- use local admin when testing local Docker submissions
+Included:
+
+- mobile app source code
+- configuration files
+- assets required by the app
+
+Not intended for final hand-in:
+
+- `node_modules/`
+- `.expo/`
+- `dist/`
+- local `.env` files
+- editor-specific settings

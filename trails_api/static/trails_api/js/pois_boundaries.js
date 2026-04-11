@@ -1,6 +1,14 @@
 /**
  * POI and Geographic Boundary Map Visualization
- * Adds Points of Interest (parking, cafes, attractions) and boundaries to the Leaflet map
+ * Adds Points of Interest (parking, cafes, attractions) and boundary-driven
+ * exploration tools to the Leaflet map.
+ *
+ * Design assumptions:
+ * - POIs are loaded lazily so the main trails map is not overwhelmed on first load
+ * - boundary interactions are exploratory rather than authoritative analysis,
+ *   so "near boundary" uses lightweight trail-start proximity where appropriate
+ * - nationwide river rendering is paginated and batched because the dataset is
+ *   large enough to affect map responsiveness if drawn in one pass
  */
 
 console.log("✅ pois_boundaries.js loaded");
@@ -41,7 +49,8 @@ const POI_TYPES = {
   accommodation: { color: "#8B5E34", icon: "🏨", label: "Accommodation" },
 };
 
-// Layer groups for different POI types
+// Layer groups keep each POI type independently toggleable without refetching
+// the full dataset every time a checkbox changes.
 let poiLayerGroups = {};
 let boundaryLayer = L.layerGroup();
 let selectedPOITypes = new Set(Object.keys(POI_TYPES)); // All POI types visible by default
@@ -294,7 +303,9 @@ function loadRivers() {
     console.error("❌ Map object (window.trailsMap) not initialized!");
     return;
   }
-  // Store all rivers fetched
+  // Rivers can be numerous enough to stall the browser if they are requested
+  // and rendered in one large pass, so the load is paginated and then rendered
+  // in smaller batches.
   let allRivers = [];
   let nextUrl = "/api/trails/boundaries/?boundary_type=river&limit=500";  // Larger page size for faster loading
   let pageCount = 0;
@@ -388,7 +399,7 @@ function loadRivers() {
       console.error('Failed to render river polyline', e);
     }
   }
-  // Recursive function to fetch pages
+  // Follow paginated API responses until the safety cap is reached.
   function fetchPage(url) {
     if (pageCount >= maxPages) {
       console.warn(`⚠️ Reached max pages limit (${maxPages}), starting render...`);
@@ -427,7 +438,8 @@ function loadRivers() {
         }
       });
   }
-  // Render all rivers in batches for performance
+  // Render all rivers in batches so the UI stays responsive while nationwide
+  // river geometry is added to the map.
   function renderAllRivers(rivers) {
     console.log(`🎨 Rendering ${rivers.length} rivers on map (batch mode)...`);
     console.log("Map check before rendering:", window.trailsMap ? "✅ EXISTS" : "❌ MISSING");
@@ -615,7 +627,8 @@ function loadTrailsNearBoundary(boundaryId, radiusMeters = 200) {
       
       let displayedCount = 0;
       trails.forEach((t, index) => {
-        // Get coordinates from start_point (GeoJSON) or latitude/longitude
+        // The backend may return either a GeoJSON start_point or raw lat/lng
+        // values depending on which serializer fed the boundary-near query.
         let lat, lng;
         
         if (t.start_point && t.start_point.coordinates) {
@@ -633,7 +646,8 @@ function loadTrailsNearBoundary(boundaryId, radiusMeters = 200) {
         // Prepare trail info
         const trailName = t.trail_name || t.name || 'Trail';
         const county = t.county || 'Unknown';
-        // Create circle marker with yellow/orange color for visibility
+        // Use a contrasting marker style so "boundary-near" results stay easy
+        // to distinguish from the normal trail-start markers already on the map.
         const marker = L.circleMarker([lat, lng], {
           radius: 9,
           color: '#f6960efa',
@@ -675,7 +689,6 @@ function loadTrailsByCounty(countyName) {
     .catch((err) => console.error("❌ Error loading county trails:", err));
 }
 
-/**
 /**
  * Get and display summary statistics for spatial analysis
  * @returns {Object} Summary data including counts of trails, rivers, and POIs loaded
@@ -731,6 +744,7 @@ function toggleAllPOIs() {
     return;
   }
 
+  // The first click performs the fetch; later clicks only toggle visibility.
   if (!allPOIsLoaded) {
     loadAllPOIs();
     return;
@@ -919,7 +933,8 @@ function loadTrailsCrossingBoundary(boundaryId, boundaryName) {
  * Initialize everything when DOM is ready
  */
 document.addEventListener("DOMContentLoaded", function () {
-  // Wait a moment for the main map to initialize
+  // This script depends on the primary trails map script having created
+  // window.trailsMap first, so it waits briefly and retries if needed.
   setTimeout(() => {
     if (window.trailsMap) {
       console.log("🎯 POI system initializing...");

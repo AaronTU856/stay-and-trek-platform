@@ -1,13 +1,22 @@
 /* global loadTrails, setupEventListeners, enableProximitySearch, loadAllTrails */
 /* eslint-disable no-unused-vars */
 
-
+/*
+ * Main Leaflet workflow for the public trails map.
+ *
+ * Trail discovery is anchored to stored trail start points so proximity search,
+ * sidebar search, and numbered result markers stay fast. The same file also
+ * owns stay-planning and routing state because route drawing depends on the
+ * currently selected trail and accommodation together.
+ */
 
 console.log("✅ trails_map.js loaded");
 let map;
 let allTrailsData = [];
 
-// Keeps track of the trail, stay, and route currently being used for planning.
+// Keeps track of the current planning sequence without leaving the map page.
+// Once a trail and accommodation are selected, the route request uses this
+// state to ask the backend for a matching path.
 let accommodationRequestId = 0;
 let selectedTrail = null;
 let selectedAccommodation = null;
@@ -399,6 +408,9 @@ function loadTrails() {
       console.log("Data type:", typeof data);
       console.log("Data keys:", Object.keys(data || {}));
 
+      // The map has to tolerate a couple of legacy response shapes. Normalising
+      // everything into one Feature array keeps the rendering path simple even
+      // if the backend returns either GeoJSON or a plain list.
       let features = [];
 
       if (
@@ -451,7 +463,8 @@ function loadTrails() {
     });
 }
 
-// Loads the town markers and weather popups used alongside the trail search flow.
+// Loads the town overlay independently from the trail markers so proximity
+// search can add local context without rebuilding the main trail layer.
 fetch("/api/trails/towns/geojson/")
   .then((res) => res.json())
   .then((data) => {
@@ -1412,6 +1425,8 @@ function buildTownWeatherHtml(weather) {
 
 console.log("✅ trails_map.js fully loaded");
 
+// --- Proximity search workflow ----------------------------------------------
+
 // Turns the click-to-search mode on and off.
 function enableProximitySearch() {
   const toggleBtn = document.getElementById("toggle-search");
@@ -1475,6 +1490,8 @@ async function performProximitySearch(lat, lng) {
     window.trailsMap.removeLayer(window.searchCircle);
   }
 
+  // Mirror the submitted radius visually on the map so the returned trail list
+  // is easy to interpret against the user's chosen search area.
   window.searchCircle = L.circle([lat, lng], {
     radius: radiusKm * 1000, // convert km to meters
     color: "blue",
@@ -1511,6 +1528,9 @@ async function performProximitySearch(lat, lng) {
     }
 
     displayNearestTrails(data.nearest_trails);
+    // Nearby stay search is anchored to the same search point so the planning
+    // flow remains consistent: choose an area, inspect trails, then inspect
+    // accommodation around that same area.
     updateAccommodations(lat, lng); // Passes the orange search marker location
     const town = await findNearestTown(lat, lng);
     await updateResultsPanel(data, town);
@@ -1794,6 +1814,8 @@ function onTrailClick(e) {
         .catch(error => console.error('Weather error:', error));
 }
 
+// --- Accommodation and routing workflow -------------------------------------
+
 // Loads accommodation near the selected search area or trail.
 function updateAccommodations(searchLat = null, searchLng = null) {
   console.log("updateAccommodations called");
@@ -1818,6 +1840,8 @@ function updateAccommodations(searchLat = null, searchLng = null) {
     window.trailsMap.addLayer(window.accommodationLayer);
   }
 
+  // Use the explicit search point when the user has just run a proximity
+  // search; otherwise fall back to the current map centre for free browsing.
   const lat = searchLat || window.trailsMap.getCenter().lat;
   const lng = searchLng || window.trailsMap.getCenter().lng;
   const countEl = document.getElementById("accommodation-count");
@@ -1967,6 +1991,9 @@ function drawRoute(geojson) {
     })));
   }
 
+  // Connector segments show the snapped jump from the selected trail/stay
+  // point onto the routable road network. Styling them differently keeps the
+  // road route readable and explains why the route may not start exactly on a road.
   routeLayer = L.geoJSON(geojson, {
 
     style: function(feature) {
@@ -2046,6 +2073,9 @@ function tryRoute() {
 
   if (!selectedTrail || !selectedAccommodation) return;
 
+  // Route requests are always based on the latest selected trail/stay pair.
+  // That keeps the map behaviour predictable when the user changes either
+  // selection before asking for a new route.
   routingInProgress = true;
   fetch("/api/trails/route/", {
     method: "POST",
