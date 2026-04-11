@@ -32,6 +32,7 @@ htmlcov/
 *.swp
 *.bak
 *.checkpoint
+staticfiles/**/* 2.*
 data/
 
 # --- Mobile App (Expo / React Native) ---
