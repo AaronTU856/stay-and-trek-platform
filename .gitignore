@@ -31,6 +31,7 @@ htmlcov/
 .DS_Store
 *.swp
 *.bak
+*.checkpoint
 data/
 
 # --- Mobile App (Expo / React Native) ---
