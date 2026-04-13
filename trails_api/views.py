@@ -12,7 +12,7 @@ assumptions to keep in mind when reading it are:
 """
 
 import logging
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from django.core.serializers import serialize
 from django.db import models, connection 
@@ -340,6 +340,7 @@ def trail_statistics(request):
 
 # Saves a suggested trail description for moderation.
 @api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
 def suggest_description(request, pk):
     try:
         trail = Trail.objects.get(pk=pk)
@@ -414,37 +415,6 @@ def nearest_town(request):
         'latitude': nearest.location.y,
         'longitude': nearest.location.x,
     })
-
-# Loads sample towns from the bundled GeoJSON file.
-@api_view(['GET'])
-def load_towns(request):
-    with open("trails_api/data/sample_towns.geojson") as f:
-        data = json.load(f)
-    Town.objects.all().delete()
-    count = 0
-
-    for feature in data["features"]:
-        props = feature["properties"]
-        name = props.get("ENGLISH") or props.get("name")
-        area = props.get("AREA")
-        population = props.get("POPULATION") or props.get("population") or 0
-        town_type = props.get("TOWN_TYPE") or props.get("town_type") or "Urban"
-
-        # Convert each GeoJSON coordinate pair into a PostGIS point so the
-        # towns can be used by nearest-town lookup, filtering, and weather views.
-        lon, lat = feature["geometry"]["coordinates"]
-        point = Point(float(lon), float(lat), srid=4326)
-
-        Town.objects.create(
-            name=name,
-            area=area,
-            population=population,
-            town_type=town_type,
-            location=point
-        )
-        count += 1
-
-    return Response({"status": f"Loaded {count} towns successfully"})
 
 # Returns trails as GeoJSON for the main map page.
 @api_view(['GET'])
@@ -527,17 +497,6 @@ def trails_paths_geojson(request):
     qs = Trail.objects.exclude(path__isnull=True)
     serializer = TrailPathGeoSerializer(qs, many=True)
     return Response(serializer.data)
-
-
-
-# Shows the small API test page.
-def api_test_page(request):
-    return redirect(f"{settings.STATIC_URL}api_test.html")
-
-# Keeps the old API test route working.
-def api_test_view(request):
-    return redirect(f"{settings.STATIC_URL}api_test.html")
-
 
 # --- Weather proxy endpoints -------------------------------------------------
 

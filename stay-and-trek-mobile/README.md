@@ -1,6 +1,6 @@
 # Stay & Trek Mobile
 
-This folder contains the Expo / React Native mobile client for Stay & Trek. It connects to the same Django backend used by the web application.
+This folder contains an optional Expo / React Native companion prototype for Stay & Trek. It connects to the same Django backend used by the web application.
 
 ## What The Mobile App Does
 

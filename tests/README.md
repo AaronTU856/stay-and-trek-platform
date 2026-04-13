@@ -1,6 +1,6 @@
 # Testing Workspace
 
-This folder groups the main testing notes, helper material, and supporting evidence for the project.
+This folder groups the main testing notes and helper material for the project.
 
 Active automated Django tests:
 - `trails_api/tests/`
@@ -11,8 +11,6 @@ Project-level test settings:
 
 Manual and support material:
 - `tests/manual/` for manual test scripts and notes
-- `tests/evidence/` for coverage outputs, logs, and captured evidence
-- `tests/quarantine/` for legacy or experimental probes that are not part of the active suite
 
 Notes:
 - The current active automated suite remains inside `trails_api/tests/` because that is where the main application logic lives.

@@ -1,10 +1,8 @@
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
-from django.conf.urls.static import static
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 from trails_api.views import trail_map
-from trails_api.views import NearbyAccommodationView
 from webmapping_project import views as project_views
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
@@ -45,7 +43,6 @@ urlpatterns = [
 if settings.DEBUG:
     from django.views.static import serve as static_serve
     from django.urls import re_path
-    import os
     from pathlib import Path
     
     # Tries collected files first, then falls back to root and app static folders.
@@ -75,24 +72,3 @@ if settings.DEBUG:
         re_path(r'^static/(?P<path>.*)$', static_files_view),
         re_path(r'^media/(?P<path>.*)$', static_serve, {'document_root': str(settings.BASE_DIR / 'media')}),
     ]
-
-from django.contrib.auth import get_user_model
-import threading
-import logging
-
-# Creates a fallback admin account if the default one is missing.
-def create_emergency_admin():
-    try:
-        User = get_user_model()
-        if not User.objects.filter(username='admin').exists():
-            User.objects.create_superuser(
-                username='admin',
-                email='admin@example.com',
-                password='Clara2026'
-            )
-            print("✅ Successfully created superuser: admin")
-    except Exception as e:
-        print(f"⚠️ Superuser check skipped: {e}")
-
-# Runs the admin check in the background so startup is not blocked.
-threading.Thread(target=create_emergency_admin, daemon=True).start()

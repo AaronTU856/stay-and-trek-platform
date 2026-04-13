@@ -2,7 +2,7 @@
 let API_BASE = "";
 
 if (window.location.hostname.includes("run.app")) {
-    API_BASE = "https://stay-and-trek-service-642845720185.europe-west1.run.app";
+    API_BASE = window.location.origin;
 } else {
     API_BASE = "";
 }

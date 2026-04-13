@@ -1,13 +1,12 @@
 openapi: 3.0.3
 info:
-  title: Trials API
+  title: Stay & Trek API
   version: 1.0.0
-  description: RESTful API for trial data in Ireland
+  description: REST API for trail, accommodation, and spatial data in Ireland.
   contact:
-    name: Aaron Baggot
+    name: Stay & Trek Academic Project
     programme: TU856
-    Module: Web Mapping
-    email: C22716399@mytudublin.ie
+    module: Web Mapping
   license:
     name: MIT
 paths:

@@ -56,8 +56,9 @@ else:
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-this-is-a-temporary-key-12345')
+# SECURITY WARNING: keep the secret key used in production secret.
+# The submission branch uses environment variables and neutral placeholder values.
+SECRET_KEY = os.environ.get('SECRET_KEY', 'replace-me-in-local-env')
 OPENWEATHERMAP_API_KEY = os.getenv('OPENWEATHERMAP_API_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -72,7 +73,6 @@ ALLOWED_HOSTS = [
     '0.0.0.0', # Common for Docker internal routing
     'stay-and-trek.com', 
     'www.stay-and-trek.com',
-    'stay-and-trek-service-642845720185.europe-west1.run.app',
     '.run.app', # Permits all Google Cloud Run subdomains
 ]
 
@@ -85,7 +85,7 @@ if os.getenv('K_SERVICE'):
 
 CSRF_TRUSTED_ORIGINS = [
     'https://stay-and-trek.com',
-    'https://www.stay-and-trek.com'
+    'https://www.stay-and-trek.com',
     'https://*.run.app',
 ]
 
@@ -194,10 +194,10 @@ else:
         DATABASES = {
             'default': {
                 'ENGINE': 'django.contrib.gis.db.backends.postgis',
-                'NAME': 'stay_and_trek',
-                'USER': 'postgres',
-                'PASSWORD': 'Clara2026',
-                'HOST': '/cloudsql/long-octane-477515-k6:europe-west1:stay-trek-db',
+                'NAME': os.getenv('NEW_DB_NAME', 'stay_and_trek'),
+                'USER': os.getenv('NEW_DB_USER', 'postgres'),
+                'PASSWORD': os.getenv('NEW_DB_PASSWORD', 'set-in-environment'),
+                'HOST': os.getenv('NEW_DB_HOST', '/cloudsql/project:region:instance'),
                 'PORT': '', 
             }
         }
@@ -208,9 +208,9 @@ else:
         DATABASES = {
             'default': {
                 'ENGINE': 'django.contrib.gis.db.backends.postgis',
-                'NAME': 'stay_and_trek',
-                'USER': 'postgres',
-                'PASSWORD': 'Clara2026',
+                'NAME': os.getenv('NEW_DB_NAME', 'stay_and_trek'),
+                'USER': os.getenv('NEW_DB_USER', 'postgres'),
+                'PASSWORD': os.getenv('NEW_DB_PASSWORD', 'set-in-environment'),
                 'HOST': os.getenv('DB_HOST', '127.0.0.1'),
                 'PORT': '8080',
             }
@@ -316,7 +316,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',  # Open for development
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
     ],
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
@@ -333,16 +333,16 @@ REST_FRAMEWORK = {
 }
 
 # CORS settings for development
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOW_CREDENTIALS = True
 
 # API Documentation
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'Trials API',
-    'DESCRIPTION': 'RESTful API for trial data in Ireland',
+    'TITLE': 'Stay & Trek API',
+    'DESCRIPTION': 'REST API for trail, accommodation, and spatial data in Ireland.',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
-    "CONTACT": {"name": "Aaron Baggot", "programme": "TU856", "Module": "Web Mapping", "email": "C22716399@mytudublin.ie"},
+    "CONTACT": {"name": "Stay & Trek Academic Project", "programme": "TU856", "module": "Web Mapping"},
     "LICENSE": {"name": "MIT"},
     
     # Optional niceties:
@@ -382,5 +382,4 @@ import os
 # These are the standard paths for the libraries we installed in your Dockerfile
 GDAL_LIBRARY_PATH = '/usr/lib/libgdal.so'
 GEOS_LIBRARY_PATH = '/usr/lib/libgeos_c.so'
-
 

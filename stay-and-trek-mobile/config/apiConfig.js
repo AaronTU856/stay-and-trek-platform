@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 // Resolves the backend base URL for simulators, devices, and production builds.
 // Default LAN fallback if Expo cannot infer the host automatically.
 // You can override this with EXPO_PUBLIC_API_BASE_URL or EXPO_PUBLIC_API_HOST.
-const FALLBACK_MAC_LOCAL_IP = '192.168.1.83';
+const FALLBACK_LOCAL_HOST = '127.0.0.1';
 const API_PORT = '8000';
 
 function stripPort(hostValue) {
@@ -39,7 +39,7 @@ function getLanBaseUrl() {
   }
 
   const explicitHost = process.env.EXPO_PUBLIC_API_HOST?.trim();
-  const resolvedHost = explicitHost || getExpoHost() || FALLBACK_MAC_LOCAL_IP;
+  const resolvedHost = explicitHost || getExpoHost() || FALLBACK_LOCAL_HOST;
 
   return `http://${resolvedHost}:${API_PORT}`;
 }
@@ -63,7 +63,7 @@ const API_CONFIGS = {
   
   // Deployed API.
   production: {
-    all: 'https://stay-and-trek-service-xxx.a.run.app',
+    all: process.env.EXPO_PUBLIC_PRODUCTION_API_URL?.trim() || 'https://example.run.app',
   },
 };
 

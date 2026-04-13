@@ -21,7 +21,7 @@ Stay & Trek is a web mapping project for exploring walking trails in Ireland. It
 - `maps/` additional map-related pages and app wiring
 - `stay-and-trek-mobile/` optional mobile client using the same backend API
 - `docker/` local Docker configuration for Django, PostGIS, and nginx
-- `tests/` supporting test notes, scripts, and evidence material
+- `tests/` supporting test notes and manual test scripts
 
 ## Dependencies
 
