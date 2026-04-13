@@ -41,10 +41,9 @@ SYSTEM OVERVIEW
 WORKFLOW
 
 - local development is run through Docker
-- cloud deployment is handled through the `dev` branch
-- the live website uses the `stay-and-trek.com` domain
-- local Docker and cloud use different databases
-- mobile submissions go to `Pending` first, then are reviewed in admin and changed to `Verified`
+- cloud deployment uses Google Cloud Run and Cloud SQL
+- local Docker and cloud environments use separate databases
+- mobile submissions enter a moderation workflow before approval
 
 TESTING AND VALIDATION
 

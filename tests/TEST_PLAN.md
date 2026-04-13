@@ -18,7 +18,7 @@ Initial real-failure focus:
 
 Evidence to capture:
 - Failing terminal output or CI logs
-- Fix applied
+- Corrective change applied
 - Passing rerun
 
 ## Active Automated Suite

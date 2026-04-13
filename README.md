@@ -65,7 +65,7 @@ docker compose exec web python manage.py test
 
 ## Mobile Client
 
-The mobile app in `stay-and-trek-mobile/` is an optional companion application. It uses the same backend API and supports:
+The mobile app in `stay-and-trek-mobile/` is a companion application built against the same backend API. It supports:
 
 - trail browsing
 - trail detail views
@@ -75,28 +75,11 @@ The mobile app in `stay-and-trek-mobile/` is an optional companion application. 
 
 See `stay-and-trek-mobile/README.md` for local mobile setup.
 
-## Submission Scope
+## Repository Notes
 
-Included in the academic project:
+The repository contains the web application, API, automated tests, supporting documentation, and the mobile client source code.
 
-- Django web application and templates
-- REST and GeoJSON API endpoints
-- spatial search, POI, boundary, and routing logic
-- automated tests in `trails_api/tests/`
-- documentation and test evidence folders
-- optional mobile client source code
-
-Not intended as core submission material:
-
-- local virtual environments
-- dependency caches and `node_modules`
-- collected static build artefacts
-- coverage output, runtime logs, and editor/system files
-- private environment files and machine-specific settings
-
-## Suggested Exclusions From Final Hand-In
-
-These should normally be excluded from the final submission package:
+The following local artefacts are not required for review or execution and are normally excluded from exported project bundles:
 
 - `.git/`
 - `.venv/`

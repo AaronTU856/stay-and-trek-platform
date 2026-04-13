@@ -1,6 +1,6 @@
 # Screenshot Index
 
-This file links testing screenshots to the report sections where they are used.
+This file records the screenshots used during testing and notes where they are referenced.
 
 ## Chapter 6
 

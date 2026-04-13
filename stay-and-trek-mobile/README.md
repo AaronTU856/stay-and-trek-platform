@@ -1,6 +1,6 @@
 # Stay & Trek Mobile
 
-This folder contains the optional Expo / React Native mobile client for Stay & Trek. It connects to the same Django backend used by the web application.
+This folder contains the Expo / React Native mobile client for Stay & Trek. It connects to the same Django backend used by the web application.
 
 ## What The Mobile App Does
 
@@ -43,10 +43,10 @@ For local development, use the local Django backend started from the project roo
 
 When a signed-in user submits a trail description from the app:
 
-1. the submission goes to the backend API
+1. the suggestion is sent to the backend API
 2. the trail status is set to `Pending`
-3. the moderator reviews it in Django admin
-4. the moderator changes the status to `Verified`
+3. a moderator reviews the submission in Django admin
+4. approved updates are moved to `Verified`
 
 The admin approval step is manual.
 
@@ -58,15 +58,15 @@ The admin approval step is manual.
 - `services/apiClient.js` API helper functions
 - `config/apiConfig.js` API base URL configuration
 
-## Submission Scope
+## Repository Notes
 
-Included:
+This folder contains:
 
 - mobile app source code
 - configuration files
 - assets required by the app
 
-Not intended for final hand-in:
+The following local artefacts are not needed in an exported project bundle:
 
 - `node_modules/`
 - `.expo/`
