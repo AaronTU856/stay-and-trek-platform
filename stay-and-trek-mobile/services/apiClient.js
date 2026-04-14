@@ -112,7 +112,7 @@ export async function getTrailsGeoJSON() {
 
 export async function getAccommodations(params = {}) {
     const queryString = new URLSearchParams(params).toString();
-    const endpoint = `/api/accommodations/?${queryString}`;
+    const endpoint = `/api/trails/accommodations/?${queryString}`;
     return apiCall(endpoint);
 }
 
@@ -132,20 +132,35 @@ export async function getTrailWeather(trailId) {
   return apiCall(`/api/trails/weather/${trailId}/`);
 }
 
-export async function getTownWeather(townName) {
-  return apiCall(`/api/trails/weather-town/?location=${encodeURIComponent(townName)}`);
+export async function getTownWeather(arg1, arg2) {
+  let lat;
+  let lng;
+
+  if (typeof arg1 === 'object' && arg1 !== null) {
+    lat = arg1.lat;
+    lng = arg1.lng;
+  } else if (arg1 !== undefined && arg2 !== undefined) {
+    lat = arg1;
+    lng = arg2;
+  }
+
+  if (lat === undefined || lng === undefined) {
+    throw new Error('getTownWeather requires latitude and longitude');
+  }
+
+  return apiCall(`/api/trails/weather-town/?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}`);
 }
 
 // Towns
 
 export async function getTowns(params = {}) {
   const queryString = new URLSearchParams(params).toString();
-  const endpoint = `/api/towns/?${queryString}`;
+  const endpoint = `/api/trails/towns/geojson/?${queryString}`;
   return apiCall(endpoint);
 }
 
 export async function getNearestTown(lat, lng) {
-  return apiCall('/api/nearest-town/', {
+  return apiCall('/api/trails/nearest-town/', {
     method: 'POST',
     body: JSON.stringify({ latitude: lat, longitude: lng }),
   });
@@ -155,20 +170,20 @@ export async function getNearestTown(lat, lng) {
 
 export async function getPOIs(params = {}) {
   const queryString = new URLSearchParams(params).toString();
-  const endpoint = `/api/pois/?${queryString}`;
+  const endpoint = `/api/trails/pois/?${queryString}`;
   return apiCall(endpoint);
 }
 
 export async function getPOIsByType(poiType) {
-  return apiCall(`/api/pois/type/${poiType}/`);
+  return apiCall(`/api/trails/pois/type/${poiType}/`);
 }
 
 export async function getPOIsNearTrail(trailId) {
-  return apiCall(`/api/pois/near-trail/?trail_id=${trailId}`);
+  return apiCall(`/api/trails/pois/near-trail/?trail_id=${trailId}`);
 }
 
 export async function getPOIsInRadius(lat, lng, radiusKm) {
-  return apiCall('/api/pois/radius-search/', {
+  return apiCall('/api/trails/pois/radius-search/', {
     method: 'POST',
     body: JSON.stringify({ latitude: lat, longitude: lng, radius_km: radiusKm }),
   });
@@ -178,17 +193,16 @@ export async function getPOIsInRadius(lat, lng, radiusKm) {
 
 export async function getBoundaries(params = {}) {
   const queryString = new URLSearchParams(params).toString();
-  const endpoint = `/api/boundaries/?${queryString}`;
+  const endpoint = `/api/trails/boundaries/?${queryString}`;
   return apiCall(endpoint);
 }
 
 export async function getTrailsCrossingBoundary(boundaryId) {
-  return apiCall(`/api/boundaries/${boundaryId}/trails-crossing/`);
+  return apiCall(`/api/trails/boundaries/${boundaryId}/trails-crossing/`);
 }
 
 export async function getSpatialAnalysisSummary() {
-  return apiCall('/api/spatial-analysis/summary/');
+  return apiCall('/api/trails/spatial-analysis/summary/');
 }
 
 export { API_BASE_URL };
-

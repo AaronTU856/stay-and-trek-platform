@@ -915,7 +915,6 @@ def accommodations_near_trail(request):
                     cursor,
                     trail_lng,
                     trail_lat,
-                    ROAD_HIGHWAY_FILTER
                 )
                 acc_nodes = {}
                 end_nodes = []
@@ -925,7 +924,6 @@ def accommodations_near_trail(request):
                         cursor,
                         acc.location.x,
                         acc.location.y,
-                        ROAD_HIGHWAY_FILTER
                     )
                     if acc_node is not None:
                         acc_nodes[acc.id] = acc_node
