@@ -56,8 +56,8 @@ else:
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-this-is-a-temporary-key-12345')
+# SECURITY WARNING: keep the secret key used in production secret.
+SECRET_KEY = os.environ.get('SECRET_KEY', 'replace-me-in-local-env')
 OPENWEATHERMAP_API_KEY = os.getenv('OPENWEATHERMAP_API_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -382,4 +382,3 @@ import os
 # These are the standard paths for the libraries we installed in your Dockerfile
 GDAL_LIBRARY_PATH = '/usr/lib/libgdal.so'
 GEOS_LIBRARY_PATH = '/usr/lib/libgeos_c.so'
-
