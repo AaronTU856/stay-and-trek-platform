@@ -7,6 +7,7 @@ from trails_api.views import trail_map
 from trails_api.views import NearbyAccommodationView
 from webmapping_project import views as project_views
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+import os
 
 
 # Wires the main web pages, APIs, and app sections into one route table.
@@ -88,7 +89,7 @@ def create_emergency_admin():
             User.objects.create_superuser(
                 username='admin',
                 email='admin@example.com',
-                password='Clara2026'
+                password=os.getenv('EMERGENCY_ADMIN_PASSWORD', 'set-in-environment')
             )
             print("✅ Successfully created superuser: admin")
     except Exception as e:

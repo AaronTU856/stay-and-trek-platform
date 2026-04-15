@@ -196,7 +196,7 @@ else:
                 'ENGINE': 'django.contrib.gis.db.backends.postgis',
                 'NAME': 'stay_and_trek',
                 'USER': 'postgres',
-                'PASSWORD': 'Clara2026',
+                'PASSWORD': os.getenv('NEW_DB_PASSWORD', 'set-in-environment'),
                 'HOST': '/cloudsql/long-octane-477515-k6:europe-west1:stay-trek-db',
                 'PORT': '', 
             }
@@ -210,7 +210,7 @@ else:
                 'ENGINE': 'django.contrib.gis.db.backends.postgis',
                 'NAME': 'stay_and_trek',
                 'USER': 'postgres',
-                'PASSWORD': 'Clara2026',
+                'PASSWORD': os.getenv('NEW_DB_PASSWORD', 'set-in-environment'),
                 'HOST': os.getenv('DB_HOST', '127.0.0.1'),
                 'PORT': '8080',
             }
@@ -382,5 +382,4 @@ import os
 # These are the standard paths for the libraries we installed in your Dockerfile
 GDAL_LIBRARY_PATH = '/usr/lib/libgdal.so'
 GEOS_LIBRARY_PATH = '/usr/lib/libgeos_c.so'
-
 

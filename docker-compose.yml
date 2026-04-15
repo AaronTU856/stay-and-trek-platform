@@ -28,10 +28,10 @@ services:
     environment:
       - DEBUG=1
       - SECRET_KEY=your_secret_key_here
-      - DATABASE_URL=postgres://postgres:postgres@db:5432/stayandtrek
+      - DATABASE_URL=postgres://postgres:${POSTGRES_PASSWORD:-replace_with_local_postgres_password}@db:5432/stayandtrek
       - POSTGRES_DB=stayandtrek
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-replace_with_local_postgres_password}
       - DB_HOST=db
       - DB_PORT=5432
     networks:
@@ -46,7 +46,7 @@ services:
     environment:
       POSTGRES_DB: stayandtrek
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-replace_with_local_postgres_password}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
