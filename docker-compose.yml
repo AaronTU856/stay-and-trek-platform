@@ -26,14 +26,14 @@ services:
     env_file:
       - .env
     environment:
-      - DEBUG=1
-      - SECRET_KEY=your_secret_key_here
-      - DATABASE_URL=postgres://postgres:postgres@db:5432/stayandtrek
-      - POSTGRES_DB=stayandtrek
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - DB_HOST=db
-      - DB_PORT=5432
+      - DEBUG=${DEBUG:-1}
+      - SECRET_KEY=${SECRET_KEY:-replace_with_local_secret_key}
+      - DATABASE_URL=${DATABASE_URL:-postgres://postgres:replace_with_local_postgres_password@db:5432/stayandtrek}
+      - POSTGRES_DB=${POSTGRES_DB:-stayandtrek}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-replace_with_local_postgres_password}
+      - DB_HOST=${DB_HOST:-db}
+      - DB_PORT=${DB_PORT:-5432}
     networks:
       - app_network
 
@@ -44,9 +44,9 @@ services:
     container_name: postgres_container
     platform: linux/amd64  # Use amd64 to work on your M1 Mac
     environment:
-      POSTGRES_DB: stayandtrek
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-stayandtrek}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-replace_with_local_postgres_password}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
