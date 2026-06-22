@@ -1,6 +1,30 @@
 # Stay & Trek
 
-Stay & Trek is a web mapping project for exploring walking trails in Ireland. It combines a Django and PostGIS backend, a Leaflet-based web map, supporting analytics pages, and an optional Expo / React Native mobile client that uses the same API.
+**Stay & Trek** is a full-stack geospatial platform for planning hiking trips in Ireland. It brings trail discovery, nearby accommodation, weather data and interactive mapping into a Django web application, with a companion React Native mobile prototype that consumes the same API.
+
+> Final Year Project, BSc (Hons) Computer Science, Technological University Dublin
+
+## Portfolio Highlights
+
+- Search and explore **1,000+ trail records** and **2,000+ accommodation records**.
+- Use radius-based and bounding-box spatial search backed by PostgreSQL and PostGIS.
+- Consume Django REST Framework endpoints from both the web application and Expo / React Native prototype.
+- Run locally with Docker, PostgreSQL/PostGIS and nginx; deploy the application to Google Cloud Platform.
+
+## Architecture Overview
+
+```text
+Web browser (Django templates + Leaflet) ─┐
+                                         ├── Django / Django REST Framework ── PostgreSQL + PostGIS
+Expo / React Native mobile client ───────┘              │
+                                                        └── GeoJSON, spatial search and weather endpoints
+```
+
+## Screenshots
+
+| Trails map | Radius search | Analytics dashboard |
+| --- | --- | --- |
+| ![Stay & Trek trails map](Documentation/screenshots_tests/Trails_Home.png) | ![Radius search](Documentation/screenshots_tests/Radius_Search.png) | ![Analytics dashboard](Documentation/screenshots_tests/Dashboard_Analytics_Page.png) |
 
 ## What The System Does
 
@@ -121,3 +145,30 @@ These should normally be excluded from the final submission package:
 - Leaflet
 - Docker
 - Expo / React Native
+
+## API and Mobile Client
+
+The application exposes REST and GeoJSON endpoints used by the web experience and the Expo / React Native companion client. API documentation is available within the running application. The mobile client supports trail discovery, trail details, nearby accommodation, weather display and trail-description submission.
+
+## Cloud Deployment
+
+Stay & Trek has been deployed to Google Cloud Platform. Docker provides a consistent local development environment, while the cloud deployment demonstrates practical experience of packaging and operating a full-stack geospatial application.
+
+## Further Reading
+
+- [Architecture notes](Documentation/ARCHITECTURE.md)
+- [Security hygiene notes](Documentation/SECURITY_HYGIENE.md)
+- [Mobile client setup](stay-and-trek-mobile/README.md)
+- [Testing workspace](tests/README.md)
+
+## Future Improvements
+
+- Expand automated coverage across browser, API and mobile user journeys.
+- Introduce richer route-planning and accessibility information for trails.
+- Add saved trips and personalised trail recommendations.
+- Add performance monitoring and caching for frequently requested map and weather data.
+- Improve mobile offline support for outdoor use.
+
+## Security
+
+Create `.env` from `.env.example`, then supply unique local values for Django secrets and third-party API keys. Never commit `.env`, database credentials or cloud secrets. Before a production deployment, rotate any previously exposed values and use managed secrets for cloud configuration.
