@@ -44,24 +44,9 @@ Optional for the mobile client:
 
 ## Run Locally
 
-Start the web stack:
-
-```bash
-docker compose up -d --build
-docker compose exec web python manage.py migrate
-docker compose exec web python manage.py collectstatic --noinput
-```
-
-Open the local system at:
-
-- `http://127.0.0.1:8000/`
-- `http://127.0.0.1:8000/admin/`
-
-Run the Django tests:
-
-```bash
-docker compose exec web python manage.py test
-```
+Follow [Local web development](docs/LOCAL_DEVELOPMENT.md) for the first-time
+configuration, database startup, local administrator and test commands.
+The local stack uses its own Docker database; production credentials are not needed.
 
 ## Mobile Client
 

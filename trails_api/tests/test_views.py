@@ -1,5 +1,5 @@
 from django.contrib.gis.geos import Point
-from django.test import TestCase
+from django.test import TestCase, SimpleTestCase, override_settings
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -351,3 +351,42 @@ class DashboardAnalyticsTests(TestCase):
         self.assertEqual((stats["easy_count"], stats["moderate_count"], stats["hard_count"]), (1, 0, 1))
         self.assertEqual(response.context["county_labels"], ["Wicklow"])
         self.assertEqual(response.context["county_counts"], [2])
+
+
+class DemoSeedSafetyTests(SimpleTestCase):
+    @override_settings(DEBUG=True)
+    def test_seed_rejects_unsafe_targets_before_database_access(self):
+        from django.core.management.base import CommandError
+        from trails_api.management.commands.seed_demo_data import Command
+
+        safe_db = {"ENGINE": "django.contrib.gis.db.backends.postgis",
+                   "HOST": "db", "NAME": "stayandtrek_demo"}
+        safe_env = {"STAY_TREK_DEMO": "1", "ACTIVE_DB": "local"}
+        cases = [
+            ({"NAME": "stay_and_trek"}, {}),
+            ({"NAME": "stayandtrek"}, {}),
+            ({"HOST": "production-host"}, {}),
+            ({"ENGINE": "django.db.backends.sqlite3"}, {}),
+            ({}, {"STAY_TREK_DEMO": "0"}),
+            ({}, {"ACTIVE_DB": "new"}),
+            ({}, {"K_SERVICE": "production-service"}),
+            ({}, {"USE_CLOUD_PROXY": "true"}),
+        ]
+        for db_changes, env_changes in cases:
+            with self.subTest(db=db_changes, env=env_changes):
+                with patch("trails_api.management.commands.seed_demo_data.connection") as db:
+                    db.settings_dict = {**safe_db, **db_changes}
+                    with patch.dict("os.environ", {**safe_env, **env_changes}, clear=True):
+                        with self.assertRaises(CommandError):
+                            Command().handle()
+                    db.cursor.assert_not_called()
+
+    @override_settings(DEBUG=False)
+    def test_seed_rejects_production_mode(self):
+        from django.core.management.base import CommandError
+        from trails_api.management.commands.seed_demo_data import Command
+
+        with patch("trails_api.management.commands.seed_demo_data.connection") as db:
+            with self.assertRaises(CommandError):
+                Command().handle()
+            db.cursor.assert_not_called()

@@ -1,0 +1,49 @@
+# Standalone, disposable development stack. Does not read .env or mount source.
+services:
+  db:
+    build:
+      context: .
+      dockerfile: docker/db/Dockerfile
+    platform: linux/amd64
+    environment:
+      POSTGRES_DB: stayandtrek_demo
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: demo-local-only
+    volumes:
+      - demo_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d stayandtrek_demo"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [demo]
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    ports: ["127.0.0.1:8010:8000"]
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DEBUG: "1"
+      SECRET_KEY: demo-development-only-not-for-production
+      ACTIVE_DB: local
+      K_SERVICE: ""
+      USE_CLOUD_PROXY: "false"
+      CI: ""
+      STAY_TREK_DEMO: "1"
+      DATABASE_URL: postgres://postgres:demo-local-only@db:5432/stayandtrek_demo
+      POSTGRES_DB: stayandtrek_demo
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: demo-local-only
+      DB_HOST: db
+      DB_PORT: "5432"
+      OPENWEATHERMAP_API_KEY: ""
+      CARTO_BASEMAP_API_KEY: ""
+    networks: [demo, frontend]
+volumes:
+  demo_data:
+networks:
+  demo:
+    internal: true
+  frontend:

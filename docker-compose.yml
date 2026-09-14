@@ -22,19 +22,24 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - db
-    env_file:
-      - .env
+      db:
+        condition: service_healthy
     environment:
       - DEBUG=1
-      - SECRET_KEY=your_secret_key_here
+      # Override dotenv values as well as inherited Cloud SQL switches.
+      - ACTIVE_DB=local
+      - K_SERVICE=
+      - USE_CLOUD_PROXY=false
+      - CI=
+      - SECRET_KEY=${SECRET_KEY:-local-development-only-change-me}
       - DATABASE_URL=postgres://postgres:${POSTGRES_PASSWORD:-replace_with_local_postgres_password}@db:5432/stayandtrek
       - POSTGRES_DB=stayandtrek
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-replace_with_local_postgres_password}
       - DB_HOST=db
       - DB_PORT=5432
-      - CARTO_BASEMAP_API_KEY=${CARTO_BASEMAP_API_KEY}
+      - OPENWEATHERMAP_API_KEY=${OPENWEATHERMAP_API_KEY:-}
+      - CARTO_BASEMAP_API_KEY=${CARTO_BASEMAP_API_KEY:-}
     networks:
       - app_network
 
@@ -48,6 +53,11 @@ services:
       POSTGRES_DB: stayandtrek
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-replace_with_local_postgres_password}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d stayandtrek"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:

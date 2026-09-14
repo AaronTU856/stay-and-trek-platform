@@ -62,8 +62,13 @@ credential cleanup remain unverified; see `docs/SECURITY_ROLLOUT.md`.
 
 ## 3. Establish local development and staging
 
-- [ ] Document a reproducible fresh-checkout setup with example configuration.
-- [ ] Provide development data isolated from production.
+- [x] Document fresh-checkout setup in `docs/LOCAL_DEVELOPMENT.md`, align
+      `.env.example`, and isolate Compose from production database switches.
+      Compose validation and an offline Docker settings check passed.
+- [x] Verify fresh-database migration, seeding, login and HTTP startup in the
+      standalone demo stack; see the 2026-09-14 local-development checkpoint.
+- [x] Provide guarded, repeatable fictional development data in a separate
+      demo database (3 trails, 2 towns, 3 stays). Existing databases untouched.
 - [x] Establish staging, explicit migration execution, and rollback procedures.
 
 ## 4. Strengthen validation
@@ -134,8 +139,10 @@ credential cleanup remain unverified; see `docs/SECURITY_ROLLOUT.md`.
       remove unused queries against its calculated category property. Two Docker
       regression tests reproduce the previous error and pass with the fix,
       covering an empty catalogue and populated summary statistics.
-- [ ] Release the analytics fix through a PR and validate the candidate before
-      promotion. Production remains on `cc7e344`; the local fix is not deployed.
+- [x] Release the analytics fix through PR #13. Candidate and production page
+      checks passed; commit `eac7c9c5ed6ea9225506c34385092bea7aa3416a`, revision
+      `stay-and-trek-service-00330-fur`, received 100% traffic. This supersedes
+      the earlier CARTO release checkpoint above.
 - [ ] Confirm whether the old exposed OpenWeather key has been revoked at the
       provider. The replacement key is already active through Secret Manager.
       Prototype mobile compatibility does not gate web work; mobile changes are
