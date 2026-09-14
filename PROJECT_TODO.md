@@ -65,8 +65,10 @@ credential cleanup remain unverified; see `docs/SECURITY_ROLLOUT.md`.
 - [x] Document fresh-checkout setup in `docs/LOCAL_DEVELOPMENT.md`, align
       `.env.example`, and isolate Compose from production database switches.
       Compose validation and an offline Docker settings check passed.
-- [ ] Verify the documented startup end to end against a fresh local volume.
-- [ ] Provide development data isolated from production.
+- [x] Verify fresh-database migration, seeding, login and HTTP startup in the
+      standalone demo stack; see the 2026-09-14 local-development checkpoint.
+- [x] Provide guarded, repeatable fictional development data in a separate
+      demo database (3 trails, 2 towns, 3 stays). Existing databases untouched.
 - [x] Establish staging, explicit migration execution, and rollback procedures.
 
 ## 4. Strengthen validation

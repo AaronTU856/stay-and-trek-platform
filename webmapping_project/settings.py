@@ -227,7 +227,7 @@ else:
         DATABASES = {
             'default': {
                 'ENGINE': 'django.contrib.gis.db.backends.postgis',
-                'NAME':'stayandtrek',
+                'NAME': os.getenv('POSTGRES_DB', 'stayandtrek'),
                 'USER': os.getenv('POSTGRES_USER', 'postgres'),
                 'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'postgres'),
                 'HOST': os.getenv('DB_HOST', 'db'),
